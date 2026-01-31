@@ -47,7 +47,7 @@ export default function RootLayout({
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <Header />
-            <Box component="main" sx={{ pb: { xs: '70px', md: 0 } }}>
+            <Box component="main">
               {children}
             </Box>
             <Footer />

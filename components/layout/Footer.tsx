@@ -9,117 +9,93 @@ export default function Footer() {
         <Box
             component="footer"
             sx={{
-                bgcolor: '#FDFBF7',
+                bgcolor: '#FFFFFF',
                 color: '#5D4037',
-                pt: 15,
-                pb: 8,
-                borderTop: '1px solid rgba(93, 64, 55, 0.05)'
+                pt: 10,
+                pb: 6,
+                borderTop: '1px solid rgba(0, 0, 0, 0.05)'
             }}
         >
             <Container maxWidth="lg">
-                <Box sx={{ textAlign: 'center', mb: 10 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    {/* Minimal Logo */}
                     <Typography
-                        variant="h3"
+                        variant="h5"
                         sx={{
                             fontFamily: '"Playfair Display", serif',
                             fontWeight: 700,
-                            letterSpacing: '0.15em',
-                            mb: 3,
+                            letterSpacing: '0.3em',
+                            mb: 5,
                             textTransform: 'uppercase',
-                            fontSize: { xs: '2rem', md: '3rem' }
                         }}
                     >
                         HanFlower
                     </Typography>
-                    <Typography
-                        variant="body2"
-                        sx={{
-                            maxWidth: '600px',
-                            mx: 'auto',
-                            opacity: 0.8,
-                            lineHeight: 2,
-                            letterSpacing: '0.05em',
-                            fontWeight: 300
-                        }}
-                    >
-                        ร้านดอกไม้และไม้อวบน้ำที่เชื่อว่าทุกของขวัญมีความหมาย <br />
-                        รังสรรค์ด้วยดีไซน์ที่สะท้อนตัวตนอันเหนือระดับของคุณ
-                    </Typography>
-                </Box>
 
-                <Box
-                    sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        gap: { xs: 4, md: 8 },
-                        flexWrap: 'wrap',
-                        mb: 10,
-                        borderTop: '1px solid rgba(93, 64, 55, 0.1)',
-                        borderBottom: '1px solid rgba(93, 64, 55, 0.1)',
-                        py: 4
-                    }}
-                >
-                    {[
-                        { label: 'Collections', href: '/collections' },
-                        { label: 'Our Story', href: '/about' },
-                        { label: 'Digital Card', href: '/ar-scan' },
-                        { label: 'Contact', href: '/contact' },
-                        { label: 'FAQ', href: '/faq' },
-                    ].map((item) => {
-                        const isExternal = item.href === '/ar-scan';
-                        const Component = isExternal ? 'a' : Link;
-
-                        return (
-                            <Component
-                                key={item.label}
-                                href={item.href}
-                                style={{
-                                    textDecoration: 'none',
-                                    color: 'inherit',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 600,
-                                    letterSpacing: '0.2em',
-                                    textTransform: 'uppercase',
-                                    transition: 'color 0.3s ease'
-                                }}
-                            >
-                                <Box sx={{ '&:hover': { color: '#D4AF37' } }}>
-                                    {item.label}
-                                </Box>
-                            </Component>
-                        );
-                    })}
-                </Box>
-
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <Box sx={{ display: 'flex', gap: 3 }}>
-                        <IconButton aria-label="follow us on instagram" sx={{ color: '#5D4037', '&:hover': { color: '#D4AF37' } }}>
-                            <Instagram size="20" variant="Outline" />
-                        </IconButton>
-                        <IconButton aria-label="follow us on facebook" sx={{ color: '#5D4037', '&:hover': { color: '#D4AF37' } }}>
-                            <Facebook size="20" variant="Outline" />
-                        </IconButton>
-                        <IconButton aria-label="contact us via email" sx={{ color: '#5D4037', '&:hover': { color: '#D4AF37' } }}>
-                            <DirectNotification size="20" variant="Outline" />
-                        </IconButton>
-                    </Box>
+                    {/* Simple Nav Links */}
                     <Box
                         sx={{
                             display: 'flex',
-                            flexDirection: { xs: 'column', md: 'row' },
-                            gap: { xs: 2, md: 4 },
-                            alignItems: 'center',
-                            opacity: 0.5
+                            justifyContent: 'center',
+                            gap: { xs: 3, md: 5 },
+                            flexWrap: 'wrap',
+                            mb: 6,
                         }}
                     >
-                        <Typography sx={{ fontSize: '10px', letterSpacing: '0.1em' }}>
-                            © 2026 HANFLOWER. ALL RIGHTS RESERVED.
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 3 }}>
-                            <Link href="#" style={{ color: 'inherit', textDecoration: 'none', fontSize: '10px' }}>PRIVACY POLICY</Link>
-                            <Link href="#" style={{ color: 'inherit', textDecoration: 'none', fontSize: '10px' }}>TERMS OF SERVICE</Link>
-                        </Box>
+                        {[
+                            { label: 'Shop', href: '/catalog' },
+                            { label: 'Story', href: '/#about' },
+                            { label: 'AR Scan', href: '/ar-scan' },
+                            { label: 'Contact', href: '/contact' },
+                        ].map((item) => {
+                            const isAR = item.href === '/ar-scan';
+                            const Component = isAR ? 'a' : Link;
+
+                            return (
+                                <Component
+                                    key={item.label}
+                                    href={item.href}
+                                    style={{
+                                        textDecoration: 'none',
+                                        color: 'inherit',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 600,
+                                        letterSpacing: '0.2em',
+                                        textTransform: 'uppercase',
+                                    }}
+                                >
+                                    <Box sx={{ opacity: 0.6, transition: '0.3s', '&:hover': { opacity: 1, color: '#D4AF37' } }}>
+                                        {item.label}
+                                    </Box>
+                                </Component>
+                            );
+                        })}
                     </Box>
+
+                    {/* Social Handles */}
+                    <Box sx={{ display: 'flex', gap: 2, mb: 6 }}>
+                        <IconButton aria-label="instagram" size="small" sx={{ color: '#5D4037', opacity: 0.5, '&:hover': { opacity: 1, color: '#D4AF37' } }}>
+                            <Instagram size="18" variant="Outline" />
+                        </IconButton>
+                        <IconButton aria-label="facebook" size="small" sx={{ color: '#5D4037', opacity: 0.5, '&:hover': { opacity: 1, color: '#D4AF37' } }}>
+                            <Facebook size="18" variant="Outline" />
+                        </IconButton>
+                        <IconButton aria-label="email" size="small" sx={{ color: '#5D4037', opacity: 0.5, '&:hover': { opacity: 1, color: '#D4AF37' } }}>
+                            <DirectNotification size="18" variant="Outline" />
+                        </IconButton>
+                    </Box>
+
+                    {/* Ultra Minimal Copyright */}
+                    <Typography
+                        sx={{
+                            fontSize: '9px',
+                            letterSpacing: '0.15em',
+                            opacity: 0.4,
+                            fontWeight: 400
+                        }}
+                    >
+                        © 2026 HANFLOWER STUDIO. PRESERVING EMOTIONS.
+                    </Typography>
                 </Box>
             </Container>
         </Box>

@@ -1,10 +1,38 @@
 'use client';
 
-import { Container, Typography, Box, Button } from "@mui/material";
+import { Container, Typography, Box } from "@mui/material";
 import Image from "next/image";
-import { ArrowRight } from "iconsax-react";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Pagination, Autoplay, EffectFade } from 'swiper/modules';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/effect-fade';
 
 export default function AboutUs() {
+
+    const storySlides = [
+        {
+            overline: "OUR HERITAGE",
+            title: "ศิลปะแห่งการ",
+            titleItalic: "ส่งต่อความรู้สึก",
+            desc: "ที่ HanFlower เราเชื่อว่าดอกไม้คือเรื่องราวแห่งความรู้สึก เราจึงผสานศาสตร์แห่งศิลป์และนวัตกรรมดิจิทัลเข้าด้วยกัน เพื่อให้ทุกความทรงจำยังคงงดงาม"
+        },
+        {
+            overline: "THE CRAFTSMANSHIP",
+            title: "คัดสรรด้วย",
+            titleItalic: "ความพิถีพิถัน",
+            desc: "เราคัดเลือกดอกไม้ที่สดใหม่ที่สุดและไม้อวบน้ำสายพันธุ์พรีเมียมจากแหล่งที่ดีที่สุด เพื่อมอบประสบการณ์ที่สมบูรณ์แบบให้กับผู้รับในทุกโอกาส"
+        },
+        {
+            overline: "THE INNOVATION",
+            title: "นวัตกรรม",
+            titleItalic: "แห่งจินตนาการ",
+            desc: "สัมผัสประสบการณ์ใหม่ที่ทำให้ความทรงจำมีชีวิต ด้วยเทคโนโลยี AR Scan ที่จะเปลี่ยนการ์ดอวยพรธรรมดาให้เป็นการบอกความในใจที่น่าประทับใจที่สุด"
+        }
+    ];
+
     return (
         <Box component="section" sx={{ py: { xs: 10, md: 14 }, bgcolor: '#FDFBF7', overflow: 'hidden' }}>
             <Container maxWidth="xl">
@@ -69,91 +97,121 @@ export default function AboutUs() {
                         </Box>
                     </Box>
 
-                    <Box sx={{ width: { xs: '100%', md: '50%' } }}>
-                        <Box>
-                            <Typography
-                                variant="overline"
-                                sx={{
-                                    color: '#D4AF37',
-                                    fontWeight: 600,
-                                    letterSpacing: '0.4em',
-                                    mb: 3,
-                                    display: 'block'
-                                }}
+                    <Box sx={{ width: { xs: '100%', md: '50%' }, textAlign: { xs: 'center', md: 'left' } }}>
+                        <Box sx={{ width: '100%', minHeight: { xs: '380px', md: '450px' } }}>
+                            <Swiper
+                                modules={[Pagination, Autoplay, EffectFade]}
+                                effect="fade"
+                                fadeEffect={{ crossFade: true }}
+                                spaceBetween={0}
+                                slidesPerView={1}
+                                pagination={{ clickable: true }}
+                                autoplay={{ delay: 5000, disableOnInteraction: false }}
+                                style={{ paddingBottom: '60px' }}
                             >
-                                OUR HERITAGE
-                            </Typography>
+                                {storySlides.map((slide, idx) => (
+                                    <SwiperSlide key={idx} style={{ backgroundColor: 'transparent' }}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{
+                                                color: '#D4AF37',
+                                                fontWeight: 600,
+                                                letterSpacing: '0.4em',
+                                                mb: { xs: 2, md: 3 },
+                                                display: 'block'
+                                            }}
+                                        >
+                                            {slide.overline}
+                                        </Typography>
 
-                            <Typography
-                                variant="h2"
-                                sx={{
-                                    mb: 4,
-                                    fontSize: { xs: '2.5rem', md: '3.5rem' },
-                                    lineHeight: 1.2,
-                                    color: '#1A1A1A'
-                                }}
-                            >
-                                ศิลปะแห่งการ <br />
-                                <span style={{ fontStyle: 'italic', fontFamily: '"Playfair Display", serif', color: '#D4AF37' }}>ส่งต่อความรู้สึก</span>
-                            </Typography>
+                                        <Typography
+                                            variant="h2"
+                                            sx={{
+                                                mb: { xs: 3, md: 4 },
+                                                fontSize: { xs: '2rem', md: '3.5rem' },
+                                                lineHeight: 1.2,
+                                                color: '#1A1A1A'
+                                            }}
+                                        >
+                                            {slide.title} <br />
+                                            <span style={{ fontStyle: 'italic', fontFamily: '"Playfair Display", serif', color: '#D4AF37' }}>{slide.titleItalic}</span>
+                                        </Typography>
 
-                            <Box sx={{ width: '60px', height: '1px', bgcolor: '#D4AF37', mb: 5 }} />
+                                        <Box sx={{ width: '60px', height: '1px', bgcolor: '#D4AF37', mb: { xs: 4, md: 5 }, mx: { xs: 'auto', md: 0 } }} />
 
-                            <Typography
-                                variant="body1"
-                                sx={{
-                                    mb: 4,
-                                    color: '#5D4037',
-                                    lineHeight: 2,
-                                    fontSize: '1.1rem',
-                                    fontWeight: 300
-                                }}
-                            >
-                                ที่ HanFlower เราเชื่อว่าดอกไม้ไม่ใช่เป็นเพียงแค่ของขวัญ แต่คือการถ่ายทอดอารมณ์และเรื่องราว
-                                จากจุดเริ่มต้นที่หลงใหลในความงดงามของธรรมชาติ สู่การรังสรรค์สตูดิโอที่ผสาน
-                                ศาสตร์แห่งศิลป์และนวัตกรรมดิจิทัลเข้าด้วยกันอย่างลงตัว
-                            </Typography>
+                                        <Typography
+                                            variant="body1"
+                                            sx={{
+                                                mb: { xs: 4, md: 6 },
+                                                color: '#5D4037',
+                                                lineHeight: 1.8,
+                                                fontSize: { xs: '0.95rem', md: '1.1rem' },
+                                                fontWeight: 300,
+                                                maxWidth: { xs: '100%', md: '90%' }
+                                            }}
+                                        >
+                                            {slide.desc}
+                                        </Typography>
 
-                            <Typography
-                                variant="body1"
-                                sx={{
-                                    mb: 6,
-                                    color: '#5D4037',
-                                    lineHeight: 2,
-                                    fontSize: '1.1rem',
-                                    fontWeight: 300,
-                                    opacity: 0.8
-                                }}
-                            >
-                                เราคัดสรรดอกไม้ที่สดที่สุดและไม้อวบน้ำสายพันธุ์พรีเมียม พร้อมด้วยเทคโนโลยี AR Scan
-                                ที่จะทำให้การ์ดอวยพรของคุณมีชีวิตขึ้นมา เพื่อให้ทุกความทรงจำยังคงงดงามตราบนานเท่านาน
-                            </Typography>
-
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 2,
-                                    pt: 2
-                                }}
-                            >
-                                <Typography
-                                    sx={{
-                                        color: '#D4AF37',
-                                        letterSpacing: '0.3em',
-                                        fontWeight: 700,
-                                        fontSize: '0.75rem',
-                                        textTransform: 'uppercase'
-                                    }}
-                                >
-                                    WHERE ART MEETS NATURE
-                                </Typography>
-                                <Box sx={{ width: '40px', height: '1px', bgcolor: 'rgba(212, 175, 55, 0.4)' }} />
-                            </Box>
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: { xs: 'center', md: 'flex-start' },
+                                                gap: 2,
+                                                pt: 2
+                                            }}
+                                        >
+                                            <Typography
+                                                sx={{
+                                                    color: '#D4AF37',
+                                                    letterSpacing: '0.3em',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.7rem',
+                                                    textTransform: 'uppercase'
+                                                }}
+                                            >
+                                                WHERE ART MEETS NATURE
+                                            </Typography>
+                                            <Box sx={{ width: '30px', height: '1px', bgcolor: 'rgba(212, 175, 55, 0.4)' }} />
+                                        </Box>
+                                    </SwiperSlide>
+                                ))}
+                            </Swiper>
                         </Box>
                     </Box>
                 </Box>
             </Container>
+
+            {/* Custom Style for Swiper Pagination */}
+            <style jsx global>{`
+                .swiper-pagination {
+                    bottom: 0px !important;
+                    display: flex !important;
+                    justify-content: flex-start !important;
+                    align-items: center;
+                    gap: 8px;
+                }
+                @media (max-width: 900px) {
+                    .swiper-pagination {
+                        justify-content: center !important;
+                    }
+                }
+                .swiper-pagination-bullet {
+                    width: 6px;
+                    height: 6px;
+                    background: #E5E5E5;
+                    opacity: 1;
+                    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+                    margin: 0 !important;
+                }
+                .swiper-pagination-bullet-active {
+                    width: 24px;
+                    height: 4px;
+                    background: #D4AF37 !important;
+                    border-radius: 4px;
+                }
+            `}</style>
         </Box>
     );
 }

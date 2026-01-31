@@ -5,15 +5,15 @@ import Link from "next/link";
 import { Container, Typography, Button, Box } from "@mui/material";
 
 const products = [
-    { title: "Sweet Roses", image: "/images/bouquet.png", type: "Signature Bouquet", price: "1,290" },
-    { title: "Lucky Jade", image: "/images/succulent.png", type: "Premium Succulent", price: "450" },
-    { title: "Golden Pear", image: "/images/img1.webp", type: "Fruit Basket", price: "2,590" },
-    { title: "Winterberry Box", image: "/images/img2.webp", type: "Gift Box", price: "1,890" }
+    { title: "Sweet Roses", image: "/images/bouquet.png", type: "Signature Bouquet", price: "1,290", originalPrice: "1,590", discount: "19" },
+    { title: "Lucky Jade", image: "/images/succulent.png", type: "Premium Succulent", price: "450", originalPrice: "550", discount: "18" },
+    { title: "Golden Pear", image: "/images/img1.webp", type: "Fruit Basket", price: "2,590", originalPrice: "3,290", discount: "21" },
+    { title: "Winterberry Box", image: "/images/img2.webp", type: "Gift Box", price: "1,890", originalPrice: "2,290", discount: "17" }
 ];
 
 export default function ProductSneakPeek() {
     return (
-        <Box component="section" sx={{ py: { xs: 10, md: 14 }, bgcolor: '#FFFFFF', borderTop: '1px solid #F5F5F5' }}>
+        <Box component="section" sx={{ pb: { xs: 6, md: 14 }, pt: { xs: 10, md: 14 }, bgcolor: '#FFFFFF', borderTop: '1px solid #F5F5F5' }}>
             <Container maxWidth="xl">
                 <Box
                     sx={{
@@ -56,8 +56,8 @@ export default function ProductSneakPeek() {
                 <Box
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' },
-                        gap: 4
+                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+                        gap: { xs: 2, md: 4 }
                     }}
                 >
                     {products.map((product, idx) => (
@@ -85,24 +85,41 @@ export default function ProductSneakPeek() {
                                     }}
                                     className="hover-zoom"
                                 />
-                                {/* Add to Cart Overlay */}
+
+                                {/* Discount Badge Overlay */}
+                                <Box sx={{
+                                    position: 'absolute',
+                                    top: 15,
+                                    right: 15,
+                                    bgcolor: '#D4AF37',
+                                    color: '#FFFFFF',
+                                    px: 1.5,
+                                    py: 0.5,
+                                    fontSize: '0.65rem',
+                                    fontWeight: 700,
+                                    letterSpacing: '0.1em',
+                                    zIndex: 2
+                                }}>
+                                    -{product.discount}%
+                                </Box>
+
+                                {/* SHOP NOW Overlay */}
                                 <Box sx={{
                                     position: 'absolute',
                                     bottom: 0,
                                     left: 0,
                                     right: 0,
-                                    bgcolor: '#FFFFFF',
-                                    py: 2.5, // Slightly taller
+                                    bgcolor: 'rgba(255, 255, 255, 0.7)',
+                                    backdropFilter: 'blur(10px)',
+                                    py: 2,
                                     textAlign: 'center',
                                     transform: 'translateY(100%)',
-                                    transition: 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)', // Smooth slide
-                                    borderTop: '1px solid #F0F0F0',
+                                    transition: 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
                                 }}
-                                    // Adding className to target from parent
                                     className="add-to-cart-overlay"
                                 >
-                                    <Typography variant="button" sx={{ fontSize: '0.75rem', color: '#1A1A1A', letterSpacing: '0.15em', fontWeight: 600 }}>
-                                        ADD TO CART
+                                    <Typography variant="button" sx={{ fontSize: '0.75rem', color: '#1A1A1A', letterSpacing: '0.15em', fontWeight: 700 }}>
+                                        SHOP NOW
                                     </Typography>
                                 </Box>
                                 {/* Re-applying hover logic correctly */}
@@ -123,15 +140,20 @@ export default function ProductSneakPeek() {
                                 <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 500, color: '#1A1A1A', mb: 1, letterSpacing: '0.05em' }}>
                                     {product.title}
                                 </Typography>
-                                <Typography variant="subtitle1" sx={{ color: '#D4AF37', fontWeight: 600, fontSize: '1rem' }}>
-                                    ฿{product.price}
-                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5 }}>
+                                    <Typography variant="subtitle1" sx={{ color: '#D4AF37', fontWeight: 700, fontSize: '1.1rem' }}>
+                                        ฿{product.price}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: '#BBB', textDecoration: 'line-through', fontSize: '0.85rem' }}>
+                                        ฿{product.originalPrice}
+                                    </Typography>
+                                </Box>
                             </Box>
                         </Box>
                     ))}
                 </Box>
 
-                <Box sx={{ display: { xs: 'block', md: 'none' }, textAlign: 'center', mt: 8 }}>
+                <Box sx={{ display: { xs: 'block', md: 'none' }, textAlign: 'center', mt: 6 }}>
                     <Button
                         variant="outlined"
                         sx={{
