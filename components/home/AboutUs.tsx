@@ -34,7 +34,7 @@ export default function AboutUs() {
     ];
 
     return (
-        <Box component="section" sx={{ py: { xs: 10, md: 14 }, bgcolor: '#FDFBF7', overflow: 'hidden' }}>
+        <Box component="section" sx={{ py: { xs: 10, md: 14 }, bgcolor: '#FFF9F8', overflow: 'hidden' }}>
             <Container maxWidth="xl">
                 <Box sx={{
                     display: 'flex',
@@ -44,23 +44,52 @@ export default function AboutUs() {
                 }}>
                     <Box sx={{ width: { xs: '100%', md: '50%' }, position: 'relative' }}>
                         <Box sx={{ position: 'relative' }}>
-                            {/* Decorative Background Box */}
+                            {/* Focused Soft Glow behind path */}
                             <Box
                                 sx={{
                                     position: 'absolute',
-                                    top: -40,
-                                    left: -40,
-                                    width: '80%',
-                                    height: '100%',
-                                    border: '1px solid rgba(212, 175, 55, 0.3)',
+                                    top: '-10%',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    width: '120%',
+                                    height: '110%',
+                                    background: 'radial-gradient(circle, rgba(183, 110, 121, 0.15) 0%, transparent 70%)',
+                                    filter: 'blur(50px)',
                                     zIndex: 0,
-                                    display: { xs: 'none', md: 'block' }
                                 }}
                             />
 
-                            <Box sx={{ position: 'relative', zIndex: 1, overflow: 'hidden', borderRadius: 0 }}>
+                            {/* Elegant Arch Frame */}
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    top: -15,
+                                    left: -15,
+                                    right: -15,
+                                    bottom: 0,
+                                    border: '1px solid rgba(183, 110, 121, 0.25)',
+                                    borderRadius: '500px 500px 20px 20px', // Perfect Arch shape
+                                    zIndex: 0,
+                                    display: { xs: 'none', md: 'block' },
+                                    transition: 'all 0.6s ease'
+                                }}
+                            />
+
+                            <Box sx={{
+                                position: 'relative',
+                                zIndex: 1,
+                                overflow: 'hidden',
+                                borderRadius: '500px 500px 20px 20px', // Arch shape for image
+                                boxShadow: '0 40px 80px rgba(0,0,0,0.12)',
+                                transition: 'all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                                '&:hover': {
+                                    transform: 'translateY(-15px)',
+                                    boxShadow: '0 60px 100px rgba(183, 110, 121, 0.15)',
+                                    '& img': { transform: 'scale(1.05)' }
+                                }
+                            }}>
                                 <Image
-                                    src="/images/about-florist.webp"
+                                    src="/images/about.webp"
                                     alt="Our Story"
                                     width={800}
                                     height={1000}
@@ -68,7 +97,8 @@ export default function AboutUs() {
                                         width: '100%',
                                         height: 'auto',
                                         display: 'block',
-                                        filter: 'brightness(0.95)'
+                                        filter: 'brightness(1.02) contrast(0.98)',
+                                        transition: 'transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1)'
                                     }}
                                 />
                             </Box>
@@ -87,7 +117,7 @@ export default function AboutUs() {
                                     boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
                                 }}
                             >
-                                <Typography variant="h4" sx={{ color: '#D4AF37', mb: 1, fontFamily: '"Playfair Display", serif', fontSize: '1.2rem', letterSpacing: '0.2em' }}>
+                                <Typography variant="h4" sx={{ color: '#E0BFB8', mb: 1, fontFamily: '"Playfair Display", serif', fontSize: '1.2rem', letterSpacing: '0.2em' }}>
                                     ESTD
                                 </Typography>
                                 <Typography variant="caption" sx={{ letterSpacing: '0.3em', opacity: 0.8, fontWeight: 700 }}>
@@ -114,7 +144,7 @@ export default function AboutUs() {
                                         <Typography
                                             variant="overline"
                                             sx={{
-                                                color: '#D4AF37',
+                                                color: '#B76E79',
                                                 fontWeight: 600,
                                                 letterSpacing: '0.4em',
                                                 mb: { xs: 2, md: 3 },
@@ -134,10 +164,10 @@ export default function AboutUs() {
                                             }}
                                         >
                                             {slide.title} <br />
-                                            <span style={{ fontStyle: 'italic', fontFamily: '"Playfair Display", serif', color: '#D4AF37' }}>{slide.titleItalic}</span>
+                                            <span style={{ fontStyle: 'italic', fontFamily: '"Playfair Display", serif', color: '#B76E79' }}>{slide.titleItalic}</span>
                                         </Typography>
 
-                                        <Box sx={{ width: '60px', height: '1px', bgcolor: '#D4AF37', mb: { xs: 4, md: 5 }, mx: { xs: 'auto', md: 0 } }} />
+                                        <Box sx={{ width: '60px', height: '1px', bgcolor: '#E0BFB8', mb: { xs: 4, md: 5 }, mx: { xs: 'auto', md: 0 } }} />
 
                                         <Typography
                                             variant="body1"
@@ -164,7 +194,7 @@ export default function AboutUs() {
                                         >
                                             <Typography
                                                 sx={{
-                                                    color: '#D4AF37',
+                                                    color: '#B76E79',
                                                     letterSpacing: '0.3em',
                                                     fontWeight: 700,
                                                     fontSize: '0.7rem',
@@ -173,7 +203,7 @@ export default function AboutUs() {
                                             >
                                                 WHERE ART MEETS NATURE
                                             </Typography>
-                                            <Box sx={{ width: '30px', height: '1px', bgcolor: 'rgba(212, 175, 55, 0.4)' }} />
+                                            <Box sx={{ width: '30px', height: '1px', bgcolor: 'rgba(183, 110, 121, 0.4)' }} />
                                         </Box>
                                     </SwiperSlide>
                                 ))}
@@ -208,7 +238,7 @@ export default function AboutUs() {
                 .swiper-pagination-bullet-active {
                     width: 24px;
                     height: 4px;
-                    background: #D4AF37 !important;
+                    background: #B76E79 !important;
                     border-radius: 4px;
                 }
             `}</style>

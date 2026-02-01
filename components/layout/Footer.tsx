@@ -3,8 +3,13 @@
 import { Container, Typography, Box, IconButton } from "@mui/material";
 import { Instagram, Facebook, DirectNotification } from "iconsax-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Footer() {
+    const pathname = usePathname();
+    const isAdminPage = pathname?.startsWith('/admin');
+
+    if (isAdminPage) return null;
     return (
         <Box
             component="footer"
@@ -43,7 +48,7 @@ export default function Footer() {
                         }}
                     >
                         {[
-                            { label: 'Shop', href: '/catalog' },
+                            { label: 'Shop', href: '/products' },
                             { label: 'Story', href: '/#about' },
                             { label: 'AR Scan', href: '/ar-scan' },
                             { label: 'Contact', href: '/contact' },

@@ -7,10 +7,13 @@ import { usePathname } from "next/navigation";
 
 export default function MobileNav() {
     const pathname = usePathname();
+    const isAdminPage = pathname?.startsWith('/admin');
+
+    if (isAdminPage) return null;
 
     const navItems = [
         { label: 'HOME', icon: Home, href: '/' },
-        { label: 'SHOP', icon: Shop, href: '/catalog' },
+        { label: 'SHOP', icon: Shop, href: '/products' },
         { label: 'AR SCAN', icon: ScanBarcode, href: '/ar-scan', isSpecial: true },
         { label: 'FAVORITES', icon: Heart, href: '/favorites' },
         { label: 'ACCOUNT', icon: User, href: '/account' },

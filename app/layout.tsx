@@ -34,6 +34,8 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import MobileNav from "@/components/layout/MobileNav";
 
+import CartProviderWrapper from "@/components/providers/CartProviderWrapper";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -46,12 +48,14 @@ export default function RootLayout({
       >
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
-            <Header />
-            <Box component="main">
-              {children}
-            </Box>
-            <Footer />
-            <MobileNav />
+            <CartProviderWrapper>
+              <Header />
+              <Box component="main">
+                {children}
+              </Box>
+              <Footer />
+              <MobileNav />
+            </CartProviderWrapper>
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>

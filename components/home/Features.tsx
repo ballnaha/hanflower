@@ -53,7 +53,7 @@ export default function Features() {
                     >
                         คอลเลกชันยอดนิยม
                     </Typography>
-                    <Box sx={{ width: '40px', height: '1px', bgcolor: '#D4AF37', mx: 'auto' }} />
+                    <Box sx={{ width: '40px', height: '1px', bgcolor: '#B76E79', mx: 'auto' }} />
                 </Box>
 
                 {/* Desktop Grid Layout (Hidden on mobile) */}
@@ -107,7 +107,7 @@ export default function Features() {
                 .swiper-pagination-bullet-active {
                     width: 24px;
                     height: 4px;
-                    background: #D4AF37 !important;
+                    background: #B76E79 !important;
                     border-radius: 4px;
                 }
             `}</style>
@@ -137,9 +137,9 @@ function FeatureCard({ item }: { item: any }) {
                 overflow: 'hidden',
                 transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
                 '&:hover': {
-                    outline: '1px solid #1A1A1A',
+                    outline: '1px solid #B76E79',
                     outlineOffset: '4px',
-                    borderColor: '#1A1A1A',
+                    borderColor: '#B76E79',
                     '& img': {
                         transform: 'scale(1.05)'
                     }
@@ -157,7 +157,7 @@ function FeatureCard({ item }: { item: any }) {
                 />
             </Box>
 
-            <Typography variant="overline" sx={{ color: '#D4AF37', letterSpacing: '0.2em', fontSize: '0.7rem', mb: 1 }}>
+            <Typography variant="overline" sx={{ color: '#B76E79', letterSpacing: '0.2em', fontSize: '0.7rem', mb: 1 }}>
                 {item.subtitle}
             </Typography>
             <Typography variant="h4" sx={{ color: '#1A1A1A', fontSize: '1.2rem', letterSpacing: '0.15em', textAlign: 'center' }}>
