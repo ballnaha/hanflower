@@ -51,9 +51,9 @@ export default function Header() {
                 top: 0,
                 width: '100%',
                 zIndex: 1000,
-                bgcolor: isScrolled || isProductPage ? (isProductPage && !isScrolled ? 'transparent' : 'rgba(255, 255, 255, 0.98)') : 'rgba(255, 255, 255, 0)',
-                backdropFilter: isScrolled ? 'blur(20px)' : 'none',
-                borderBottom: isScrolled || (isProductPage && isScrolled) ? '1px solid rgba(0, 0, 0, 0.05)' : 'none',
+                bgcolor: isProductPage || !isScrolled ? 'transparent' : 'rgba(255, 255, 255, 0.98)',
+                backdropFilter: isProductPage ? 'none' : (isScrolled ? 'blur(20px)' : 'none'),
+                borderBottom: isProductPage ? 'none' : (isScrolled ? '1px solid rgba(0, 0, 0, 0.05)' : 'none'),
                 transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
             }}
         >
@@ -89,7 +89,7 @@ export default function Header() {
                         </Link>
                     </Box>
 
-                    <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: { xs: 1, md: 3 } }}>
+                    <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: { xs: 1, md: 2 } }}>
                         <IconButton sx={{ color: '#1A1A1A', display: { xs: 'none', md: 'flex' } }}>
                             <SearchNormal1 size={20} variant="Outline" color="#1A1A1A" />
                         </IconButton>
@@ -99,11 +99,56 @@ export default function Header() {
                         <IconButton sx={{ color: '#1A1A1A', display: { xs: 'none', md: 'flex' } }}>
                             <Profile size={20} variant="Outline" color="#1A1A1A" />
                         </IconButton>
-                        <IconButton onClick={() => toggleCart(true)} sx={{ color: '#1A1A1A' }}>
-                            <Badge badgeContent={cartCount} color="warning" sx={{ '& .MuiBadge-badge': { fontSize: '10px' } }}>
-                                <ShoppingBag size={20} variant="Outline" color="#1A1A1A" />
+
+                        <IconButton
+                            onClick={() => toggleCart(true)}
+                            sx={{
+                                color: '#1A1A1A',
+                                transition: 'transform 0.2s',
+                                '&:hover': { transform: 'scale(1.1)' }
+                            }}
+                        >
+                            <Badge
+                                badgeContent={cartCount}
+                                sx={{
+                                    '& .MuiBadge-badge': {
+                                        fontSize: '10px',
+                                        bgcolor: '#B76E79',
+                                        color: '#FFF'
+                                    }
+                                }}
+                            >
+                                <ShoppingBag size="22" variant="Outline" color="#1A1A1A" />
                             </Badge>
                         </IconButton>
+
+                        <Button
+                            variant="contained"
+                            disableElevation
+                            component="a"
+                            href="https://line.me/R/ti/p/@setevent"
+                            target="_blank"
+                            sx={{
+                                bgcolor: '#06C755',
+                                borderRadius: '100px',
+                                px: { xs: 2, md: 3 },
+                                py: { xs: 0.8, md: 1.2 },
+                                color: '#FFFFFF',
+                                textTransform: 'none',
+                                fontSize: { xs: '0.75rem', md: '0.85rem' },
+                                fontWeight: 600,
+                                letterSpacing: '0.02em',
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                    bgcolor: '#05B54C',
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: '0 4px 12px rgba(6,199,85,0.2)'
+                                },
+                            }}
+                            startIcon={<Image src="/images/line.png" alt="LINE" width={18} height={18} />}
+                        >
+                            สั่งซื้อทางไลน์
+                        </Button>
                     </Box>
                 </Box>
             ) : (
@@ -129,12 +174,12 @@ export default function Header() {
 
                         <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 8 }}>
                             {[
-                                { label: 'COLLECTIONS', href: '/collections' },
+                                { label: 'สินค้าทั้งหมด', href: '/products' },
                                 { label: 'OUR STORY', href: '/about' },
-                                { label: 'DIGITAL CARD', href: '/ar-scan' },
-                                { label: 'CONTACT', href: '/contact' },
+                                { label: 'แจ้งชำระเงิน', href: '/payment' },
+                                { label: 'ติดต่อเรา', href: '/contact' },
                             ].map((link) => {
-                                const isExternal = link.href === '/ar-scan';
+                                const isExternal = link.href === '/payment';
                                 const Component = isExternal ? 'a' : Link;
 
                                 return (
@@ -175,51 +220,60 @@ export default function Header() {
                             })}
                         </Box>
 
-                        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2 }}>
-                            <Box sx={{ display: { xs: 'flex', lg: 'none' } }}>
-                                <IconButton
-                                    aria-label="shopping cart"
-                                    onClick={() => toggleCart(true)}
-                                    sx={{ color: isScrolled ? '#5D4037' : (pathname === '/' && !isScrolled ? '#FFFFFF' : '#5D4037') }}
+                        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: { xs: 1, md: 2 } }}>
+                            <IconButton
+                                aria-label="shopping cart"
+                                onClick={() => toggleCart(true)}
+                                sx={{
+                                    color: isScrolled ? '#5D4037' : (pathname === '/' && !isScrolled ? '#FFFFFF' : '#5D4037'),
+                                    transition: 'transform 0.2s',
+                                    '&:hover': { transform: 'scale(1.1)' }
+                                }}
+                            >
+                                <Badge
+                                    badgeContent={cartCount}
+                                    sx={{
+                                        '& .MuiBadge-badge': {
+                                            fontSize: '10px',
+                                            bgcolor: '#B76E79',
+                                            color: '#FFF'
+                                        }
+                                    }}
                                 >
-                                    <Badge badgeContent={cartCount} color="warning" sx={{ '& .MuiBadge-badge': { fontSize: '10px', top: '2px', right: '2px' } }}>
-                                        <ShoppingBag size="24" variant="Outline" color="#D4AF37" />
-                                    </Badge>
-                                </IconButton>
-                            </Box>
+                                    <ShoppingBag size="22" variant="Outline" color={isScrolled ? '#5D4037' : (pathname === '/' && !isScrolled ? '#FFFFFF' : '#B76E79')} />
+                                </Badge>
+                            </IconButton>
 
                             <Button
                                 variant="contained"
                                 disableElevation
-                                component={Link}
-                                href="/products"
+                                component="a"
+                                href="https://line.me/R/ti/p/@setevent"
+                                target="_blank"
                                 sx={{
-                                    display: { xs: 'none', lg: 'flex' },
-                                    bgcolor: isScrolled ? '#B76E79' : 'rgba(255, 255, 255, 0.1)',
-                                    backdropFilter: isScrolled ? 'none' : 'blur(10px)',
-                                    borderRadius: '0px',
-                                    px: 5,
-                                    py: 1.8,
+                                    bgcolor: isScrolled || pathname !== '/' ? '#06C755' : 'rgba(255, 255, 255, 0.15)',
+                                    backdropFilter: 'blur(10px)',
+                                    borderRadius: '100px', // Tablet style pill
+                                    px: { xs: 2, md: 3 },
+                                    py: { xs: 0.8, md: 1.2 },
                                     color: '#FFFFFF',
-                                    textTransform: 'uppercase',
-                                    fontSize: '0.85rem',
+                                    textTransform: 'none',
+                                    fontSize: { xs: '0.75rem', md: '0.85rem' },
                                     fontWeight: 600,
-                                    letterSpacing: '0.3em',
+                                    letterSpacing: '0.02em',
                                     border: '1px solid',
-                                    borderColor: isScrolled ? '#B76E79' : 'rgba(255, 255, 255, 0.3)',
-                                    transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                                    borderColor: isScrolled || pathname !== '/' ? '#06C755' : 'rgba(255, 255, 255, 0.4)',
+                                    transition: 'all 0.3s ease',
                                     '&:hover': {
-                                        bgcolor: '#D4AF37',
-                                        color: '#FFFFFF',
-                                        borderColor: '#D4AF37',
-                                        transform: 'translateY(-2px)',
-                                        boxShadow: '0 15px 30px rgba(0,0,0,0.1)',
-                                        '& .icon': { color: '#FFFFFF' }
+                                        bgcolor: '#05B54C',
+                                        borderColor: '#05B54C',
+                                        transform: 'translateY(-1px)',
+                                        boxShadow: '0 4px 12px rgba(6,199,85,0.2)'
                                     },
                                 }}
-                                startIcon={<ShoppingBag size="18" variant="Outline" color="#FFFFFF" className="icon" />}
+                                startIcon={<Image src="/images/line.png" alt="LINE" width={18} height={18} />}
                             >
-                                SHOP NOW
+                                สั่งซื้อทางไลน์
                             </Button>
                         </Box>
                     </Box>
@@ -255,8 +309,9 @@ export default function Header() {
                     <List>
                         {[
                             { label: 'Home', href: '/' },
-                            { label: 'Collections', href: '/collections' },
+                            { label: 'Products', href: '/products' },
                             { label: 'Our Story', href: '/about' },
+                            { label: 'Payment', href: '/payment' },
                             { label: 'Digital Card', href: '/ar-scan' },
                             { label: 'Contact', href: '/contact' },
                         ].map((item) => (

@@ -27,6 +27,8 @@ import {
     AccordionDetails
 } from '@mui/material';
 import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Product } from '@/lib/products';
 import { useCart } from '@/context/CartContext';
 import AddToCart from './AddToCart';
@@ -49,6 +51,46 @@ export default function ProductSidebar({
     setActiveTab
 }: ProductSidebarProps) {
     const { addToCart } = useCart();
+    const router = useRouter();
+    const [flowerType, setFlowerType] = React.useState<'fresh' | 'velvet'>('fresh');
+    const [cardType, setCardType] = React.useState<'standard' | 'custom'>('standard');
+
+    const basePrice = parseFloat(flowerType === 'fresh' ? product.price.replace(/,/g, '') : (product.priceVelvet?.replace(/,/g, '') || product.price.replace(/,/g, '')));
+    const customCardFee = product.qrCodePrice ? parseFloat(product.qrCodePrice.replace(/,/g, '')) : 150;
+
+    const cardPrice = cardType === 'custom' ? customCardFee : 0;
+    const currentPriceNum = basePrice + cardPrice;
+    const displayPrice = currentPriceNum.toString();
+
+    const displayOriginalPrice = flowerType === 'fresh' ? product.originalPrice : (product.originalPriceVelvet || product.originalPrice);
+    const displayDiscount = flowerType === 'fresh' ? product.discount : (product.discountVelvet || product.discount);
+
+    const hasVelvet = !!product.priceVelvet;
+
+    const getFinalTitle = () => {
+        let title = product.title;
+        const variants = [];
+        if (hasVelvet) variants.push(flowerType === 'fresh' ? 'ดอกไม้สด' : 'ดอกไม้กำมะหยี่');
+        if (cardType === 'custom') variants.push('Custom QR Card');
+
+        if (variants.length > 0) {
+            title += ` (${variants.join(', ')})`;
+        }
+        return title;
+    };
+
+    const handleBuyNow = () => {
+        addToCart({
+            ...product,
+            id: `${product.id}-${flowerType}-${cardType}`,
+            sku: `${product.sku}-${flowerType.toUpperCase()}-${cardType.toUpperCase()}`,
+            price: displayPrice,
+            originalPrice: displayOriginalPrice,
+            discount: displayDiscount || "",
+            title: getFinalTitle()
+        }, quantity);
+        router.push('/payment');
+    };
 
     return (
         <Box sx={{
@@ -88,9 +130,7 @@ export default function ProductSidebar({
                     }}>
                         {product.title}
                     </Typography>
-                    <IconButton size="small" sx={{ mt: 1 }}>
-                        <Heart size={22} color="#1A1A1A" />
-                    </IconButton>
+
                 </Box>
                 <Typography variant="caption" sx={{ color: '#999', fontSize: '0.65rem', mt: 1, display: 'block', letterSpacing: '0.05em' }}>
                     REF: {product.sku}
@@ -99,26 +139,176 @@ export default function ProductSidebar({
 
             {/* Price & Description Section (Core Change) */}
             <Box sx={{ mb: 6 }}>
-                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mb: 2 }}>
-                    <Typography sx={{
-                        fontSize: '1.8rem',
-                        fontWeight: 400,
-                        color: '#1A1A1A',
-                        fontFamily: '"Inter", sans-serif'
-                    }}>
-                        ฿{product.price}
-                    </Typography>
-                    {product.originalPrice && product.originalPrice !== product.price && (
+                {/* Hide price when out of stock */}
+                {product.stock !== undefined && product.stock <= 0 ? (
+                    <Box sx={{ mb: 2 }}>
+                        <Chip
+                            label="สินค้าหมด"
+                            sx={{
+                                bgcolor: '#D32F2F',
+                                color: '#FFF',
+                                fontWeight: 700,
+                                borderRadius: '4px',
+                                height: '32px',
+                                fontSize: '1rem',
+                                '& .MuiChip-label': { px: 2 }
+                            }}
+                        />
+                    </Box>
+                ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                         <Typography sx={{
-                            fontSize: '1.1rem',
-                            color: '#999',
-                            textDecoration: 'line-through',
-                            fontWeight: 300
+                            fontSize: '1.8rem',
+                            fontWeight: 400,
+                            color: '#1A1A1A',
+                            fontFamily: '"Inter", sans-serif'
                         }}>
-                            ฿{product.originalPrice}
+                            ฿{displayPrice}
                         </Typography>
-                    )}
-                </Box>
+                        {displayOriginalPrice && displayOriginalPrice !== displayPrice && (
+                            <Typography sx={{
+                                fontSize: '1.1rem',
+                                color: '#999',
+                                textDecoration: 'line-through',
+                                fontWeight: 300
+                            }}>
+                                ฿{displayOriginalPrice}
+                            </Typography>
+                        )}
+                        {displayDiscount && parseInt(displayDiscount) > 0 && (
+                            <Chip
+                                label={`-${displayDiscount}%`}
+                                size="small"
+                                sx={{
+                                    bgcolor: '#B76E79',
+                                    color: '#FFF',
+                                    fontWeight: 700,
+                                    borderRadius: '4px',
+                                    height: '24px',
+                                    '& .MuiChip-label': { px: 1 }
+                                }}
+                            />
+                        )}
+                    </Box>
+                )}
+
+                {/* Flower Type Selection */}
+                {hasVelvet && (
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#1A1A1A', mb: 1.5, display: 'block', letterSpacing: '0.1em' }}>
+                            SELECT MATERIAL
+                        </Typography>
+                        <Stack direction="row" spacing={2}>
+                            <Button
+                                onClick={() => setFlowerType('fresh')}
+                                sx={{
+                                    flex: 1,
+                                    height: 52,
+                                    borderRadius: 0,
+                                    border: '1px solid',
+                                    borderColor: flowerType === 'fresh' ? '#B76E79' : '#E0E0E0',
+                                    bgcolor: flowerType === 'fresh' ? '#B76E79' : 'transparent',
+                                    color: flowerType === 'fresh' ? '#FFF' : '#666',
+                                    fontWeight: 600,
+                                    fontSize: '0.9rem',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    boxShadow: flowerType === 'fresh' ? '0 4px 12px rgba(183, 110, 121, 0.2)' : 'none',
+                                    '&:hover': {
+                                        borderColor: '#B76E79',
+                                        bgcolor: flowerType === 'fresh' ? '#A05C66' : 'rgba(183, 110, 121, 0.05)',
+                                        color: flowerType === 'fresh' ? '#FFF' : '#B76E79',
+                                    }
+                                }}
+                            >
+                                ดอกไม้สด
+                            </Button>
+                            <Button
+                                onClick={() => setFlowerType('velvet')}
+                                sx={{
+                                    flex: 1,
+                                    height: 52,
+                                    borderRadius: 0,
+                                    border: '1px solid',
+                                    borderColor: flowerType === 'velvet' ? '#B76E79' : '#E0E0E0',
+                                    bgcolor: flowerType === 'velvet' ? '#B76E79' : 'transparent',
+                                    color: flowerType === 'velvet' ? '#FFF' : '#666',
+                                    fontWeight: 600,
+                                    fontSize: '0.9rem',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    boxShadow: flowerType === 'velvet' ? '0 4px 12px rgba(183, 110, 121, 0.2)' : 'none',
+                                    '&:hover': {
+                                        borderColor: '#B76E79',
+                                        bgcolor: flowerType === 'velvet' ? '#A05C66' : 'rgba(183, 110, 121, 0.05)',
+                                        color: flowerType === 'velvet' ? '#FFF' : '#B76E79',
+                                    }
+                                }}
+                            >
+                                ดอกไม้กำมะหยี่
+                            </Button>
+                        </Stack>
+                    </Box>
+                )}
+
+                {/* QR Card Selection */}
+                {product.hasQrCode !== false && (
+                    <Box sx={{ mb: 4 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#1A1A1A', mb: 1.5, display: 'block', letterSpacing: '0.1em' }}>
+                            QR FEELING CARD
+                        </Typography>
+                        <Stack direction="row" spacing={2}>
+                            <Button
+                                onClick={() => setCardType('standard')}
+                                sx={{
+                                    flex: 1,
+                                    height: 52,
+                                    borderRadius: 0,
+                                    border: '1px solid',
+                                    borderColor: cardType === 'standard' ? '#B76E79' : '#E0E0E0',
+                                    bgcolor: cardType === 'standard' ? '#B76E79' : 'transparent',
+                                    color: cardType === 'standard' ? '#FFF' : '#666',
+                                    fontWeight: 600,
+                                    fontSize: '0.85rem',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    lineHeight: 1.2,
+                                    '&:hover': {
+                                        borderColor: '#B76E79',
+                                        bgcolor: cardType === 'standard' ? '#A05C66' : 'rgba(183, 110, 121, 0.05)',
+                                    }
+                                }}
+                            >
+                                <span>การ์ดมาตรฐาน</span>
+                                <span style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 400 }}>(แถมฟรี)</span>
+                            </Button>
+                            <Button
+                                onClick={() => setCardType('custom')}
+                                sx={{
+                                    flex: 2,
+                                    height: 52,
+                                    borderRadius: 0,
+                                    border: '1px solid',
+                                    borderColor: cardType === 'custom' ? '#B76E79' : '#E0E0E0',
+                                    bgcolor: cardType === 'custom' ? '#B76E79' : 'transparent',
+                                    color: cardType === 'custom' ? '#FFF' : '#666',
+                                    fontWeight: 600,
+                                    fontSize: '0.85rem',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    lineHeight: 1.2,
+                                    '&:hover': {
+                                        borderColor: '#B76E79',
+                                        bgcolor: cardType === 'custom' ? '#A05C66' : 'rgba(183, 110, 121, 0.05)',
+                                    }
+                                }}
+                            >
+                                <span>ปรับแต่งพิเศษ</span>
+                                <span style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 400 }}>(รูปภาพ/วิดีโอ +฿{customCardFee})</span>
+                            </Button>
+                        </Stack>
+                    </Box>
+                )}
 
                 {/* Product Description Moved Here */}
                 <Typography variant="body1" sx={{
@@ -141,52 +331,103 @@ export default function ProductSidebar({
                 <Typography variant="caption" sx={{ fontWeight: 700, color: '#1A1A1A', mb: 1.5, display: 'block', letterSpacing: '0.1em' }}>
                     SELECT QUANTITY
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                    <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        border: '1px solid #E0E0E0',
-                        borderRadius: '0px',
-                        height: 48
-                    }}>
-                        <IconButton onClick={decreaseQty} disabled={quantity <= 1} size="small" sx={{ px: 2 }}>
-                            <Minus size={14} color="#1A1A1A" />
-                        </IconButton>
-                        <Typography sx={{ fontWeight: 600, fontSize: '0.9rem', minWidth: 40, textAlign: 'center' }}>
-                            {quantity}
-                        </Typography>
-                        <IconButton onClick={increaseQty} size="small" sx={{ px: 2 }}>
-                            <Add size={14} color="#1A1A1A" />
-                        </IconButton>
-                    </Box>
-                    <Box sx={{ flex: 1 }}>
-                        <AddToCart price={product.price} onAdd={() => addToCart(product, quantity)} />
-                    </Box>
-                </Box>
 
-                <Button
-                    variant="outlined"
-                    fullWidth
-                    sx={{
-                        mt: 2,
-                        height: 48,
-                        borderColor: '#1A1A1A',
-                        color: '#1A1A1A',
-                        textTransform: 'uppercase',
-                        borderRadius: '0px',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        letterSpacing: '0.1em',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                            borderColor: '#B76E79',
-                            color: '#B76E79',
-                            bgcolor: 'transparent'
-                        }
-                    }}
-                >
-                    ชำระเงินทันที
-                </Button>
+                {/* Show disabled state when out of stock */}
+                {product.stock !== undefined && product.stock <= 0 ? (
+                    <Box>
+                        <Box sx={{
+                            p: 3,
+                            bgcolor: '#FFF5F5',
+                            border: '1px solid #FFCDD2',
+                            borderRadius: '8px',
+                            textAlign: 'center',
+                            mb: 2
+                        }}>
+                            <Typography sx={{ color: '#D32F2F', fontWeight: 600, fontSize: '0.95rem' }}>
+                                สินค้าหมดชั่วคราว
+                            </Typography>
+                            <Typography sx={{ color: '#888', fontSize: '0.8rem', mt: 0.5 }}>
+                                กรุณาติดต่อร้านค้าเพื่อสอบถามสินค้า
+                            </Typography>
+                        </Box>
+                        <Button
+                            variant="outlined"
+                            fullWidth
+                            disabled
+                            sx={{
+                                height: 48,
+                                borderRadius: '0px',
+                                fontWeight: 700,
+                                letterSpacing: '0.1em',
+                                textTransform: 'uppercase'
+                            }}
+                        >
+                            สินค้าหมด
+                        </Button>
+                    </Box>
+                ) : (
+                    <>
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                border: '1px solid #E0E0E0',
+                                borderRadius: '0px',
+                                height: 48
+                            }}>
+                                <IconButton onClick={decreaseQty} disabled={quantity <= 1} size="small" sx={{ width: 48, height: 48 }}>
+                                    <Minus size={14} color="#1A1A1A" />
+                                </IconButton>
+                                <Typography sx={{ fontWeight: 600, fontSize: '0.9rem', minWidth: 40, textAlign: 'center' }}>
+                                    {quantity}
+                                </Typography>
+                                <IconButton onClick={increaseQty} size="small" sx={{ width: 48, height: 48 }}>
+                                    <Add size={14} color="#1A1A1A" />
+                                </IconButton>
+                            </Box>
+                            <Box sx={{ flex: 1 }}>
+                                <AddToCart
+                                    price={displayPrice}
+                                    onAdd={() => addToCart({
+                                        ...product,
+                                        id: `${product.id}-${flowerType}-${cardType}`,
+                                        sku: `${product.sku}-${flowerType.toUpperCase()}-${cardType.toUpperCase()}`,
+                                        price: displayPrice,
+                                        originalPrice: displayOriginalPrice,
+                                        discount: displayDiscount || "",
+                                        title: getFinalTitle()
+                                    }, quantity)}
+                                />
+                            </Box>
+                        </Box>
+
+                        <Button
+                            variant="outlined"
+                            fullWidth
+                            onClick={handleBuyNow}
+                            sx={{
+                                mt: 2,
+                                height: 48,
+                                borderColor: '#1A1A1A',
+                                color: '#1A1A1A',
+                                textTransform: 'uppercase',
+                                borderRadius: '0px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                letterSpacing: '0.1em',
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                    borderColor: '#B76E79',
+                                    color: '#B76E79',
+                                    bgcolor: 'transparent'
+                                }
+                            }}
+                        >
+                            ชำระเงินทันที
+                        </Button>
+                    </>
+                )}
+
             </Box>
 
             {/* Desktop: Tabs Layout */}

@@ -1,0 +1,671 @@
+'use client';
+
+import {
+    Box,
+    Container,
+    Typography,
+    Paper,
+    Button,
+    Divider,
+    IconButton,
+    Tabs,
+    Tab,
+    Stack,
+    Fade,
+    TextField,
+    Radio,
+    RadioGroup,
+    FormControlLabel,
+    InputAdornment,
+    Alert,
+    CircularProgress,
+    alpha,
+    Snackbar
+} from '@mui/material';
+import {
+    Copy,
+    TickCircle,
+    Cards,
+    ScanBarcode,
+    ArrowRight,
+    TruckFast,
+    TicketDiscount,
+    Location,
+    Note,
+    Add,
+    Minus,
+    Trash,
+    Card
+} from 'iconsax-react';
+import Image from 'next/image';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
+import { useCart } from '@/context/CartContext';
+
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;
+}
+
+function CustomTabPanel(props: TabPanelProps) {
+    const { children, value, index, ...other } = props;
+
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`payment-tabpanel-${index}`}
+            aria-labelledby={`payment-tab-${index}`}
+            {...other}
+            style={{ width: '100%' }}
+        >
+            {value === index && (
+                <Box sx={{ py: 3 }}>
+                    <Fade in={value === index} timeout={500}>
+                        <Box>{children}</Box>
+                    </Fade>
+                </Box>
+            )}
+        </div>
+    );
+}
+
+const customInputSx = {
+    '& .MuiOutlinedInput-root': {
+        borderRadius: '12px',
+        bgcolor: '#FAFAFA',
+        '& fieldset': {
+            borderColor: 'rgba(0,0,0,0.08)',
+        },
+        '&:hover fieldset': {
+            borderColor: 'rgba(0,0,0,0.2)',
+        },
+        '&.Mui-focused fieldset': {
+            borderColor: '#B76E79',
+        }
+    },
+    '& .MuiInputLabel-root.Mui-focused': {
+        color: '#B76E79'
+    }
+};
+
+export default function CheckoutPage() {
+    const [tabValue, setTabValue] = useState(0);
+    const router = useRouter();
+    const { cartItems, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
+    const [shippingInfo, setShippingInfo] = useState({
+        name: '',
+        tel: '',
+        email: '',
+        address: '',
+        note: ''
+    });
+
+    // Checkout State
+    const [shippingMethod, setShippingMethod] = useState('standard');
+    const [promoCode, setPromoCode] = useState('');
+    const [appliedDiscount, setAppliedDiscount] = useState<{ code: string, amount: number } | null>(null);
+    const [isCheckingCode, setIsCheckingCode] = useState(false);
+    const [couponError, setCouponError] = useState('');
+    const [copied, setCopied] = useState(false);
+    const [showLineAlert, setShowLineAlert] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Costs
+    const shippingCost = shippingMethod === 'express' ? 150 : 50;
+    const finalTotal = cartItems.length > 0 ? (cartTotal + shippingCost - (appliedDiscount?.amount || 0)) : 0;
+
+    const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setShippingInfo({
+            ...shippingInfo,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    const handleApplyCoupon = () => {
+        setIsCheckingCode(true);
+        setCouponError('');
+
+        // Mock Coupon Logic
+        setTimeout(() => {
+            if (promoCode.toUpperCase() === 'HANFLOWER') {
+                const discount = Math.floor(cartTotal * 0.1); // 10% off
+                setAppliedDiscount({ code: 'HANFLOWER', amount: discount });
+                setPromoCode('');
+            } else if (promoCode.toUpperCase() === 'FREE') {
+                setAppliedDiscount({ code: 'FREE', amount: 50 }); // Free shipping value
+                setPromoCode('');
+            } else {
+                setCouponError('Invalid promo code');
+            }
+            setIsCheckingCode(false);
+        }, 800);
+    };
+
+    const handleRemoveCoupon = () => {
+        setAppliedDiscount(null);
+    };
+
+    const getOrderMessage = () => {
+        return `ยืนยันคำสั่งซื้อ\n------------------\n\n👤 ลูกค้า:\nชื่อ: ${shippingInfo.name}\nโทร: ${shippingInfo.tel}\nที่อยู่: ${shippingInfo.address}\nหมายเหตุ: ${shippingInfo.note || '-'}\n\n🚚 การจัดส่ง: ${shippingMethod === 'express' ? 'ส่งด่วน (Lalamove/Grab)' : 'ขนส่งมาตรฐาน (1-2 วัน)'}\n\n🛒 รายการสินค้า:\n${cartItems.map(item => `- ${item.title} x ${item.quantity} (${item.price})`).join('\n')}\n\n------------------\nยอดสินค้า: ${cartTotal.toLocaleString()} บ.\nค่าส่ง: ${shippingCost} บ.\nส่วนลด: -${appliedDiscount?.amount || 0} บ.\n\n💰 ยอดสุทธิ: ${finalTotal.toLocaleString()} บาท`;
+    };
+
+    const handlePlaceOrder = async () => {
+        // Validation
+        if (!shippingInfo.name || !shippingInfo.tel || !shippingInfo.address) {
+            alert('กรุณากรอกข้อมูลจัดส่งให้ครบถ้วน');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customerName: shippingInfo.name,
+                    tel: shippingInfo.tel,
+                    email: shippingInfo.email,
+                    address: shippingInfo.address,
+                    note: shippingInfo.note,
+                    cartItems: cartItems,
+                    subtotal: cartTotal,
+                    shippingCost: shippingCost,
+                    shippingMethod: shippingMethod,
+                    discount: appliedDiscount?.amount || 0,
+                    grandTotal: parseFloat(finalTotal.toString()),
+                    paymentMethod: tabValue === 0 ? 'bank_transfer' : (tabValue === 1 ? 'qr_code' : 'line_pay')
+                })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                clearCart();
+                router.push(`/order/${data.orderId}`);
+            } else {
+                if (data.error.includes('no longer exist')) {
+                    alert('ขออภัยครับ สินค้าในตะกร้าของคุณเป็นข้อมูลเก่า (เนื่องจากมีการอัพเดทระบบ) \n\nระบบจะล้างตะกร้าสินค้าเพื่อให้คุณเลือกสินค้าใหม่อีกครั้งครับ');
+                    clearCart();
+                    router.push('/products');
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + data.error);
+                }
+                setIsSubmitting(false);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Something went wrong. Please try again.');
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText('012-3-45678-9');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+        setTabValue(newValue);
+    };
+
+    return (
+        <Box sx={{ bgcolor: '#FFF', minHeight: '100vh', backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(183, 110, 121, 0.05) 0%, rgba(255,255,255,0) 70%)' }}>
+            <Header />
+
+            <Container maxWidth="xl" sx={{ py: { xs: 12, md: 16 } }}>
+                <Typography variant="h3" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, mb: 6, textAlign: 'center', color: '#1A1A1A' }}>
+                    สั่งซื้อสินค้า
+                </Typography>
+
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
+
+                    {/* Left Column: Forms */}
+                    <Box sx={{ flex: { xs: '1 1 100%', lg: '1 1 55%' }, maxWidth: { lg: 800 } }}>
+                        <Stack spacing={5}>
+
+                            {/* 1. Customer Information */}
+                            <Box>
+                                <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Location size={22} variant="Bold" color="#B76E79" /> ข้อมูลการจัดส่ง
+                                </Typography>
+                                <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, borderRadius: '24px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+                                    <Stack spacing={3}>
+                                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
+                                            <TextField
+                                                fullWidth label="ชื่อ-นามสกุล" name="name"
+                                                value={shippingInfo.name} onChange={handleShippingChange}
+                                                variant="outlined" sx={customInputSx}
+                                            />
+                                            <TextField
+                                                fullWidth label="เบอร์โทรศัพท์" name="tel"
+                                                value={shippingInfo.tel} onChange={handleShippingChange}
+                                                variant="outlined" sx={customInputSx}
+                                            />
+                                        </Stack>
+                                        <TextField
+                                            fullWidth label="อีเมล (ถ้ามี)" name="email"
+                                            value={shippingInfo.email} onChange={handleShippingChange}
+                                            variant="outlined" sx={customInputSx}
+                                            placeholder="example@email.com"
+                                            helperText="สำหรับส่งใบเสร็จและเลขพัสดุ"
+                                        />
+                                        <TextField
+                                            fullWidth label="ที่อยู่จัดส่ง" name="address"
+                                            multiline rows={3}
+                                            value={shippingInfo.address} onChange={handleShippingChange}
+                                            variant="outlined" sx={customInputSx}
+                                            placeholder="บ้านเลขที่, ถนน, ซอย, แขวง/ตำบล, เขต/อำเภอ, จังหวัด, รหัสไปรษณีย์"
+                                        />
+                                        <TextField
+                                            fullWidth label="วันที่รับของ / ข้อความการ์ด / อื่นๆ" name="note"
+                                            value={shippingInfo.note} onChange={handleShippingChange}
+                                            variant="outlined"
+                                            placeholder="ระบุวันที่ต้องการรับสินค้า, ข้อความบนการ์ดอวยพร, หรือรายละเอียดเพิ่มเติม"
+                                            multiline
+                                            rows={2}
+                                            sx={customInputSx}
+                                        />
+                                    </Stack>
+                                </Paper>
+                            </Box>
+
+                            {/* 2. Shipping Method */}
+                            <Box>
+                                <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <TruckFast size={22} variant="Bold" color="#B76E79" /> รูปแบบการจัดส่ง
+                                </Typography>
+                                <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, borderRadius: '24px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+                                    <RadioGroup value={shippingMethod} onChange={(e) => setShippingMethod(e.target.value)}>
+                                        <Stack spacing={2}>
+                                            <Paper
+                                                elevation={0}
+                                                sx={{
+                                                    p: 2.5,
+                                                    border: `1px solid ${shippingMethod === 'standard' ? '#B76E79' : 'rgba(0,0,0,0.08)'}`,
+                                                    bgcolor: shippingMethod === 'standard' ? alpha('#B76E79', 0.03) : 'transparent',
+                                                    borderRadius: '16px',
+                                                    transition: 'all 0.3s ease',
+                                                    cursor: 'pointer',
+                                                    position: 'relative',
+                                                    '&:hover': { borderColor: '#B76E79' }
+                                                }}
+                                                onClick={() => setShippingMethod('standard')}
+                                            >
+                                                <FormControlLabel
+                                                    value="standard"
+                                                    control={<Radio sx={{ color: '#B76E79', '&.Mui-checked': { color: '#B76E79' } }} />}
+                                                    label={
+                                                        <Box sx={{ ml: 1 }}>
+                                                            <Typography variant="subtitle1" fontWeight={600}>ขนส่งพัสดุ (Standard)</Typography>
+                                                            <Typography variant="body2" color="text.secondary">1-2 วันทำการ • ทั่วประเทศ</Typography>
+                                                        </Box>
+                                                    }
+                                                    sx={{ width: '100%', m: 0 }}
+                                                />
+                                                <Typography sx={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)', fontWeight: 600 }}>+฿50</Typography>
+                                            </Paper>
+
+                                            <Paper
+                                                elevation={0}
+                                                sx={{
+                                                    p: 2.5,
+                                                    border: `1px solid ${shippingMethod === 'express' ? '#B76E79' : 'rgba(0,0,0,0.08)'}`,
+                                                    bgcolor: shippingMethod === 'express' ? alpha('#B76E79', 0.03) : 'transparent',
+                                                    borderRadius: '16px',
+                                                    transition: 'all 0.3s ease',
+                                                    cursor: 'pointer',
+                                                    position: 'relative',
+                                                    '&:hover': { borderColor: '#B76E79' }
+                                                }}
+                                                onClick={() => setShippingMethod('express')}
+                                            >
+                                                <FormControlLabel
+                                                    value="express"
+                                                    control={<Radio sx={{ color: '#B76E79', '&.Mui-checked': { color: '#B76E79' } }} />}
+                                                    label={
+                                                        <Box sx={{ ml: 1 }}>
+                                                            <Typography variant="subtitle1" fontWeight={600}>ส่งด่วน (Lalamove/Grab)</Typography>
+                                                            <Typography variant="body2" color="text.secondary">กทม. และปริมณฑล (โปรดระบุเวลาส่ง)</Typography>
+                                                        </Box>
+                                                    }
+                                                    sx={{ width: '100%', m: 0 }}
+                                                />
+                                                <Typography sx={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)', fontWeight: 600 }}>+฿150</Typography>
+                                            </Paper>
+                                        </Stack>
+                                    </RadioGroup>
+                                </Paper>
+                            </Box>
+
+                            {/* 3. Payment Method */}
+                            <Box>
+                                <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Cards size={22} variant="Bold" color="#B76E79" /> ช่องทางชำระเงิน
+                                </Typography>
+                                <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, borderRadius: '24px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+                                    <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+                                        <Tabs
+                                            value={tabValue}
+                                            onChange={handleTabChange}
+                                            textColor="inherit"
+                                            sx={{
+                                                '& .Mui-selected': { color: '#B76E79' },
+                                                '& .MuiTabs-indicator': { bgcolor: '#B76E79' }
+                                            }}
+                                        >
+                                            <Tab label="โอนเงินธนาคาร" sx={{ textTransform: 'none', fontSize: '1rem', fontWeight: 600, fontFamily: 'Inter' }} />
+                                            <Tab label="สแกน QR Code" sx={{ textTransform: 'none', fontSize: '1rem', fontWeight: 600, fontFamily: 'Inter' }} />
+                                        </Tabs>
+                                    </Box>
+
+                                    <CustomTabPanel value={tabValue} index={0}>
+                                        <Box sx={{
+                                            p: { xs: 3, md: 4 },
+                                            border: '1px solid #EAEAEA',
+                                            borderRadius: '20px',
+                                            position: 'relative',
+                                            overflow: 'hidden',
+                                            bgcolor: '#FAFAFA' // Very light gray for contrast with white paper
+                                        }}>
+
+                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                    <Box sx={{ width: 48, height: 48, borderRadius: '12px', bgcolor: '#00CC00', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0, 204, 0, 0.2)' }}>
+                                                        <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#FFF' }}>KB</Typography>
+                                                    </Box>
+                                                    <Box>
+                                                        <Typography sx={{ fontWeight: 600, color: '#1A1A1A', fontSize: '1.1rem' }}>ธนาคารกสิกรไทย (KBANK)</Typography>
+                                                        <Typography variant="body2" color="text.secondary">ออมทรัพย์</Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Box>
+
+                                            <Box sx={{ mb: 4, p: 3, bgcolor: '#FFF', borderRadius: '16px', border: '1px dashed #E0E0E0', textAlign: 'center' }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1, letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: '0.75rem' }}>เลขที่บัญชี</Typography>
+                                                <Typography sx={{ fontSize: { xs: '1.5rem', sm: '2rem' }, fontFamily: 'monospace', fontWeight: 600, letterSpacing: '0.1em', color: '#1A1A1A' }}>
+                                                    012 345 6789
+                                                </Typography>
+                                                <Button
+                                                    onClick={handleCopy}
+                                                    size="small"
+                                                    startIcon={copied ? <TickCircle size={18} /> : <Copy size={18} />}
+                                                    sx={{
+                                                        color: copied ? '#4CAF50' : '#B76E79',
+                                                        borderColor: copied ? '#4CAF50' : alpha('#B76E79', 0.5),
+                                                        textTransform: 'none',
+                                                        mt: 2,
+                                                        borderRadius: '20px',
+                                                        px: 3,
+                                                        py: 0.5,
+                                                        border: '1px solid',
+                                                        bgcolor: copied ? alpha('#4CAF50', 0.1) : 'transparent',
+                                                        '&:hover': { bgcolor: alpha('#B76E79', 0.05), borderColor: '#B76E79' }
+                                                    }}
+                                                >
+                                                    {copied ? 'คัดลอกแล้ว' : 'คัดลอกเลขบัญชี'}
+                                                </Button>
+                                            </Box>
+
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 1 }}>
+                                                <Typography sx={{ fontSize: '0.9rem', color: 'text.secondary' }}>ชื่อบัญชี</Typography>
+                                                <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#1A1A1A' }}>HAN FLOWER CO., LTD.</Typography>
+                                            </Box>
+                                        </Box>
+                                    </CustomTabPanel>
+
+                                    <CustomTabPanel value={tabValue} index={1}>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
+                                            <Box sx={{ p: 3, bgcolor: '#FFF', borderRadius: '24px', border: '1px solid #EEE', mb: 3, boxShadow: '0 10px 40px rgba(0,0,0,0.08)' }}>
+                                                <ScanBarcode size={140} color="#1A1A1A" />
+                                            </Box>
+                                            <Typography variant="body2" align="center" color="text.secondary">
+                                                สแกนเพื่อจ่ายเงินผ่านแอปธนาคาร
+                                            </Typography>
+                                        </Box>
+                                    </CustomTabPanel>
+                                </Paper>
+                            </Box>
+                        </Stack>
+                    </Box>
+
+
+                    {/* Right Column: Order Summary (Sticky) */}
+                    <Box sx={{ flex: { xs: '1 1 100%', lg: '1 1 40%' }, maxWidth: { lg: 500 } }}>
+                        <Box sx={{ position: 'sticky', top: 120 }}>
+                            <Paper elevation={0} sx={{
+                                p: { xs: 3, md: 4 },
+                                borderRadius: '24px',
+                                border: '1px solid rgba(0,0,0,0.05)',
+                                bgcolor: '#FAFAFA', // Slightly distinct background
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
+                            }}>
+                                <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 600, mb: 4, letterSpacing: '-0.02em' }}>
+                                    สรุปรายการสั่งซื้อ
+                                </Typography>
+
+                                <Box sx={{ maxHeight: 350, overflowY: 'auto', pr: 1, mb: 4 }}>
+                                    {cartItems.length === 0 ? (
+                                        <Typography align="center" color="text.secondary" sx={{ py: 4 }}>ตะกร้าสินค้าว่างเปล่า</Typography>
+                                    ) : (
+                                        cartItems.map((item) => (
+                                            <Box key={item.id} sx={{ mb: 3, pb: 3, borderBottom: '1px dashed #E0E0E0', '&:last-child': { borderBottom: 'none' } }}>
+                                                <Box sx={{ display: 'flex', gap: 2.5 }}>
+                                                    <Box sx={{ width: 80, height: 80, position: 'relative', borderRadius: '12px', overflow: 'hidden', bgcolor: '#FFF', border: '1px solid #F0F0F0', flexShrink: 0 }}>
+                                                        <Image
+                                                            src={item.images && item.images[0] ? item.images[0] : '/images/placeholder-product.png'}
+                                                            alt={item.title}
+                                                            fill
+                                                            style={{ objectFit: 'contain', padding: '6px' }}
+                                                        />
+                                                    </Box>
+                                                    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                            <Typography variant="subtitle2" sx={{ fontWeight: 600, lineHeight: 1.4, fontSize: '0.95rem' }}>{item.title}</Typography>
+                                                            <Typography variant="subtitle2" fontWeight={700} color="#1A1A1A">
+                                                                ฿{(typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) * item.quantity : item.price * item.quantity).toLocaleString()}
+                                                            </Typography>
+                                                        </Box>
+
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', border: '1px solid #EAEAEA', borderRadius: '50px', bgcolor: '#FAFAFA', height: 32 }}>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                                    disabled={item.quantity <= 1}
+                                                                    sx={{
+                                                                        width: 32, height: 32,
+                                                                        color: item.quantity <= 1 ? '#DDD' : '#1A1A1A',
+                                                                        '&:hover': { bgcolor: '#FFF0F3', color: '#FF4d4F' },
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                >
+                                                                    <Minus size={16} variant="Outline" color="#1A1A1A" />
+                                                                </IconButton>
+                                                                <Typography variant="caption" sx={{ minWidth: 24, textAlign: 'center', fontWeight: 600, fontSize: '0.9rem' }}>{item.quantity}</Typography>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                                    sx={{
+                                                                        width: 32, height: 32,
+                                                                        color: '#1A1A1A',
+                                                                        '&:hover': { bgcolor: '#E8F5E9', color: '#06C755' },
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                >
+                                                                    <Add size={16} variant="Outline" color="#1A1A1A" />
+                                                                </IconButton>
+                                                            </Box>
+
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => removeFromCart(item.id)}
+                                                                sx={{
+                                                                    color: '#FF4d4F',
+                                                                    bgcolor: 'rgba(255, 77, 79, 0.05)',
+                                                                    transition: 'all 0.2s',
+                                                                    '&:hover': { color: '#FFF', transform: 'scale(1.1)' }
+                                                                }}
+                                                            >
+                                                                <Trash size={18} variant="Outline" color="#FF4d4F" />
+                                                            </IconButton>
+                                                        </Box>
+                                                    </Box>
+                                                </Box>
+                                            </Box>
+                                        ))
+                                    )}
+                                </Box>
+
+                                {/* Promo Code */}
+                                {!appliedDiscount ? (
+                                    <TextField
+                                        fullWidth
+                                        placeholder="กรอกโค้ดส่วนลด"
+                                        value={promoCode}
+                                        onChange={(e) => setPromoCode(e.target.value)}
+                                        error={!!couponError}
+                                        helperText={couponError}
+                                        sx={{
+                                            mb: 4,
+                                            '& .MuiOutlinedInput-root': {
+                                                borderRadius: '20px', // Extra rounded
+                                                bgcolor: '#FAFAFA',
+                                                pr: '6px', // Space for button
+                                                '& fieldset': { borderColor: '#EEE' },
+                                                '&:hover fieldset': { borderColor: '#B76E79' },
+                                                '&.Mui-focused fieldset': { borderColor: '#B76E79', borderWidth: '1px' }
+                                            },
+                                            '& .MuiFormHelperText-root': { mx: 2 }
+                                        }}
+                                        InputProps={{
+                                            startAdornment: <InputAdornment position="start"><TicketDiscount size={18} variant="Bold" color="#B76E79" /></InputAdornment>,
+                                            endAdornment: (
+                                                <InputAdornment position="end">
+                                                    <Button
+                                                        variant="contained"
+                                                        onClick={handleApplyCoupon}
+                                                        disabled={!promoCode || isCheckingCode}
+                                                        disableElevation
+                                                        sx={{
+                                                            bgcolor: '#1A1A1A',
+                                                            color: '#FFF',
+                                                            textTransform: 'none',
+                                                            borderRadius: '16px',
+                                                            px: 3,
+                                                            py: 1,
+                                                            fontWeight: 600,
+                                                            '&:hover': { bgcolor: '#000' },
+                                                            '&:disabled': { bgcolor: '#F5F5F5' }
+                                                        }}
+                                                    >
+                                                        {isCheckingCode ? <CircularProgress size={20} color="inherit" /> : 'ใช้โค้ด'}
+                                                    </Button>
+                                                </InputAdornment>
+                                            )
+                                        }}
+                                    />
+                                ) : (
+                                    <Fade in={!!appliedDiscount}>
+                                        <Box sx={{
+                                            mb: 4, p: 2,
+                                            bgcolor: alpha('#B76E79', 0.04),
+                                            borderRadius: '20px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            border: '1px solid',
+                                            borderColor: alpha('#B76E79', 0.15)
+                                        }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                                <TickCircle size={22} color="#B76E79" variant="Bold" />
+                                                <Box>
+                                                    <Typography variant="body2" fontWeight={700} color="#1A1A1A">ใช้โค้ด '{appliedDiscount.code}' แล้ว</Typography>
+                                                    <Typography variant="caption" color="text.secondary">รับส่วนลดส่วนตัวของคุณ ฿{appliedDiscount.amount.toLocaleString()}</Typography>
+                                                </Box>
+                                            </Box>
+                                            <IconButton size="small" onClick={handleRemoveCoupon} sx={{ color: '#1A1A1A', bgcolor: '#FFF', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', '&:hover': { color: '#FF4d4F' } }}>
+                                                <Trash size={16} variant="Bold" color="#FF4d4F" />
+                                            </IconButton>
+                                        </Box>
+                                    </Fade>
+                                )}
+                                {/* Calculations */}
+                                <Stack spacing={2} sx={{ mb: 4, p: 2.5, bgcolor: '#FFF', borderRadius: '16px', border: '1px solid #F0F0F0' }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography color="text.secondary" variant="body2">รวมค่าสินค้า</Typography>
+                                        <Typography fontWeight={600}>฿{cartTotal.toLocaleString()}</Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography color="text.secondary" variant="body2">ค่าจัดส่ง</Typography>
+                                        <Typography fontWeight={600}>฿{shippingCost.toLocaleString()}</Typography>
+                                    </Box>
+                                    {appliedDiscount && (
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', color: '#06C755' }}>
+                                            <Typography variant="body2">ส่วนลด</Typography>
+                                            <Typography fontWeight={600}>-฿{appliedDiscount.amount.toLocaleString()}</Typography>
+                                        </Box>
+                                    )}
+                                    <Divider sx={{ borderStyle: 'dashed' }} />
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Typography variant="subtitle1" fontWeight={700}>ยอดชำระทั้งสิ้น</Typography>
+                                        <Typography variant="h5" fontWeight={700} color="#B76E79">
+                                            ฿{finalTotal.toLocaleString()}
+                                        </Typography>
+                                    </Box>
+                                </Stack>
+
+                                <Button
+                                    variant="contained"
+                                    fullWidth
+                                    size="large"
+                                    loading={isSubmitting}
+                                    onClick={handlePlaceOrder}
+                                    endIcon={<ArrowRight />}
+                                    sx={{
+                                        bgcolor: '#B76E79',
+                                        color: '#FFF',
+                                        py: 2,
+                                        borderRadius: '16px',
+                                        fontSize: '1rem',
+                                        fontWeight: 700,
+                                        boxShadow: '0 10px 25px rgba(183, 110, 121, 0.3)',
+                                        textTransform: 'none',
+                                        transition: 'all 0.3s',
+                                        '&:hover': {
+                                            bgcolor: '#9D5D66',
+                                            transform: 'translateY(-2px)',
+                                            boxShadow: '0 15px 30px rgba(183, 110, 121, 0.4)'
+                                        }
+                                    }}
+                                >
+                                    ยืนยันการสั่งซื้อ
+                                </Button>
+                                <Typography variant="caption" display="block" textAlign="center" sx={{ mt: 2, color: 'text.secondary', opacity: 0.7 }}>
+                                    ปลอดภัย 100% สามารถแนบสลิปได้ในหน้าถัดไป
+                                </Typography>
+                            </Paper>
+                        </Box>
+                    </Box>
+                </Box >
+            </Container >
+
+            <Snackbar
+                open={showLineAlert}
+                autoHideDuration={4000}
+                onClose={() => setShowLineAlert(false)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setShowLineAlert(false)} severity="success" sx={{ width: '100%', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+                    Order details copied! Please paste in LINE chat.
+                </Alert>
+            </Snackbar>
+
+            <Footer />
+        </Box >
+    );
+}

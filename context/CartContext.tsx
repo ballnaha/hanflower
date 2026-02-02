@@ -25,9 +25,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
 
-    // Initialize cart from localStorage if needed (skipping for now to avoid hydration mismatch issues without proper handling)
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    // Initialize cart from localStorage
+    useEffect(() => {
+        const savedCart = localStorage.getItem('hanflower_cart');
+        if (savedCart) {
+            try {
+                setCartItems(JSON.parse(savedCart));
+            } catch (error) {
+                console.error('Failed to parse cart from localStorage:', error);
+            }
+        }
+        setIsLoaded(true);
+    }, []);
+
+    // Save cart to localStorage on change
+    useEffect(() => {
+        if (isLoaded) {
+            localStorage.setItem('hanflower_cart', JSON.stringify(cartItems));
+        }
+    }, [cartItems, isLoaded]);
 
     const addToCart = (product: Product, quantity: number) => {
+        // Ensure product has images array
+        const productWithImages = {
+            ...product,
+            images: (product.images && product.images.length > 0)
+                ? product.images
+                : (product.image ? [product.image] : [])
+        };
+
         setCartItems(prev => {
             const existing = prev.find(item => item.id === product.id);
             if (existing) {
@@ -37,7 +65,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         : item
                 );
             }
-            return [...prev, { ...product, quantity }];
+            return [...prev, { ...productWithImages, quantity }];
         });
         setIsCartOpen(true);
     };

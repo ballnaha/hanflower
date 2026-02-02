@@ -10,9 +10,9 @@ export async function GET(request: NextRequest) {
 
         const products = await prisma.product.findMany({
             include: {
-                images: true,
-                details: true,
-                features: true
+                productimage: true,
+                productdetail: true,
+                productfeature: true
             },
             orderBy: [
                 { priority: 'desc' }, // Higher priority first (desc)
@@ -21,31 +21,44 @@ export async function GET(request: NextRequest) {
             ...(limit && { take: limit })
         });
 
+        console.log(`Fetched ${products.length} products`);
+
         // Transform to match existing frontend interface
-        const transformedProducts = products.map(product => ({
-            id: product.id,
-            sku: product.sku,
-            slug: product.slug,
-            title: product.title,
-            type: product.type,
-            price: product.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","),
-            originalPrice: product.originalPrice?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || "",
-            discount: product.discount?.toString() || "",
-            priceVelvet: product.priceVelvet?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || "",
-            originalPriceVelvet: product.originalPriceVelvet?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || "",
-            image: product.image,
-            images: product.images.map(img => img.url),
-            description: product.description,
-            details: product.details.map(d => d.text),
-            features: product.features.map(f => f.text),
-            stock: product.stock,
-            priority: product.priority
-        }));
+        const transformedProducts = products.map((product: any) => {
+            try {
+                return {
+                    id: product.id,
+                    sku: product.sku,
+                    slug: product.slug,
+                    title: product.title,
+                    type: product.type,
+                    price: product.price?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || "0",
+                    originalPrice: product.originalPrice?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || "",
+                    discount: product.discount?.toString() || "",
+                    priceVelvet: product.priceVelvet?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || "",
+                    originalPriceVelvet: product.originalPriceVelvet?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || "",
+                    discountVelvet: product.discountVelvet?.toString() || "",
+                    image: product.image,
+                    images: product.productimage?.map((img: any) => img.url) || [],
+                    description: product.description,
+                    details: product.productdetail?.map((d: any) => d.text) || [],
+                    features: product.productfeature?.map((f: any) => f.text) || [],
+                    stock: product.stock,
+                    priority: product.priority,
+                    categoryId: product.categoryId,
+                    hasQrCode: product.hasQrCode,
+                    qrCodePrice: product.qrCodePrice?.toString() || "0"
+                };
+            } catch (err) {
+                console.error(`Error transforming product ${product.id}:`, err);
+                return null;
+            }
+        }).filter(Boolean);
 
         return NextResponse.json(transformedProducts);
     } catch (error) {
         console.error('Error fetching products:', error);
-        return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to fetch products', message: error instanceof Error ? error.message : String(error) }, { status: 500 });
     }
 }
 
@@ -54,9 +67,10 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const {
             title, sku, slug, type, price, originalPrice,
-            discount, priceVelvet, originalPriceVelvet,
+            discount, priceVelvet, originalPriceVelvet, discountVelvet,
             description, image, images,
-            details, features, stock, priority
+            details, features, stock, priority,
+            categoryId, hasQrCode, qrCodePrice
         } = body;
 
         const newProduct = await prisma.product.create({
@@ -71,24 +85,29 @@ export async function POST(request: NextRequest) {
                 discount: discount ? parseInt(discount.toString()) : null,
                 priceVelvet: priceVelvet ? parseFloat(priceVelvet.toString().replace(/,/g, '')) : null,
                 originalPriceVelvet: originalPriceVelvet ? parseFloat(originalPriceVelvet.toString().replace(/,/g, '')) : null,
+                discountVelvet: discountVelvet ? parseInt(discountVelvet.toString()) : null,
                 description,
                 image,
                 stock: parseInt(stock.toString() || '0'),
                 priority: parseInt(priority.toString() || '0'),
-                images: {
+                categoryId: categoryId || null,
+                hasQrCode: hasQrCode !== undefined ? hasQrCode : true,
+                qrCodePrice: qrCodePrice ? parseFloat(qrCodePrice.toString().replace(/,/g, '')) : 0,
+                updatedAt: new Date(),
+                productimage: {
                     create: images?.map((url: string) => ({ url })) || []
                 },
-                details: {
+                productdetail: {
                     create: details?.map((text: string) => ({ text })) || []
                 },
-                features: {
+                productfeature: {
                     create: features?.map((text: string) => ({ text })) || []
                 }
             },
             include: {
-                images: true,
-                details: true,
-                features: true
+                productimage: true,
+                productdetail: true,
+                productfeature: true
             }
         });
 

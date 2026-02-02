@@ -14,9 +14,9 @@ async function getProduct(identifier: string) {
     let product = await prisma.product.findUnique({
         where: { id: decodedId },
         include: {
-            images: true,
-            details: true,
-            features: true
+            productimage: true,
+            productdetail: true,
+            productfeature: true
         }
     });
 
@@ -24,14 +24,22 @@ async function getProduct(identifier: string) {
         product = await prisma.product.findUnique({
             where: { slug: decodedId },
             include: {
-                images: true,
-                details: true,
-                features: true
+                productimage: true,
+                productdetail: true,
+                productfeature: true
             }
         });
     }
 
-    return product;
+    if (!product) return null;
+
+    // Normalize for the rest of the file
+    return {
+        ...product,
+        images: product.productimage.map(img => img.url),
+        details: product.productdetail.map(d => d.text),
+        features: product.productfeature.map(f => f.text)
+    };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -50,7 +58,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const description = product.description.substring(0, 160);
     const imageUrl = product.image.startsWith('http')
         ? product.image
-        : `https://hanflower.com${product.image}`;
+        : `https://hanflowerthailand.com${product.image}`;
 
     return {
         title,
@@ -93,7 +101,7 @@ export async function generateStaticParams() {
         select: { slug: true }
     });
 
-    return products.map((product) => ({
+    return products.map((product: { slug: string }) => ({
         id: product.slug,
     }));
 }
@@ -111,7 +119,7 @@ export default async function Page({ params }: PageProps) {
         description: product.description,
         image: product.image.startsWith('http')
             ? product.image
-            : `https://hanflower.com${product.image}`,
+            : `https://hanflowerthailand.com${product.image}`,
         offers: {
             '@type': 'Offer',
             price: product.price.toString(),

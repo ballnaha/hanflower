@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
+import sharp from 'sharp';
 
 export async function POST(request: NextRequest) {
     try {
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
         try {
             await mkdir(uploadDir, { recursive: true });
         } catch (err) {
-            // Already exists or other error handled by writeFile later
+            // Already exists
         }
 
         const uploadedPaths: string[] = [];
@@ -26,12 +27,21 @@ export async function POST(request: NextRequest) {
             const bytes = await file.arrayBuffer();
             const buffer = Buffer.from(bytes);
 
-            // Create unique filename
-            const ext = file.name.split('.').pop();
-            const filename = `${crypto.randomUUID()}.${ext}`;
+            // Create unique filename - force .webp for optimization
+            const filename = `${crypto.randomUUID()}.webp`;
             const path = join(uploadDir, filename);
 
-            await writeFile(path, buffer);
+            // Use sharp to resize and compress
+            // - Resize to max 1200px width/height while maintaining aspect ratio
+            // - Convert to webp with 80% quality
+            await sharp(buffer)
+                .resize(1200, 1200, {
+                    fit: 'inside',
+                    withoutEnlargement: true
+                })
+                .webp({ quality: 80 })
+                .toFile(path);
+
             uploadedPaths.push(`/uploads/${filename}`);
         }
 

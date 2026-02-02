@@ -8,12 +8,18 @@ export interface Product {
     price: string;
     originalPrice: string;
     discount: string;
+    priceVelvet?: string;
+    originalPriceVelvet?: string;
+    discountVelvet?: string;
     image: string;
     images: string[];
     description: string;
     details: string[];
     features: string[];
     stock: number;
+    priority?: number;
+    hasQrCode?: boolean;
+    qrCodePrice?: string;
 }
 
 // Mock data removed - now using database

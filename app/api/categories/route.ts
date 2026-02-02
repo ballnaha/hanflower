@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const activeOnly = searchParams.get('active') !== 'false';
 
-        const collections = await prisma.collection.findMany({
+        const categories = await prisma.category.findMany({
             where: activeOnly ? { isActive: true } : undefined,
             orderBy: [
                 { priority: 'desc' },
@@ -14,9 +14,9 @@ export async function GET(request: NextRequest) {
             ]
         });
 
-        return NextResponse.json(collections);
+        return NextResponse.json(categories);
     } catch (error) {
-        console.error('Error fetching collections:', error);
-        return NextResponse.json({ error: 'Failed to fetch collections' }, { status: 500 });
+        console.error('Error fetching categories:', error);
+        return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 });
     }
 }

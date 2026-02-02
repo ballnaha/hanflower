@@ -14,6 +14,7 @@ import {
 import { CloseCircle, Trash, Add, Minus, ShoppingBag } from 'iconsax-react';
 import { useCart } from '@/context/CartContext';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function CartDrawer() {
     const {
@@ -57,7 +58,7 @@ export default function CartDrawer() {
                             <Box key={item.id} sx={{ display: 'flex', gap: 2 }}>
                                 <Box sx={{ position: 'relative', width: 80, height: 80, borderRadius: 2, overflow: 'hidden', bgcolor: '#F5F5F5', flexShrink: 0 }}>
                                     <Image
-                                        src={item.images[0]}
+                                        src={item.images && item.images.length > 0 && item.images[0] ? item.images[0] : '/images/placeholder-product.png'}
                                         alt={item.title}
                                         fill
                                         style={{ objectFit: 'contain' }}
@@ -73,7 +74,7 @@ export default function CartDrawer() {
                                         </IconButton>
                                     </Box>
                                     <Typography variant="caption" sx={{ color: '#666', mb: 1, display: 'block' }}>
-                                        {item.type}
+                                        SKU: {item.sku || item.type}
                                     </Typography>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', border: '1px solid #E0E0E0', borderRadius: 1 }}>
@@ -117,6 +118,9 @@ export default function CartDrawer() {
                     fullWidth
                     size="large"
                     disabled={cartItems.length === 0}
+                    component={Link}
+                    href="/payment"
+                    onClick={() => toggleCart(false)}
                     sx={{
                         bgcolor: '#1A1A1A',
                         color: '#FFF',

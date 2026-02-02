@@ -9,9 +9,21 @@ import { Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
-export default function Features() {
+interface CategoryData {
+    id: string;
+    title: string;
+    subtitle: string;
+    description: string;
+    image: string;
+}
 
-    const features = [
+interface FeaturesProps {
+    categories?: CategoryData[];
+}
+
+export default function Features({ categories = [] }: FeaturesProps) {
+
+    const staticFeatures = [
         {
             src: "/images/img2.webp",
             title: "ช่อดอกไม้",
@@ -38,6 +50,15 @@ export default function Features() {
         },
     ];
 
+    const displayFeatures = categories.length > 0
+        ? categories.map(cat => ({
+            src: cat.image,
+            title: cat.title,
+            subtitle: cat.subtitle,
+            desc: cat.description
+        }))
+        : staticFeatures;
+
     return (
         <Box component="section" sx={{ py: { xs: 10, md: 14 }, bgcolor: '#FFFFFF' }}>
             <Container maxWidth="xl">
@@ -51,7 +72,7 @@ export default function Features() {
                             letterSpacing: '0.05em'
                         }}
                     >
-                        คอลเลกชันยอดนิยม
+                        หมวดหมู่สินค้า
                     </Typography>
                     <Box sx={{ width: '40px', height: '1px', bgcolor: '#B76E79', mx: 'auto' }} />
                 </Box>
@@ -62,7 +83,7 @@ export default function Features() {
                     gridTemplateColumns: 'repeat(4, 1fr)',
                     gap: 4
                 }}>
-                    {features.map((item, idx) => (
+                    {displayFeatures.map((item, idx) => (
                         <FeatureCard key={idx} item={item} />
                     ))}
                 </Box>
@@ -78,7 +99,7 @@ export default function Features() {
                         autoplay={{ delay: 3500, disableOnInteraction: false }}
                         style={{ paddingBottom: '50px' }}
                     >
-                        {features.map((item, idx) => (
+                        {displayFeatures.map((item, idx) => (
                             <SwiperSlide key={idx}>
                                 <FeatureCard item={item} />
                             </SwiperSlide>
@@ -146,7 +167,7 @@ function FeatureCard({ item }: { item: any }) {
                 }
             }}>
                 <Image
-                    src={item.src}
+                    src={item.src || '/images/img2.webp'}
                     alt={item.title}
                     fill
                     style={{

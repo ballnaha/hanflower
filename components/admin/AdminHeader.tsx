@@ -1,10 +1,23 @@
 'use client';
 
-import { Box, Typography, IconButton, Badge, Avatar, Breadcrumbs, Link as MuiLink } from '@mui/material';
-import { Notification, SearchNormal1, DirectRight } from 'iconsax-react';
+import { Box, Typography, IconButton, Badge, Avatar, Breadcrumbs, Link as MuiLink, useMediaQuery, useTheme } from '@mui/material';
+import { Notification, SearchNormal1, DirectRight, HambergerMenu, SidebarLeft, SidebarRight } from 'iconsax-react';
 import Link from 'next/link';
+import { useAdminUI } from '@/context/AdminUIContext';
 
 export default function AdminHeader({ title }: { title: string }) {
+    const { toggleSidebar, toggleCollapse, isCollapsed } = useAdminUI();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+
+    const handleToggle = () => {
+        if (isMobile) {
+            toggleSidebar();
+        } else {
+            toggleCollapse();
+        }
+    };
+
     return (
         <Box sx={{
             height: '80px',
@@ -13,34 +26,63 @@ export default function AdminHeader({ title }: { title: string }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            px: 4,
+            px: { xs: 2, md: 4 },
             position: 'sticky',
             top: 0,
             zIndex: 1000
         }}>
-            <Box>
-                <Breadcrumbs aria-label="breadcrumb" separator={<DirectRight size={14} color="#BBB" />}>
-                    <MuiLink
-                        component={Link}
-                        underline="hover"
-                        color="inherit"
-                        href="/admin"
-                        sx={{ fontSize: '0.8rem', color: '#888' }}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <IconButton
+                    onClick={handleToggle}
+                    sx={{
+                        bgcolor: '#FFF9F8',
+                        borderRadius: '12px',
+                        color: '#B76E79',
+                        '&:hover': { bgcolor: '#FFF1F0' }
+                    }}
+                >
+                    {isMobile ? (
+                        <HambergerMenu size={24} variant="Bulk" color="#B76E79" />
+                    ) : (
+                        isCollapsed ? (
+                            <HambergerMenu size={24} variant="Bulk" color="#B76E79" />
+                        ) : (
+                            <HambergerMenu size={24} variant="Bulk" color="#B76E79" />
+                        )
+                    )}
+                </IconButton>
+
+                <Box>
+                    <Breadcrumbs
+                        aria-label="breadcrumb"
+                        separator={<DirectRight size={14} color="#BBB" />}
+                        sx={{ display: { xs: 'none', sm: 'flex' } }}
                     >
-                        Admin
-                    </MuiLink>
-                    <Typography color="text.primary" sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1A1A1A' }}>
+                        <MuiLink
+                            component={Link}
+                            underline="hover"
+                            color="inherit"
+                            href="/admin"
+                            sx={{ fontSize: '0.8rem', color: '#888' }}
+                        >
+                            Admin
+                        </MuiLink>
+                        <Typography color="text.primary" sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1A1A1A' }}>
+                            {title}
+                        </Typography>
+                    </Breadcrumbs>
+                    <Typography
+                        variant={isMobile ? "h6" : "h5"}
+                        sx={{ fontWeight: 700, color: '#1A1A1A', mt: isMobile ? 0 : 0.5 }}
+                    >
                         {title}
                     </Typography>
-                </Breadcrumbs>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: '#1A1A1A', mt: 0.5 }}>
-                    {title}
-                </Typography>
+                </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                {/* Search */}
-                <IconButton sx={{ bgcolor: '#F9F9F9', borderRadius: '12px' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 3 } }}>
+                {/* Search - Hide on very small screens */}
+                <IconButton sx={{ bgcolor: '#F9F9F9', borderRadius: '12px', display: { xs: 'none', sm: 'flex' } }}>
                     <SearchNormal1 size={20} color="#666" />
                 </IconButton>
 
@@ -51,11 +93,11 @@ export default function AdminHeader({ title }: { title: string }) {
                     </Badge>
                 </IconButton>
 
-                <Box sx={{ width: '1px', height: '30px', bgcolor: '#EEE', mx: 1 }} />
+                <Box sx={{ width: '1px', height: '30px', bgcolor: '#EEE', mx: { xs: 0.5, sm: 1 } }} />
 
                 {/* User Profile */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }}>
-                    <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
+                    <Box sx={{ textAlign: 'right', display: { xs: 'none', md: 'block' } }}>
                         <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#1A1A1A', lineHeight: 1.2 }}>
                             Admin User
                         </Typography>
@@ -65,11 +107,11 @@ export default function AdminHeader({ title }: { title: string }) {
                     </Box>
                     <Avatar
                         sx={{
-                            width: 40,
-                            height: 40,
+                            width: { xs: 32, sm: 40 },
+                            height: { xs: 32, sm: 40 },
                             bgcolor: '#B76E79',
                             fontWeight: 700,
-                            fontSize: '0.9rem',
+                            fontSize: '0.8rem',
                             border: '2px solid #FFF9F8'
                         }}
                     >

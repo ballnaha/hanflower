@@ -71,26 +71,38 @@ export default function Hero() {
                         textShadow: '0 4px 20px rgba(0,0,0,0.3)',
                         fontFamily: '"Playfair Display", serif'
                     }}>
-                        เอกลักษณ์ <br />
-                        <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#D4AF37' }}>แห่งรสนิยม</span>
+                        บอกรัก <br />
+                        <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#D4AF37' }}>ยังไงให้โลกจำ</span>
+                    </Typography>
+
+                    <Typography variant="h6" sx={{
+                        color: 'rgba(255,255,255,0.8)',
+                        fontWeight: 300,
+                        letterSpacing: '0.1em',
+                        mb: 2,
+                        fontSize: { xs: '0.9rem', md: '1.1rem' }
+                    }}>
+                        ช่อดอกไม้แห่งความทรงจำ
                     </Typography>
 
                     <Box sx={{ width: '60px', height: '1px', bgcolor: '#D4AF37', mb: { xs: 3, md: 5 } }} />
 
                     <Typography variant="body1" sx={{
                         color: 'rgba(255,255,255,0.9)',
-                        fontSize: { xs: '1rem', md: '1.2rem' },
+                        fontSize: { xs: '1.1rem', md: '1.4rem' },
                         mb: { xs: 4, md: 6 },
-                        lineHeight: 2,
-                        fontWeight: 300,
+                        lineHeight: 1.6,
+                        fontWeight: 400,
                         maxWidth: '600px',
                     }}>
-                        "ยกระดับการให้ของขวัญ ด้วยดีไซน์ที่สะท้อนตัวตนอันเหนือระดับของคุณ"
+                        "ช่อ QR CODE เจ้าแรก และเจ้าเดียวในไทย"
                     </Typography>
 
                     <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 3, md: 5 }, justifyContent: 'flex-start', alignItems: 'center' }}>
                         <Button
                             variant="outlined"
+                            component={Link}
+                            href="/products"
                             sx={{
                                 px: { xs: 8, md: 10 },
                                 py: 2.5,
@@ -111,44 +123,10 @@ export default function Hero() {
                                 }
                             }}
                         >
-                            THE COLLECTIONS
+                            SHOP NOW
                         </Button>
 
-                        <a href="/ar-scan" style={{ textDecoration: 'none' }}>
-                            <Box sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 2,
-                                py: 2,
-                                position: 'relative',
-                                cursor: 'pointer',
-                                group: 'true',
-                                '&::after': {
-                                    content: '""',
-                                    position: 'absolute',
-                                    bottom: 10,
-                                    left: 0,
-                                    width: '0%',
-                                    height: '1px',
-                                    bgcolor: '#D4AF37',
-                                    transition: 'width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                                },
-                                '&:hover::after': {
-                                    width: '100%',
-                                }
-                            }}>
-                                <Typography sx={{
-                                    color: '#D4AF37',
-                                    fontSize: '0.75rem',
-                                    letterSpacing: '0.4em',
-                                    fontWeight: 700,
-                                    textTransform: 'uppercase'
-                                }}>
-                                    VIRTUAL AR EXPERT
-                                </Typography>
-                                <ScanBarcode size="18" variant="Outline" color="#D4AF37" />
-                            </Box>
-                        </a>
+
                     </Box>
                 </Box>
             </Container>

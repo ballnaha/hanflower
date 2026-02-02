@@ -54,18 +54,22 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
         discount: '',
         priceVelvet: '',
         originalPriceVelvet: '',
+        discountVelvet: '',
         description: '',
         image: '',
         stock: '0',
         priority: '0',
         images: [''],
         details: [''],
-        features: ['']
+        features: [''],
+        categoryId: '',
+        hasQrCode: true,
+        qrCodePrice: '150'
     });
 
     const [pendingImage, setPendingImage] = useState<{ file: File; preview: string } | null>(null);
     const [pendingImages, setPendingImages] = useState<{ file: File; preview: string }[]>([]);
-    const [collections, setCollections] = useState<{ id: string; title: string; subtitle: string }[]>([]);
+    const [categories, setCategories] = useState<{ id: string; title: string; subtitle: string }[]>([]);
 
     useEffect(() => {
         if (!isNew) {
@@ -81,12 +85,16 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                             discount: data.discount?.toString() || '',
                             priceVelvet: data.priceVelvet?.toString().replace(/,/g, '') || '',
                             originalPriceVelvet: data.originalPriceVelvet?.toString().replace(/,/g, '') || '',
+                            discountVelvet: data.discountVelvet?.toString() || '',
                             stock: data.stock?.toString() || '0',
                             priority: data.priority?.toString() || '0',
                             image: data.image || '',
                             images: data.images.length > 0 ? data.images : [''],
                             details: data.details.length > 0 ? data.details : [''],
-                            features: data.features.length > 0 ? data.features : ['']
+                            features: data.features.length > 0 ? data.features : [''],
+                            categoryId: data.categoryId || '',
+                            hasQrCode: data.hasQrCode !== undefined ? data.hasQrCode : true,
+                            qrCodePrice: data.qrCodePrice?.toString() || '150'
                         });
                     }
                 } catch (err) {
@@ -99,24 +107,30 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
         }
     }, [id, isNew]);
 
-    // Fetch collections for the dropdown
+    // Fetch categories for the dropdown
     useEffect(() => {
-        const fetchCollections = async () => {
+        const fetchCategories = async () => {
             try {
-                const res = await fetch('/api/collections');
+                const res = await fetch('/api/categories');
                 if (res.ok) {
                     const data = await res.json();
-                    setCollections(data);
+                    setCategories(data);
                 }
             } catch (err) {
-                console.error('Error fetching collections:', err);
+                console.error('Error fetching categories:', err);
             }
         };
-        fetchCollections();
+        fetchCategories();
     }, []);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
+
+        if (name === 'hasQrCode') {
+            setForm(prev => ({ ...prev, hasQrCode: !prev.hasQrCode }));
+            return;
+        }
+
         setForm(prev => {
             const updated = { ...prev, [name]: value };
 
@@ -141,6 +155,30 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                 if (originalPrice > 0 && discount > 0 && discount < 100) {
                     const calculatedPrice = Math.round(originalPrice * (1 - discount / 100));
                     updated.price = calculatedPrice.toString();
+                }
+            }
+
+            // Auto-calculate discount for Velvet when priceVelvet and originalPriceVelvet change
+            if (name === 'priceVelvet' || name === 'originalPriceVelvet') {
+                const price = parseFloat(name === 'priceVelvet' ? value : prev.priceVelvet) || 0;
+                const originalPrice = parseFloat(name === 'originalPriceVelvet' ? value : prev.originalPriceVelvet) || 0;
+
+                if (originalPrice > 0 && price > 0 && originalPrice > price) {
+                    const discount = Math.round(((originalPrice - price) / originalPrice) * 100);
+                    updated.discountVelvet = discount.toString();
+                } else if (originalPrice <= 0 || price <= 0 || price >= originalPrice) {
+                    updated.discountVelvet = '';
+                }
+            }
+
+            // Auto-calculate priceVelvet when discountVelvet changes (if originalPriceVelvet exists)
+            if (name === 'discountVelvet') {
+                const discount = parseFloat(value) || 0;
+                const originalPrice = parseFloat(prev.originalPriceVelvet) || 0;
+
+                if (originalPrice > 0 && discount > 0 && discount < 100) {
+                    const calculatedPrice = Math.round(originalPrice * (1 - discount / 100));
+                    updated.priceVelvet = calculatedPrice.toString();
                 }
             }
 
@@ -237,8 +275,6 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
 
-                    // If original is PNG/WebP and we might convert to JPEG, or even if it stays PNG
-                    // standardizing background to White for cleaner look in JPEG conversion
                     if (file.type !== 'image/png') {
                         ctx!.fillStyle = '#FFFFFF';
                         ctx!.fillRect(0, 0, width, height);
@@ -248,13 +284,23 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
 
                     const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
                     canvas.toBlob((blob) => {
-                        const resizedFile = new File([blob!], file.name, {
+                        if (!blob) {
+                            resolve(file); // Fallback to original if blob creation fails
+                            return;
+                        }
+                        const resizedFile = new File([blob], file.name, {
                             type: mimeType,
                             lastModified: Date.now(),
                         });
                         resolve(resizedFile);
                     }, mimeType, mimeType === 'image/jpeg' ? 0.85 : undefined);
                 };
+                img.onerror = () => {
+                    resolve(file); // Fallback to original on error
+                };
+            };
+            reader.onerror = () => {
+                resolve(file); // Fallback to original on error
             };
         });
     };
@@ -294,6 +340,7 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
         if (!form.price || parseFloat(form.price) <= 0) return 'ราคาต้องมากกว่า 0 บาท';
         if (!form.description.trim()) return 'กรุณาระบุคำอธิบายสินค้า';
         if (!form.type.trim()) return 'กรุณาระบุหมวดหมู่สินค้า';
+        if (!form.categoryId) return 'กรุณาเลือกหมวดหมู่หลัก';
         if (!form.image && !pendingImage && form.images.filter(img => img.trim() !== '').length === 0 && pendingImages.length === 0) {
             return 'กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป';
         }
@@ -440,17 +487,28 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                     required
                                 />
                                 <FormControl fullWidth required>
-                                    <InputLabel id="type-label">หมวดหมู่ / ประเภท</InputLabel>
+                                    <InputLabel id="category-label">หมวดหมู่</InputLabel>
                                     <Select
-                                        labelId="type-label"
-                                        name="type"
-                                        value={form.type}
-                                        label="หมวดหมู่ / ประเภท"
-                                        onChange={(e) => setForm(prev => ({ ...prev, type: e.target.value }))}
+                                        labelId="category-label"
+                                        name="categoryId"
+                                        value={form.categoryId}
+                                        label="หมวดหมู่"
+                                        onChange={(e) => {
+                                            const catId = e.target.value;
+                                            const selectedCat = categories.find(c => c.id === catId);
+                                            setForm(prev => ({
+                                                ...prev,
+                                                categoryId: catId,
+                                                type: selectedCat ? selectedCat.subtitle : prev.type // Use English subtitle
+                                            }));
+                                        }}
                                     >
-                                        {collections.map((col) => (
-                                            <MenuItem key={col.id} value={col.title}>
-                                                {col.title} ({col.subtitle})
+                                        <MenuItem value="">
+                                            <em>ระบุหมวดหมู่</em>
+                                        </MenuItem>
+                                        {categories.map((cat) => (
+                                            <MenuItem key={cat.id} value={cat.id}>
+                                                {cat.title} ({cat.subtitle})
                                             </MenuItem>
                                         ))}
                                     </Select>
@@ -469,13 +527,20 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                     sx={{ borderRadius: '10px', textTransform: 'none', color: '#B76E79', borderColor: '#B76E79' }}
                                 >
                                     อัปโหลดรูปภาพ
-                                    <input type="file" multiple hidden accept="image/*" onChange={(e) => handleFileUpload(e, 'images')} />
+                                    <input
+                                        type="file"
+                                        multiple
+                                        hidden
+                                        accept="image/*"
+                                        onClick={(e: any) => { e.target.value = null; }}
+                                        onChange={(e) => handleFileUpload(e, 'images')}
+                                    />
                                 </Button>
                             </Box>
 
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                                 {form.images.filter(url => url.trim() !== '').map((url, idx) => (
-                                    <Box key={`existing-${idx}`} sx={{ flex: { xs: '1 1 calc(50% - 8px)', sm: '1 1 calc(33.33% - 10.66px)', md: '1 1 calc(25% - 12px)' } }}>
+                                    <Box key={`existing-${idx}`} sx={{ flex: { xs: '0 0 calc(50% - 8px)', sm: '0 0 calc(33.33% - 10.66px)', md: '0 0 calc(25% - 12px)' } }}>
                                         <Box sx={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid #EEE', paddingTop: '100%' }}>
                                             <NextImage
                                                 src={url.startsWith('http') || url.startsWith('/') ? url : `/${url}`}
@@ -494,7 +559,7 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                     </Box>
                                 ))}
                                 {pendingImages.map((item, idx) => (
-                                    <Box key={`pending-${idx}`} sx={{ flex: { xs: '1 1 calc(50% - 8px)', sm: '1 1 calc(33.33% - 10.66px)', md: '1 1 calc(25% - 12px)' } }}>
+                                    <Box key={`pending-${idx}`} sx={{ flex: { xs: '0 0 calc(50% - 8px)', sm: '0 0 calc(33.33% - 10.66px)', md: '0 0 calc(25% - 12px)' } }}>
                                         <Box sx={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid #EEE', paddingTop: '100%', opacity: 0.7 }}>
                                             <NextImage
                                                 src={item.preview}
@@ -524,11 +589,17 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                             <Typography variant="subtitle2" sx={{ mb: 2, color: '#666' }}>รายละเอียด (Product Details)</Typography>
                             <Stack spacing={2} sx={{ mb: 4 }}>
                                 {form.details.map((text, idx) => (
-                                    <Box key={idx} sx={{ display: 'flex', gap: 1 }}>
+                                    <Box key={`detail-${idx}`} sx={{ display: 'flex', gap: 1 }}>
                                         <TextField
                                             fullWidth
                                             value={text}
                                             onChange={(e) => handleArrayChange(idx, e.target.value, 'details')}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    addArrayItem('details');
+                                                }
+                                            }}
                                             placeholder="ระบุรายละเอียด..."
                                         />
                                         <IconButton color="error" onClick={() => removeArrayItem(idx, 'details')} disabled={form.details.length === 1}>
@@ -544,11 +615,17 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                             <Typography variant="subtitle2" sx={{ mb: 2, color: '#666' }}>คุณสมบัติ (Product Features)</Typography>
                             <Stack spacing={2}>
                                 {form.features.map((text, idx) => (
-                                    <Box key={idx} sx={{ display: 'flex', gap: 1 }}>
+                                    <Box key={`feature-${idx}`} sx={{ display: 'flex', gap: 1 }}>
                                         <TextField
                                             fullWidth
                                             value={text}
                                             onChange={(e) => handleArrayChange(idx, e.target.value, 'features')}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    addArrayItem('features');
+                                                }
+                                            }}
                                             placeholder="ระบุคุณสมบัติ..."
                                         />
                                         <IconButton color="error" onClick={() => removeArrayItem(idx, 'features')} disabled={form.features.length === 1}>
@@ -613,6 +690,14 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                     value={form.originalPriceVelvet}
                                     onChange={handleChange}
                                 />
+                                <TextField
+                                    fullWidth
+                                    label="ส่วนลดดอกไม้กำมะหยี่ (%)"
+                                    name="discountVelvet"
+                                    type="number"
+                                    value={form.discountVelvet}
+                                    onChange={handleChange}
+                                />
 
                                 <Divider sx={{ my: 2 }} />
 
@@ -634,6 +719,39 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                     onChange={handleChange}
                                     helperText="ค่ามากจะแสดงก่อน (เช่น 100 แสดงก่อน 1)"
                                 />
+
+                                <Divider sx={{ my: 2 }}>
+                                    <Chip label="🎴 QR Feeling Card" size="small" sx={{ fontWeight: 600 }} />
+                                </Divider>
+
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Typography variant="body2" sx={{ color: '#666' }}>เปิดใช้งาน Feeling Card</Typography>
+                                    <Button
+                                        onClick={() => handleChange({ target: { name: 'hasQrCode' } } as any)}
+                                        sx={{
+                                            color: form.hasQrCode ? '#FFF' : '#666',
+                                            bgcolor: form.hasQrCode ? '#B76E79' : '#EEE',
+                                            borderRadius: '20px',
+                                            px: 2,
+                                            height: 32,
+                                            '&:hover': { bgcolor: form.hasQrCode ? '#A45D68' : '#DDD' }
+                                        }}
+                                    >
+                                        {form.hasQrCode ? 'เปิด' : 'ปิด'}
+                                    </Button>
+                                </Box>
+
+                                {form.hasQrCode && (
+                                    <TextField
+                                        fullWidth
+                                        label="ราคาการ์ดปรับแต่งพิเศษ (บาท)"
+                                        name="qrCodePrice"
+                                        type="number"
+                                        value={form.qrCodePrice}
+                                        onChange={handleChange}
+                                        helperText="ราคาที่ระบุคือค่าธรรมเนียมปรับแต่งพิเศษ (รูปภาพ/วิดีโอ)"
+                                    />
+                                )}
                             </Stack>
 
                             <Divider sx={{ my: 4 }} />
@@ -655,7 +773,13 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                 }}
                             >
                                 เลือกรูปภาพหลัก
-                                <input type="file" hidden accept="image/*" onChange={(e) => handleFileUpload(e, 'image')} />
+                                <input
+                                    type="file"
+                                    hidden
+                                    accept="image/*"
+                                    onClick={(e: any) => { e.target.value = null; }}
+                                    onChange={(e) => handleFileUpload(e, 'image')}
+                                />
                             </Button>
 
                             {/* Display actual cover image */}

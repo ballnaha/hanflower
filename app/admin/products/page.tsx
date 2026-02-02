@@ -46,6 +46,7 @@ interface Product {
     image: string;
     stock: number;
     priority: number;
+    categoryId?: string;
 }
 
 export default function AdminProductsPage() {
@@ -55,18 +56,18 @@ export default function AdminProductsPage() {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
-    const [collections, setCollections] = useState<any[]>([]);
-    const [selectedCollection, setSelectedCollection] = useState('all');
+    const [categories, setCategories] = useState<any[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState('all');
 
-    const fetchCollections = async () => {
+    const fetchCategories = async () => {
         try {
-            const res = await fetch('/api/collections');
+            const res = await fetch('/api/categories');
             if (res.ok) {
                 const data = await res.json();
-                setCollections(data);
+                setCategories(data);
             }
         } catch (error) {
-            console.error('Error fetching collections:', error);
+            console.error('Error fetching categories:', error);
         }
     };
 
@@ -115,7 +116,7 @@ export default function AdminProductsPage() {
 
     useEffect(() => {
         fetchProducts();
-        fetchCollections();
+        fetchCategories();
     }, []);
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, productId: string) => {
@@ -131,8 +132,9 @@ export default function AdminProductsPage() {
     const filteredProducts = products.filter(p => {
         const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.type.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCollection = selectedCollection === 'all' || p.type === selectedCollection;
-        return matchesSearch && matchesCollection;
+        // Match by ID if possible, otherwise rely on fallback behavior (or just ID)
+        const matchesCategory = selectedCategory === 'all' || p.categoryId === selectedCategory;
+        return matchesSearch && matchesCategory;
     });
 
     return (
@@ -188,12 +190,12 @@ export default function AdminProductsPage() {
                 />
 
                 <FormControl size="small" sx={{ minWidth: 200 }}>
-                    <InputLabel id="collection-filter-label" sx={{ fontSize: '0.85rem' }}>Collection</InputLabel>
+                    <InputLabel id="category-filter-label" sx={{ fontSize: '0.85rem' }}>Category</InputLabel>
                     <Select
-                        labelId="collection-filter-label"
-                        value={selectedCollection}
-                        label="Collection"
-                        onChange={(e) => setSelectedCollection(e.target.value)}
+                        labelId="category-filter-label"
+                        value={selectedCategory}
+                        label="Category"
+                        onChange={(e) => setSelectedCategory(e.target.value)}
                         sx={{
                             bgcolor: '#F9F9F9',
                             borderRadius: '10px',
@@ -202,8 +204,8 @@ export default function AdminProductsPage() {
                         }}
                     >
                         <MenuItem value="all">ทั้งหมด</MenuItem>
-                        {collections.map((col) => (
-                            <MenuItem key={col.id} value={col.title}>{col.title}</MenuItem>
+                        {categories.map((cat: any) => (
+                            <MenuItem key={cat.id} value={cat.id}>{cat.title}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>
@@ -236,9 +238,16 @@ export default function AdminProductsPage() {
                             </TableRow>
                         ) : filteredProducts.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                                    <BoxIcon size={64} variant="Bulk" color="#DDD" />
-                                    <Typography sx={{ mt: 2, color: '#888' }}>ไม่พบข้อมูลสินค้า</Typography>
+                                <TableCell colSpan={6} align="center" sx={{ py: 12 }}>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                        <BoxIcon size={80} variant="Bulk" color="#E0E0E0" />
+                                        <Typography sx={{ mt: 2, color: '#888', fontWeight: 500 }}>
+                                            ไม่พบข้อมูลสินค้า
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: '#AAA' }}>
+                                            ลองเปลี่ยนคำค้นหาหรือตัวกรองดูอีกครั้ง
+                                        </Typography>
+                                    </Box>
                                 </TableCell>
                             </TableRow>
                         ) : (

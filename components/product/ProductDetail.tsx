@@ -116,7 +116,10 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
     const decreaseQty = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
 
     // Combine cover image and additional images for display
-    const allImages = [product.image, ...(product.images || [])].filter(url => url && url.trim() !== '');
+    const allImages = [
+        product.image,
+        ...(product.images || [])
+    ].filter(url => url && url.trim() !== '');
 
     return (
         <Box sx={{
@@ -129,24 +132,6 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
             '@keyframes fadeIn': {
                 from: { opacity: 0, transform: 'translateY(10px)' },
                 to: { opacity: 1, transform: 'translateY(0)' }
-            },
-            // Liquid Glass Background Effect
-            '&::before': {
-                content: '""',
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: `
-                    radial-gradient(ellipse at 20% 20%, rgba(183, 110, 121, 0.15) 0%, transparent 50%),
-                    radial-gradient(ellipse at 80% 80%, rgba(183, 110, 121, 0.1) 0%, transparent 50%),
-                    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.8) 0%, transparent 70%),
-                    linear-gradient(135deg, rgba(255, 249, 248, 0.95) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(245, 237, 237, 0.95) 100%)
-                `,
-                backdropFilter: 'blur(100px)',
-                WebkitBackdropFilter: 'blur(100px)',
-                zIndex: -1
             }
         }}>
             <Box sx={{
@@ -185,16 +170,43 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                                     priority={idx === 0}
                                 />
                                 {idx === 0 && (
-                                    <Typography sx={{
-                                        position: 'absolute',
-                                        bottom: 30,
-                                        left: 30,
-                                        fontSize: '0.75rem',
-                                        color: '#666',
-                                        fontWeight: 500
-                                    }}>
-                                        New
-                                    </Typography>
+                                    <>
+                                        <Typography sx={{
+                                            position: 'absolute',
+                                            bottom: 30,
+                                            left: 30,
+                                            fontSize: '0.75rem',
+                                            color: '#666',
+                                            fontWeight: 500,
+                                            zIndex: 2
+                                        }}>
+                                            New
+                                        </Typography>
+                                        {/* QR Code Card Overlay */}
+                                        {product.hasQrCode !== false && (
+                                            <Box sx={{
+                                                position: 'absolute',
+                                                bottom: 40,
+                                                right: 40,
+                                                width: '22%',
+                                                aspectRatio: '1/1.3',
+                                                zIndex: 5,
+                                                filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.15))',
+                                                animation: 'float 3s ease-in-out infinite',
+                                                '@keyframes float': {
+                                                    '0%, 100%': { transform: 'translateY(0) rotate(5deg)' },
+                                                    '50%': { transform: 'translateY(-10px) rotate(8deg)' }
+                                                }
+                                            }}>
+                                                <Image
+                                                    src="/images/qr_code.png"
+                                                    alt="QR Code Feeling Card"
+                                                    fill
+                                                    style={{ objectFit: 'contain' }}
+                                                />
+                                            </Box>
+                                        )}
+                                    </>
                                 )}
                             </Box>
                         ))}
@@ -241,16 +253,38 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                                             priority={idx === 0}
                                         />
                                         {idx === 0 && (
-                                            <Typography sx={{
-                                                position: 'absolute',
-                                                bottom: 20,
-                                                left: 20,
-                                                fontSize: '0.75rem',
-                                                color: '#666',
-                                                fontWeight: 500
-                                            }}>
-                                                New
-                                            </Typography>
+                                            <>
+                                                <Typography sx={{
+                                                    position: 'absolute',
+                                                    bottom: 20,
+                                                    left: 20,
+                                                    fontSize: '0.75rem',
+                                                    color: '#666',
+                                                    fontWeight: 500,
+                                                    zIndex: 2
+                                                }}>
+                                                    New
+                                                </Typography>
+                                                {/* QR Code Card Overlay for Mobile */}
+                                                {product.hasQrCode !== false && (
+                                                    <Box sx={{
+                                                        position: 'absolute',
+                                                        bottom: 30,
+                                                        right: 30,
+                                                        width: '28%',
+                                                        aspectRatio: '1/1.3',
+                                                        zIndex: 5,
+                                                        filter: 'drop-shadow(0 8px 15px rgba(0,0,0,0.12))'
+                                                    }}>
+                                                        <Image
+                                                            src="/images/qr_code.png"
+                                                            alt="QR Code Feeling Card"
+                                                            fill
+                                                            style={{ objectFit: 'contain' }}
+                                                        />
+                                                    </Box>
+                                                )}
+                                            </>
                                         )}
                                     </Box>
                                 </SwiperSlide>
