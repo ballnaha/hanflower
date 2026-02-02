@@ -50,7 +50,7 @@ export default function RootLayout({
           <ThemeProvider theme={theme}>
             <CartProviderWrapper>
               <Header />
-              <Box component="main">
+              <Box component="main" sx={{ pb: { xs: '100px', md: 0 } }}>
                 {children}
               </Box>
               <Footer />

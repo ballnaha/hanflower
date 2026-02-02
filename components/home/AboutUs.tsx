@@ -34,12 +34,12 @@ export default function AboutUs() {
     ];
 
     return (
-        <Box component="section" sx={{ py: { xs: 10, md: 14 }, bgcolor: '#FFF9F8', overflow: 'hidden' }}>
+        <Box component="section" sx={{ py: { xs: 6, md: 8 }, bgcolor: '#FFF9F8', overflow: 'hidden' }}>
             <Container maxWidth="xl">
                 <Box sx={{
                     display: 'flex',
                     flexDirection: { xs: 'column', md: 'row' },
-                    gap: { xs: 8, md: 15 },
+                    gap: { xs: 5, md: 8 },
                     alignItems: 'center'
                 }}>
                     <Box sx={{ width: { xs: '100%', md: '50%' }, position: 'relative' }}>
@@ -82,6 +82,10 @@ export default function AboutUs() {
                                 borderRadius: '500px 500px 20px 20px', // Arch shape for image
                                 boxShadow: '0 40px 80px rgba(0,0,0,0.12)',
                                 transition: 'all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                                aspectRatio: '4 / 5', // กำหนด ratio เพื่อป้องกัน layout shift
+                                width: '100%',
+                                maxWidth: { xs: '360px', md: '480px' },
+                                mx: 'auto',
                                 '&:hover': {
                                     transform: 'translateY(-15px)',
                                     boxShadow: '0 60px 100px rgba(183, 110, 121, 0.15)',
@@ -91,12 +95,11 @@ export default function AboutUs() {
                                 <Image
                                     src="/images/about.webp"
                                     alt="Our Story"
-                                    width={800}
-                                    height={1000}
+                                    fill
+                                    sizes="(max-width: 768px) 320px, 400px"
+                                    priority
                                     style={{
-                                        width: '100%',
-                                        height: 'auto',
-                                        display: 'block',
+                                        objectFit: 'cover',
                                         filter: 'brightness(1.02) contrast(0.98)',
                                         transition: 'transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1)'
                                     }}
@@ -107,20 +110,20 @@ export default function AboutUs() {
                             <Box
                                 sx={{
                                     position: 'absolute',
-                                    bottom: 40,
-                                    right: -40,
+                                    bottom: 30,
+                                    right: -30,
                                     bgcolor: '#5D4037',
                                     color: '#FFFFFF',
-                                    p: 4,
+                                    p: 2.5,
                                     display: { xs: 'none', lg: 'block' },
                                     zIndex: 2,
-                                    boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+                                    boxShadow: '0 15px 30px rgba(0,0,0,0.18)'
                                 }}
                             >
-                                <Typography variant="h4" sx={{ color: '#E0BFB8', mb: 1, fontFamily: '"Playfair Display", serif', fontSize: '1.2rem', letterSpacing: '0.2em' }}>
+                                <Typography variant="h4" sx={{ color: '#E0BFB8', mb: 0.5, fontFamily: '"Playfair Display", serif', fontSize: '0.9rem', letterSpacing: '0.15em' }}>
                                     ESTD
                                 </Typography>
-                                <Typography variant="caption" sx={{ letterSpacing: '0.3em', opacity: 0.8, fontWeight: 700 }}>
+                                <Typography variant="caption" sx={{ letterSpacing: '0.2em', opacity: 0.8, fontWeight: 700, fontSize: '0.65rem' }}>
                                     SINCE 2020
                                 </Typography>
                             </Box>
@@ -128,7 +131,7 @@ export default function AboutUs() {
                     </Box>
 
                     <Box sx={{ width: { xs: '100%', md: '50%' }, textAlign: { xs: 'center', md: 'left' } }}>
-                        <Box sx={{ width: '100%', minHeight: { xs: '380px', md: '450px' } }}>
+                        <Box sx={{ width: '100%', minHeight: { xs: '300px', md: '350px' } }}>
                             <Swiper
                                 modules={[Pagination, Autoplay, EffectFade]}
                                 effect="fade"

@@ -206,166 +206,202 @@ function ProductCard({ product }: { product: Product }) {
     return (
         <Link href={`/product/${product.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
             <Box sx={{ cursor: 'pointer', group: 'true', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                {/* Outer wrapper for QR card visibility */}
                 <Box sx={{
                     position: 'relative',
-                    aspectRatio: '3/4',
-                    overflow: 'hidden',
                     mb: 3,
-                    bgcolor: '#F2F2F2',
-                    border: '1px solid rgba(0,0,0,0.03)',
-                    transition: 'all 0.5s ease',
-                    '&:hover': {
-                        borderColor: '#B76E79',
-                        boxShadow: '0 10px 40px rgba(183, 110, 121, 0.15)',
-                        '& img': { transform: 'scale(1.05)' },
-                        '& .view-overlay': { transform: 'translateY(0)' }
+                    overflow: 'hidden',
+                    '&:hover .qr-card-slide': {
+                        right: '5%',
+                        opacity: 1,
+                    },
+                    '&:hover .qr-hint': {
+                        opacity: 1,
                     }
                 }}>
-                    <Image
-                        src={getImageSrc(imgSrc)}
-                        alt={product.title}
-                        fill
-                        style={{
-                            objectFit: 'cover',
-                            padding: '10%',
-                            transition: 'transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1)'
-                        }}
-                        onError={handleImageError}
-                    />
+                    {/* Main product image container */}
+                    <Box sx={{
+                        position: 'relative',
+                        aspectRatio: '3/4',
+                        overflow: 'hidden',
+                        bgcolor: '#F2F2F2',
+                        border: '1px solid rgba(0,0,0,0.03)',
+                        transition: 'all 0.5s ease',
+                        '&:hover': {
+                            borderColor: '#B76E79',
+                            boxShadow: '0 10px 40px rgba(183, 110, 121, 0.15)',
+                            '& img': { transform: 'scale(1.05)' },
+                        }
+                    }}>
+                        <Image
+                            src={getImageSrc(imgSrc)}
+                            alt={product.title}
+                            fill
+                            style={{
+                                objectFit: 'cover',
+                                padding: '10%',
+                                transition: 'transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1)'
+                            }}
+                            onError={handleImageError}
+                        />
 
-                    {/* QR Code Card Overlay */}
+                        {/* Discount Badge Overlay */}
+                        {currentDiscount && parseInt(currentDiscount) > 0 && (
+                            <Box sx={{
+                                position: 'absolute',
+                                top: 15,
+                                right: 15,
+                                bgcolor: '#B76E79',
+                                color: '#FFFFFF',
+                                px: 1.5,
+                                py: 0.5,
+                                fontSize: '0.65rem',
+                                fontWeight: 700,
+                                letterSpacing: '0.1em',
+                                zIndex: 2
+                            }}>
+                                -{currentDiscount}%
+                            </Box>
+                        )}
+
+                        {/* Out of Stock Overlay */}
+                        {product.stock !== undefined && product.stock <= 0 && (
+                            <Box sx={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                bgcolor: 'rgba(0,0,0,0.5)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 3
+                            }}>
+                                <Box sx={{
+                                    bgcolor: '#333',
+                                    color: '#FFF',
+                                    px: 3,
+                                    py: 1,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    letterSpacing: '0.1em'
+                                }}>
+                                    สินค้าหมด
+                                </Box>
+                            </Box>
+                        )}
+
+                        {/* Variant Selector Overlay - Always Visible */}
+                        {hasVelvet && (
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    bottom: 15,
+                                    left: 0,
+                                    right: 0,
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    zIndex: 2
+                                }}
+                            >
+                                <Box sx={{
+                                    display: 'inline-flex',
+                                    bgcolor: 'rgba(255, 255, 255, 0.85)',
+                                    backdropFilter: 'blur(8px)',
+                                    borderRadius: '30px',
+                                    p: 0.5,
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+                                }}>
+                                    <Box
+                                        onClick={(e) => handleVariantClick(e, 'fresh')}
+                                        sx={{
+                                            px: 2,
+                                            py: 0.6,
+                                            borderRadius: '20px',
+                                            cursor: 'pointer',
+                                            bgcolor: selectedVariant === 'fresh' ? '#FFFFFF' : 'transparent',
+                                            boxShadow: selectedVariant === 'fresh' ? '0 2px 8px rgba(183, 110, 121, 0.2)' : 'none',
+                                            color: selectedVariant === 'fresh' ? '#B76E79' : '#666',
+                                            transition: 'all 0.2s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 0.5
+                                        }}
+                                    >
+                                        <Typography sx={{ fontSize: '0.85rem', fontWeight: selectedVariant === 'fresh' ? 700 : 500 }}>
+                                            ดอกไม้สด
+                                        </Typography>
+                                    </Box>
+                                    <Box
+                                        onClick={(e) => handleVariantClick(e, 'velvet')}
+                                        sx={{
+                                            px: 2,
+                                            py: 0.6,
+                                            borderRadius: '20px',
+                                            cursor: 'pointer',
+                                            bgcolor: selectedVariant === 'velvet' ? '#FFFFFF' : 'transparent',
+                                            boxShadow: selectedVariant === 'velvet' ? '0 2px 8px rgba(183, 110, 121, 0.2)' : 'none',
+                                            color: selectedVariant === 'velvet' ? '#B76E79' : '#666',
+                                            transition: 'all 0.2s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 0.5
+                                        }}
+                                    >
+                                        <Typography sx={{ fontSize: '0.85rem', fontWeight: selectedVariant === 'velvet' ? 700 : 500 }}>
+                                            กำมะหยี่
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </Box>
+                        )}
+                    </Box>
+
+                    {/* QR Code Card - Hidden on right side, slides out on hover */}
                     {product.hasQrCode !== false && (
-                        <Box sx={{
-                            position: 'absolute',
-                            bottom: 65,
-                            right: 15,
-                            width: '26%',
-                            aspectRatio: '1/1.3',
-                            zIndex: 5,
-                            filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.15))',
-                            animation: 'floatShort 3s ease-in-out infinite',
-                            '@keyframes floatShort': {
-                                '0%, 100%': { transform: 'translateY(0) rotate(5deg)' },
-                                '50%': { transform: 'translateY(-15px) rotate(8deg)' }
-                            }
-                        }}>
+                        <Box
+                            className="qr-card-slide"
+                            sx={{
+                                position: 'absolute',
+                                top: '30%',
+                                right: '-18%',
+                                transform: 'translateY(-50%)',
+                                width: '25%',
+                                aspectRatio: '1/1.3',
+                                zIndex: 10,
+                                filter: 'drop-shadow(-3px 5px 10px rgba(0,0,0,0.15))',
+                                transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                opacity: 0.7,
+                                pointerEvents: 'none',
+                            }}>
                             <Image
                                 src="/images/qr_code.png"
                                 alt="QR Code Feeling Card"
                                 fill
                                 style={{ objectFit: 'contain' }}
                             />
-                        </Box>
-                    )}
-
-                    {/* Discount Badge Overlay */}
-                    {currentDiscount && parseInt(currentDiscount) > 0 && (
-                        <Box sx={{
-                            position: 'absolute',
-                            top: 15,
-                            right: 15,
-                            bgcolor: '#B76E79',
-                            color: '#FFFFFF',
-                            px: 1.5,
-                            py: 0.5,
-                            fontSize: '0.65rem',
-                            fontWeight: 700,
-                            letterSpacing: '0.1em',
-                            zIndex: 2
-                        }}>
-                            -{currentDiscount}%
-                        </Box>
-                    )}
-
-                    {/* Out of Stock Overlay */}
-                    {product.stock !== undefined && product.stock <= 0 && (
-                        <Box sx={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            bgcolor: 'rgba(0,0,0,0.5)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 3
-                        }}>
-                            <Box sx={{
-                                bgcolor: '#333',
-                                color: '#FFF',
-                                px: 3,
-                                py: 1,
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                letterSpacing: '0.1em'
-                            }}>
-                                สินค้าหมด
-                            </Box>
-                        </Box>
-                    )}
-
-                    {/* Variant Selector Overlay - Always Visible */}
-                    {hasVelvet && (
-                        <Box
-                            sx={{
-                                position: 'absolute',
-                                bottom: 15,
-                                left: 0,
-                                right: 0,
-                                display: 'flex',
-                                justifyContent: 'center',
-                                zIndex: 2
-                            }}
-                        >
-                            <Box sx={{
-                                display: 'inline-flex',
-                                bgcolor: 'rgba(255, 255, 255, 0.85)',
-                                backdropFilter: 'blur(8px)',
-                                borderRadius: '30px',
-                                p: 0.5,
-                                boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
-                            }}>
-                                <Box
-                                    onClick={(e) => handleVariantClick(e, 'fresh')}
-                                    sx={{
-                                        px: 2,
-                                        py: 0.6,
-                                        borderRadius: '20px',
-                                        cursor: 'pointer',
-                                        bgcolor: selectedVariant === 'fresh' ? '#FFFFFF' : 'transparent',
-                                        boxShadow: selectedVariant === 'fresh' ? '0 2px 8px rgba(183, 110, 121, 0.2)' : 'none',
-                                        color: selectedVariant === 'fresh' ? '#B76E79' : '#666',
-                                        transition: 'all 0.2s',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 0.5
-                                    }}
-                                >
-                                    <Typography sx={{ fontSize: '0.85rem', fontWeight: selectedVariant === 'fresh' ? 700 : 500 }}>
-                                        ดอกไม้สด
-                                    </Typography>
-                                </Box>
-                                <Box
-                                    onClick={(e) => handleVariantClick(e, 'velvet')}
-                                    sx={{
-                                        px: 2,
-                                        py: 0.6,
-                                        borderRadius: '20px',
-                                        cursor: 'pointer',
-                                        bgcolor: selectedVariant === 'velvet' ? '#FFFFFF' : 'transparent',
-                                        boxShadow: selectedVariant === 'velvet' ? '0 2px 8px rgba(183, 110, 121, 0.2)' : 'none',
-                                        color: selectedVariant === 'velvet' ? '#B76E79' : '#666',
-                                        transition: 'all 0.2s',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 0.5
-                                    }}
-                                >
-                                    <Typography sx={{ fontSize: '0.85rem', fontWeight: selectedVariant === 'velvet' ? 700 : 500 }}>
-                                        กำมะหยี่
-                                    </Typography>
-                                </Box>
+                            {/* Small hint text */}
+                            <Box
+                                className="qr-hint"
+                                sx={{
+                                    position: 'absolute',
+                                    bottom: -18,
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    bgcolor: '#B76E79',
+                                    color: '#FFF',
+                                    px: 1,
+                                    py: 0.3,
+                                    borderRadius: '10px',
+                                    fontSize: '0.5rem',
+                                    fontWeight: 600,
+                                    whiteSpace: 'nowrap',
+                                    opacity: 0,
+                                    transition: 'opacity 0.3s ease 0.2s',
+                                }}
+                            >
+                                ฟรี!
                             </Box>
                         </Box>
                     )}

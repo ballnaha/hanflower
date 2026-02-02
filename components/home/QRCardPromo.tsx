@@ -10,7 +10,8 @@ export default function QRCardPromo() {
         <Box
             component="section"
             sx={{
-                py: { xs: 8, md: 12 },
+                py: { xs: 5, md: 6 },
+                pb: { xs: 6, md: 8 },
                 bgcolor: '#FFF9F8',
                 position: 'relative',
                 overflow: 'hidden'
@@ -33,7 +34,7 @@ export default function QRCardPromo() {
                     display: 'flex',
                     flexDirection: { xs: 'column', md: 'row' },
                     alignItems: 'center',
-                    gap: { xs: 6, md: 10 }
+                    gap: { xs: 4, md: 6 }
                 }}>
                     {/* Left: Card Mockup */}
                     <Box sx={{
@@ -44,8 +45,8 @@ export default function QRCardPromo() {
                     }}>
                         <Box sx={{
                             position: 'relative',
-                            width: { xs: 280, md: 360 },
-                            height: { xs: 180, md: 230 },
+                            width: { xs: 240, md: 300 },
+                            height: { xs: 155, md: 195 },
                             perspective: '1000px'
                         }}>
                             {/* Card Design */}
@@ -182,7 +183,7 @@ export default function QRCardPromo() {
                                 fontSize: { xs: '1.8rem', md: '2.5rem' },
                                 fontWeight: 600,
                                 color: '#1A1A1A',
-                                mb: 2,
+                                mb: 1.5,
                                 lineHeight: 1.3
                             }}
                         >
@@ -201,7 +202,7 @@ export default function QRCardPromo() {
                             variant="body1"
                             sx={{
                                 color: '#666',
-                                mb: 3,
+                                mb: 2,
                                 fontSize: '1rem',
                                 lineHeight: 1.8,
                                 maxWidth: { md: 480 }
@@ -214,7 +215,7 @@ export default function QRCardPromo() {
 
                         {/* What's included */}
                         <Box sx={{
-                            mb: 3,
+                            mb: 2,
                             p: 2.5,
                             bgcolor: 'rgba(183, 110, 121, 0.05)',
                             borderRadius: '12px',
@@ -317,7 +318,7 @@ export default function QRCardPromo() {
                         <Stack
                             direction={{ xs: 'column', sm: 'row' }}
                             spacing={3}
-                            sx={{ mb: 3, justifyContent: { xs: 'center', md: 'flex-start' } }}
+                            sx={{ mb: 2, justifyContent: { xs: 'center', md: 'flex-start' } }}
                         >
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                 <Box sx={{
@@ -370,7 +371,7 @@ export default function QRCardPromo() {
                             sx={{
                                 color: '#888',
                                 display: 'block',
-                                mb: 3,
+                                mb: 2,
                                 fontStyle: 'italic',
                                 maxWidth: { md: 450 }
                             }}

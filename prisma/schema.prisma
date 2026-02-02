@@ -121,3 +121,39 @@ model user {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
+
+model shippingmethod {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  name          String
+  description   String?
+  price         Decimal  @db.Decimal(10, 2)
+  estimatedDays String?
+  enabled       Boolean  @default(true)
+  priority      Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model coupon {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  discount    Decimal   @db.Decimal(10, 2)
+  type        String    @default("percent") // percent, fixed
+  minSpend    Decimal?  @default(0.00) @db.Decimal(10, 2)
+  maxDiscount Decimal?  @db.Decimal(10, 2)
+  limit       Int?
+  used        Int       @default(0)
+  expireAt    DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}

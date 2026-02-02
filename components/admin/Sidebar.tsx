@@ -9,8 +9,12 @@ import {
     People,
     ProfileCircle,
     Setting2,
-    Logout
+    Logout,
+    Ticket,
+    Truck,
+    Card
 } from 'iconsax-react';
+
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -20,14 +24,37 @@ import { useAdminUI } from '@/context/AdminUIContext';
 const SIDEBAR_WIDTH = 280;
 const COLLAPSED_WIDTH = 88;
 
-const menuItems = [
-    { text: 'Dashboard', icon: Element3, path: '/admin' },
-    { text: 'จัดการสินค้า', icon: BoxIcon, path: '/admin/products' },
-    { text: 'จัดการหมวดหมู่', icon: Category, path: '/admin/categories' },
-    { text: 'คำสั่งซื้อ', icon: ReceiptItem, path: '/admin/orders' },
-    { text: 'ลูกค้า', icon: People, path: '/admin/customers' },
-    { text: 'จัดการผู้ดูแลระบบ', icon: ProfileCircle, path: '/admin/users' },
-    { text: 'ตั้งค่าร้านค้า', icon: Setting2, path: '/admin/settings' },
+const menuGroups = [
+    {
+        title: 'ภาพรวม',
+        items: [
+            { text: 'Dashboard', icon: Element3, path: '/admin' },
+        ]
+    },
+    {
+        title: 'การขาย & สินค้า',
+        items: [
+            { text: 'คำสั่งซื้อ', icon: ReceiptItem, path: '/admin/orders' },
+            { text: 'จัดการสินค้า', icon: BoxIcon, path: '/admin/products' },
+            { text: 'จัดการหมวดหมู่', icon: Category, path: '/admin/categories' },
+        ]
+    },
+    {
+        title: 'การตลาด & ขนส่ง',
+        items: [
+            { text: 'ลูกค้า', icon: People, path: '/admin/customers' },
+            { text: 'โค้ดส่วนลด (Coupons)', icon: Ticket, path: '/admin/coupons' },
+            { text: 'ค่าจัดส่ง (Shipping)', icon: Truck, path: '/admin/shipping' },
+            { text: 'วิธีการชำระเงิน (Payments)', icon: Card, path: '/admin/payment' },
+        ]
+    },
+    {
+        title: 'ตั้งค่าระบบ',
+        items: [
+            { text: 'ผู้ดูแลระบบ', icon: ProfileCircle, path: '/admin/users' },
+            { text: 'ตั้งค่าร้านค้า', icon: Setting2, path: '/admin/settings' },
+        ]
+    }
 ];
 
 export default function Sidebar() {
@@ -108,63 +135,86 @@ export default function Sidebar() {
             </Box>
 
             {/* Navigation Section */}
-            <Box sx={{ flex: 1, px: isCollapsed && !isMobile ? 1 : 2 }}>
-                <List>
-                    {menuItems.map((item) => {
-                        const isActive = pathname === item.path;
-                        const button = (
-                            <ListItemButton
-                                component={Link}
-                                href={item.path}
-                                onClick={isMobile ? closeSidebar : undefined}
+            <Box sx={{ flex: 1, px: isCollapsed && !isMobile ? 1 : 2, overflowY: 'auto', '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { bgcolor: '#EEEEEE', borderRadius: '4px' } }}>
+                {menuGroups.map((group, index) => (
+                    <Box key={group.title} sx={{ mb: 2 }}>
+                        {(!isCollapsed || isMobile) && (
+                            <Typography
+                                variant="caption"
                                 sx={{
-                                    borderRadius: '12px',
-                                    py: 1.5,
-                                    px: isCollapsed && !isMobile ? 0 : 2,
-                                    justifyContent: isCollapsed && !isMobile ? 'center' : 'flex-start',
-                                    bgcolor: isActive ? '#FFF9F8' : 'transparent',
-                                    color: isActive ? '#B76E79' : '#666',
-                                    transition: 'all 0.2s',
-                                    '&:hover': {
-                                        bgcolor: isActive ? '#FFF9F8' : '#F5F5F5',
-                                        color: isActive ? '#B76E79' : '#1A1A1A'
-                                    }
+                                    px: 2,
+                                    mb: 1,
+                                    display: 'block',
+                                    color: '#AAA',
+                                    fontWeight: 700,
+                                    fontSize: '0.7rem',
+                                    letterSpacing: '0.05em',
+                                    textTransform: 'uppercase'
                                 }}
                             >
-                                <ListItemIcon sx={{
-                                    minWidth: isCollapsed && !isMobile ? 0 : 45,
-                                    justifyContent: 'center'
-                                }}>
-                                    <item.icon
-                                        size={22}
-                                        color={isActive ? '#B76E79' : '#666'}
-                                        variant={isActive ? 'Bulk' : 'Outline'}
-                                    />
-                                </ListItemIcon>
-                                {(!isCollapsed || isMobile) && (
-                                    <ListItemText
-                                        primary={item.text}
-                                        primaryTypographyProps={{
-                                            fontSize: '0.9rem',
-                                            fontWeight: isActive ? 600 : 500,
-                                            sx: { whiteSpace: 'nowrap' }
+                                {group.title}
+                            </Typography>
+                        )}
+                        <List disablePadding>
+                            {group.items.map((item) => {
+                                const isActive = pathname === item.path;
+                                const button = (
+                                    <ListItemButton
+                                        component={Link}
+                                        href={item.path}
+                                        onClick={isMobile ? closeSidebar : undefined}
+                                        sx={{
+                                            borderRadius: '12px',
+                                            py: 1,
+                                            px: isCollapsed && !isMobile ? 0 : 2,
+                                            justifyContent: isCollapsed && !isMobile ? 'center' : 'flex-start',
+                                            bgcolor: isActive ? '#FFF9F8' : 'transparent',
+                                            color: isActive ? '#B76E79' : '#666',
+                                            transition: 'all 0.2s',
+                                            mb: 0.5,
+                                            '&:hover': {
+                                                bgcolor: isActive ? '#FFF9F8' : '#F5F5F5',
+                                                color: isActive ? '#B76E79' : '#1A1A1A'
+                                            }
                                         }}
-                                    />
-                                )}
-                            </ListItemButton>
-                        );
+                                    >
+                                        <ListItemIcon sx={{
+                                            minWidth: isCollapsed && !isMobile ? 0 : 36,
+                                            justifyContent: 'center'
+                                        }}>
+                                            <item.icon
+                                                size={20}
+                                                color={isActive ? '#B76E79' : '#666'}
+                                                variant={isActive ? 'Bulk' : 'Outline'}
+                                            />
+                                        </ListItemIcon>
+                                        {(!isCollapsed || isMobile) && (
+                                            <ListItemText
+                                                primary={item.text}
+                                                primaryTypographyProps={{
+                                                    fontSize: '0.875rem',
+                                                    fontWeight: isActive ? 600 : 500,
+                                                    sx: { whiteSpace: 'nowrap' }
+                                                }}
+                                            />
+                                        )}
+                                    </ListItemButton>
+                                );
 
-                        return (
-                            <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
-                                {isCollapsed && !isMobile ? (
-                                    <Tooltip title={item.text} placement="right">
-                                        <Box sx={{ width: '100%' }}>{button}</Box>
-                                    </Tooltip>
-                                ) : button}
-                            </ListItem>
-                        );
-                    })}
-                </List>
+                                return (
+                                    <ListItem key={item.text} disablePadding>
+                                        {isCollapsed && !isMobile ? (
+                                            <Tooltip title={item.text} placement="right">
+                                                <Box sx={{ width: '100%' }}>{button}</Box>
+                                            </Tooltip>
+                                        ) : button}
+                                    </ListItem>
+                                );
+                            })}
+                        </List>
+                        {index < menuGroups.length - 1 && !isCollapsed && <Box sx={{ height: 8 }} />}
+                    </Box>
+                ))}
             </Box>
 
             {/* Bottom Section */}

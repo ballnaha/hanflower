@@ -97,8 +97,8 @@ export default function OrderSuccessPage() {
     };
 
     const handleNotifyLine = () => {
-        // Open LINE Add Friend page for @setevent
-        window.open('https://line.me/R/ti/p/@setevent', '_blank');
+        // Open LINE Add Friend page for fonms2
+        window.open('https://line.me/ti/p/~fonms2', '_blank');
     };
 
     const handleSaveInvoice = async () => {
@@ -199,6 +199,19 @@ export default function OrderSuccessPage() {
                             </Typography>
                             <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.9rem' }}>{order.customerName}</Typography>
                             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.8rem' }}>{order.tel}</Typography>
+                        </Box>
+
+                        {/* Shipping Method */}
+                        <Box sx={{ py: 1.5, borderBottom: '1px dashed #E8E8E8' }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', mb: 0.5 }}>
+                                รูปแบบการจัดส่ง
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <TruckFast size={16} color={order.shippingMethod === 'express' ? '#B76E79' : '#666'} variant="Bold" />
+                                <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.85rem', color: order.shippingMethod === 'express' ? '#B76E79' : '#1A1A1A' }}>
+                                    {order.shippingMethod === 'express' ? 'ส่งด่วน (Lalamove/Grab)' : 'ขนส่งพัสดุ (1-2 วัน)'}
+                                </Typography>
+                            </Box>
                         </Box>
 
                         {/* Products */}
@@ -317,7 +330,7 @@ export default function OrderSuccessPage() {
                         borderTop: '1px solid #F0F0F0'
                     }}>
                         <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem', display: 'block' }}>
-                            LINE: @setevent | ขอบคุณที่ใช้บริการค่ะ 🌸
+                            LINE: fonms2 | ขอบคุณที่ใช้บริการค่ะ 🌸
                         </Typography>
                     </Box>
                 </Box>

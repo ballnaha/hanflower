@@ -3,12 +3,28 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
+    // Seed Shipping Methods first
+    const shippingMethods = [
+        { code: 'standard', name: 'ขนส่งพัสดุ (Standard)', description: '1-2 วันทำการ • ทั่วประเทศ', price: 50, estimatedDays: '1-2 วัน', enabled: true, priority: 0 },
+        { code: 'express', name: 'ส่งด่วน (Lalamove/Grab)', description: 'กทม. และปริมณฑล', price: 150, estimatedDays: 'ภายในวันเดียว', enabled: true, priority: 1 },
+        { code: 'pickup', name: 'รับสินค้าเอง', description: 'รับสินค้าที่ร้าน ซอยวัดลาดปลาดุก นนทบุรี', price: 0, estimatedDays: 'นัดรับสินค้า', enabled: false, priority: 2 },
+        { code: 'cod', name: 'เก็บเงินปลายทาง (COD)', description: 'ชำระเงินเมื่อรับสินค้า • ค่าบริการเพิ่ม', price: 30, estimatedDays: '2-3 วัน', enabled: false, priority: 3 }
+    ];
+
+    for (const method of shippingMethods) {
+        await prisma.shippingmethod.upsert({
+            where: { code: method.code },
+            update: method,
+            create: method
+        });
+    }
+    console.log('✅ Seeded shipping methods!');
+
     // Clear existing data
-    await prisma.productFeature.deleteMany();
-    await prisma.productDetail.deleteMany();
-    await prisma.productImage.deleteMany();
+    await prisma.productfeature.deleteMany();
+    await prisma.productdetail.deleteMany();
+    await prisma.productimage.deleteMany();
     await prisma.product.deleteMany();
-    await prisma.collection.deleteMany();
 
     const productsData = [
         {

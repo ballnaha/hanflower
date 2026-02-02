@@ -126,7 +126,7 @@ export default function Header() {
                             variant="contained"
                             disableElevation
                             component="a"
-                            href="https://line.me/R/ti/p/@setevent"
+                            href="https://line.me/ti/p/~fonms2"
                             target="_blank"
                             sx={{
                                 bgcolor: '#06C755',
@@ -248,7 +248,7 @@ export default function Header() {
                                 variant="contained"
                                 disableElevation
                                 component="a"
-                                href="https://line.me/R/ti/p/@setevent"
+                                href="https://line.me/ti/p/~fonms2"
                                 target="_blank"
                                 sx={{
                                     bgcolor: isScrolled || pathname !== '/' ? '#06C755' : 'rgba(255, 255, 255, 0.15)',

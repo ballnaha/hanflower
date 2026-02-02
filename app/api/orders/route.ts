@@ -2,6 +2,31 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// GET all orders (for admin)
+export async function GET() {
+    try {
+        const orders = await prisma.order.findMany({
+            include: {
+                orderitem: true
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+
+        // Map orderitem to items for consistency
+        const formattedOrders = orders.map(order => ({
+            ...order,
+            items: order.orderitem
+        }));
+
+        return NextResponse.json(formattedOrders);
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
+    }
+}
+
 export async function POST(request: Request) {
     try {
         const body = await request.json();

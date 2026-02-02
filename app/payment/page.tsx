@@ -114,8 +114,83 @@ export default function CheckoutPage() {
     const [showLineAlert, setShowLineAlert] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Costs
-    const shippingCost = shippingMethod === 'express' ? 150 : 50;
+    // Snackbar State
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' | 'info' }>({
+        open: false,
+        message: '',
+        severity: 'error'
+    });
+
+    // Shipping Methods from API
+    interface ShippingMethodType {
+        code: string;
+        name: string;
+        description: string;
+        price: number;
+        enabled: boolean;
+        estimatedDays: string;
+    }
+    const [shippingMethods, setShippingMethods] = useState<ShippingMethodType[]>([]);
+    const [freeShippingThreshold, setFreeShippingThreshold] = useState(0);
+    const [enableFreeShipping, setEnableFreeShipping] = useState(false);
+
+    // Payment Settings State
+    const [paymentSettings, setPaymentSettings] = useState({
+        bank: {
+            enabled: true,
+            bankName: 'ธนาคารกสิกรไทย (KBANK)',
+            accountNo: '012 345 6789',
+            accountName: 'HAN FLOWER CO., LTD.',
+            branch: '',
+            bankLogo: ''
+        },
+        qr: {
+            enabled: true,
+            image: ''
+        }
+    });
+
+    // Fetch initial data
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            try {
+                // Fetch Shipping
+                const shipRes = await fetch('/api/shipping');
+                const shipData = await shipRes.json();
+                if (shipData.methods) {
+                    const enabledMethods = shipData.methods.filter((m: any) => m.enabled).map((m: any) => ({
+                        ...m,
+                        price: parseFloat(m.price)
+                    }));
+                    setShippingMethods(enabledMethods);
+                    if (enabledMethods.length > 0 && !enabledMethods.find((m: any) => m.code === shippingMethod)) {
+                        setShippingMethod(enabledMethods[0].code);
+                    }
+                }
+                setFreeShippingThreshold(shipData.freeShippingThreshold || 0);
+                setEnableFreeShipping(shipData.enableFreeShipping || false);
+
+                // Fetch Payment Settings
+                const payRes = await fetch('/api/payment-settings');
+                if (payRes.ok) {
+                    const payData = await payRes.json();
+                    setPaymentSettings(payData);
+                }
+            } catch (error) {
+                console.error('Failed to fetch initial data:', error);
+            }
+        };
+        fetchInitialData();
+    }, []);
+
+    // Costs - dynamic from API
+    const selectedMethod = shippingMethods.find(m => m.code === shippingMethod);
+    const baseShippingCost = selectedMethod?.price || 0;
+    // Check if standard shipping is enabled
+    const isStandardEnabled = shippingMethods.some(m => m.code === 'standard');
+    // Apply free shipping if enabled and cart total meets threshold (except for express/cod)
+    const qualifiesForFreeShipping = enableFreeShipping && isStandardEnabled && cartTotal >= freeShippingThreshold && shippingMethod === 'standard';
+    const shippingCost = qualifiesForFreeShipping ? 0 : baseShippingCost;
     const finalTotal = cartItems.length > 0 ? (cartTotal + shippingCost - (appliedDiscount?.amount || 0)) : 0;
 
     const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,24 +200,40 @@ export default function CheckoutPage() {
         });
     };
 
-    const handleApplyCoupon = () => {
+    const handleApplyCoupon = async () => {
+        if (!promoCode.trim()) return;
+
         setIsCheckingCode(true);
         setCouponError('');
 
-        // Mock Coupon Logic
-        setTimeout(() => {
-            if (promoCode.toUpperCase() === 'HANFLOWER') {
-                const discount = Math.floor(cartTotal * 0.1); // 10% off
-                setAppliedDiscount({ code: 'HANFLOWER', amount: discount });
+        try {
+            const res = await fetch('/api/coupons/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: promoCode,
+                    cartTotal: cartTotal
+                })
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.valid) {
+                setAppliedDiscount({
+                    code: data.code,
+                    amount: data.discountAmount
+                });
                 setPromoCode('');
-            } else if (promoCode.toUpperCase() === 'FREE') {
-                setAppliedDiscount({ code: 'FREE', amount: 50 }); // Free shipping value
-                setPromoCode('');
+                // Optional: Store couponId if needed for order creation
             } else {
-                setCouponError('Invalid promo code');
+                setCouponError(data.error || 'คูปองใช้ไม่ได้');
             }
+        } catch (error) {
+            console.error('Error verifying coupon:', error);
+            setCouponError('เกิดข้อผิดพลาดในการตรวจสอบคูปอง');
+        } finally {
             setIsCheckingCode(false);
-        }, 800);
+        }
     };
 
     const handleRemoveCoupon = () => {
@@ -155,8 +246,31 @@ export default function CheckoutPage() {
 
     const handlePlaceOrder = async () => {
         // Validation
-        if (!shippingInfo.name || !shippingInfo.tel || !shippingInfo.address) {
-            alert('กรุณากรอกข้อมูลจัดส่งให้ครบถ้วน');
+        if (cartItems.length === 0) {
+            setSnackbar({ open: true, message: 'ตะกร้าสินค้าว่างเปล่า กรุณาเลือกสินค้าก่อน', severity: 'warning' });
+            return;
+        }
+        if (!shippingInfo.name) {
+            setSnackbar({ open: true, message: 'กรุณากรอกชื่อ-นามสกุล', severity: 'error' });
+            return;
+        }
+        if (!shippingInfo.tel) {
+            setSnackbar({ open: true, message: 'กรุณากรอกเบอร์โทรศัพท์', severity: 'error' });
+            return;
+        }
+        if (!shippingInfo.address) {
+            setSnackbar({ open: true, message: 'กรุณากรอกที่อยู่จัดส่ง', severity: 'error' });
+            return;
+        }
+
+        let paymentMethodCode = '';
+        if (paymentSettings.bank.enabled && tabValue === 0) {
+            paymentMethodCode = 'bank_transfer';
+        } else if (paymentSettings.qr.enabled && tabValue === (paymentSettings.bank.enabled ? 1 : 0)) {
+            paymentMethodCode = 'qr_code';
+        } else {
+            // Fallback or error if no payment method is selected/enabled
+            setSnackbar({ open: true, message: 'กรุณาเลือกช่องทางการชำระเงิน', severity: 'error' });
             return;
         }
 
@@ -177,7 +291,7 @@ export default function CheckoutPage() {
                     shippingMethod: shippingMethod,
                     discount: appliedDiscount?.amount || 0,
                     grandTotal: parseFloat(finalTotal.toString()),
-                    paymentMethod: tabValue === 0 ? 'bank_transfer' : (tabValue === 1 ? 'qr_code' : 'line_pay')
+                    paymentMethod: paymentMethodCode
                 })
             });
 
@@ -188,23 +302,25 @@ export default function CheckoutPage() {
                 router.push(`/order/${data.orderId}`);
             } else {
                 if (data.error.includes('no longer exist')) {
-                    alert('ขออภัยครับ สินค้าในตะกร้าของคุณเป็นข้อมูลเก่า (เนื่องจากมีการอัพเดทระบบ) \n\nระบบจะล้างตะกร้าสินค้าเพื่อให้คุณเลือกสินค้าใหม่อีกครั้งครับ');
-                    clearCart();
-                    router.push('/products');
+                    setSnackbar({ open: true, message: 'สินค้าในตะกร้าเป็นข้อมูลเก่า ระบบจะล้างตะกร้าเพื่อให้เลือกสินค้าใหม่', severity: 'warning' });
+                    setTimeout(() => {
+                        clearCart();
+                        router.push('/products');
+                    }, 2000);
                 } else {
-                    alert('เกิดข้อผิดพลาด: ' + data.error);
+                    setSnackbar({ open: true, message: 'เกิดข้อผิดพลาด: ' + data.error, severity: 'error' });
                 }
                 setIsSubmitting(false);
             }
         } catch (error) {
             console.error(error);
-            alert('Something went wrong. Please try again.');
+            setSnackbar({ open: true, message: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง', severity: 'error' });
             setIsSubmitting(false);
         }
     };
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText('012-3-45678-9');
+    const handleCopy = (text: string) => {
+        navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -212,6 +328,11 @@ export default function CheckoutPage() {
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue);
     };
+
+    // Determine actual tab indices based on enabled settings
+    const bankTabIndex = paymentSettings.bank.enabled ? 0 : -1;
+    const qrTabIndex = paymentSettings.qr.enabled ? (paymentSettings.bank.enabled ? 1 : 0) : -1;
+
 
     return (
         <Box sx={{ bgcolor: '#FFF', minHeight: '100vh', backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(183, 110, 121, 0.05) 0%, rgba(255,255,255,0) 70%)' }}>
@@ -262,7 +383,7 @@ export default function CheckoutPage() {
                                             placeholder="บ้านเลขที่, ถนน, ซอย, แขวง/ตำบล, เขต/อำเภอ, จังหวัด, รหัสไปรษณีย์"
                                         />
                                         <TextField
-                                            fullWidth label="วันที่รับของ / ข้อความการ์ด / อื่นๆ" name="note"
+                                            fullWidth label="ข้อความอื่น ๆ" name="note"
                                             value={shippingInfo.note} onChange={handleShippingChange}
                                             variant="outlined"
                                             placeholder="ระบุวันที่ต้องการรับสินค้า, ข้อความบนการ์ดอวยพร, หรือรายละเอียดเพิ่มเติม"
@@ -280,65 +401,66 @@ export default function CheckoutPage() {
                                     <TruckFast size={22} variant="Bold" color="#B76E79" /> รูปแบบการจัดส่ง
                                 </Typography>
                                 <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, borderRadius: '24px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+                                    {/* Free Shipping Applied Alert */}
+                                    {enableFreeShipping && isStandardEnabled && cartTotal >= freeShippingThreshold && freeShippingThreshold > 0 && (
+                                        <Alert
+                                            severity="success"
+                                            icon={<TickCircle size={20} variant="Bold" />}
+                                            sx={{ mb: 2, borderRadius: '12px', bgcolor: alpha('#2E7D32', 0.08), border: '1px solid', borderColor: alpha('#2E7D32', 0.2) }}
+                                        >
+                                            🎉 ยินดีด้วย! คุณได้รับสิทธิ์ <strong>ส่งฟรี</strong> สำหรับการจัดส่งแบบ Standard
+                                        </Alert>
+                                    )}
+
                                     <RadioGroup value={shippingMethod} onChange={(e) => setShippingMethod(e.target.value)}>
                                         <Stack spacing={2}>
-                                            <Paper
-                                                elevation={0}
-                                                sx={{
-                                                    p: 2.5,
-                                                    border: `1px solid ${shippingMethod === 'standard' ? '#B76E79' : 'rgba(0,0,0,0.08)'}`,
-                                                    bgcolor: shippingMethod === 'standard' ? alpha('#B76E79', 0.03) : 'transparent',
-                                                    borderRadius: '16px',
-                                                    transition: 'all 0.3s ease',
-                                                    cursor: 'pointer',
-                                                    position: 'relative',
-                                                    '&:hover': { borderColor: '#B76E79' }
-                                                }}
-                                                onClick={() => setShippingMethod('standard')}
-                                            >
-                                                <FormControlLabel
-                                                    value="standard"
-                                                    control={<Radio sx={{ color: '#B76E79', '&.Mui-checked': { color: '#B76E79' } }} />}
-                                                    label={
-                                                        <Box sx={{ ml: 1 }}>
-                                                            <Typography variant="subtitle1" fontWeight={600}>ขนส่งพัสดุ (Standard)</Typography>
-                                                            <Typography variant="body2" color="text.secondary">1-2 วันทำการ • ทั่วประเทศ</Typography>
-                                                        </Box>
-                                                    }
-                                                    sx={{ width: '100%', m: 0 }}
-                                                />
-                                                <Typography sx={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)', fontWeight: 600 }}>+฿50</Typography>
-                                            </Paper>
-
-                                            <Paper
-                                                elevation={0}
-                                                sx={{
-                                                    p: 2.5,
-                                                    border: `1px solid ${shippingMethod === 'express' ? '#B76E79' : 'rgba(0,0,0,0.08)'}`,
-                                                    bgcolor: shippingMethod === 'express' ? alpha('#B76E79', 0.03) : 'transparent',
-                                                    borderRadius: '16px',
-                                                    transition: 'all 0.3s ease',
-                                                    cursor: 'pointer',
-                                                    position: 'relative',
-                                                    '&:hover': { borderColor: '#B76E79' }
-                                                }}
-                                                onClick={() => setShippingMethod('express')}
-                                            >
-                                                <FormControlLabel
-                                                    value="express"
-                                                    control={<Radio sx={{ color: '#B76E79', '&.Mui-checked': { color: '#B76E79' } }} />}
-                                                    label={
-                                                        <Box sx={{ ml: 1 }}>
-                                                            <Typography variant="subtitle1" fontWeight={600}>ส่งด่วน (Lalamove/Grab)</Typography>
-                                                            <Typography variant="body2" color="text.secondary">กทม. และปริมณฑล (โปรดระบุเวลาส่ง)</Typography>
-                                                        </Box>
-                                                    }
-                                                    sx={{ width: '100%', m: 0 }}
-                                                />
-                                                <Typography sx={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)', fontWeight: 600 }}>+฿150</Typography>
-                                            </Paper>
+                                            {shippingMethods.map((method) => (
+                                                <Paper
+                                                    key={method.code}
+                                                    elevation={0}
+                                                    sx={{
+                                                        p: 2.5,
+                                                        border: `1px solid ${shippingMethod === method.code ? '#B76E79' : 'rgba(0,0,0,0.08)'}`,
+                                                        bgcolor: shippingMethod === method.code ? alpha('#B76E79', 0.03) : 'transparent',
+                                                        borderRadius: '16px',
+                                                        transition: 'all 0.3s ease',
+                                                        cursor: 'pointer',
+                                                        position: 'relative',
+                                                        '&:hover': { borderColor: '#B76E79' }
+                                                    }}
+                                                    onClick={() => setShippingMethod(method.code)}
+                                                >
+                                                    <FormControlLabel
+                                                        value={method.code}
+                                                        control={<Radio sx={{ color: '#B76E79', '&.Mui-checked': { color: '#B76E79' } }} />}
+                                                        label={
+                                                            <Box sx={{ ml: 1 }}>
+                                                                <Typography variant="subtitle1" fontWeight={600}>{method.name}</Typography>
+                                                                <Typography variant="body2" color="text.secondary">{method.description}</Typography>
+                                                            </Box>
+                                                        }
+                                                        sx={{ width: '100%', m: 0 }}
+                                                    />
+                                                    <Typography sx={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)', fontWeight: 600, textAlign: 'right' }}>
+                                                        {method.code === 'pickup' ? (
+                                                            <span style={{ color: '#2E7D32' }}>รับเอง</span>
+                                                        ) : method.code === 'cod' ? (
+                                                            <span style={{ color: '#9C27B0' }}>+฿{method.price} <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>(ค่า COD)</span></span>
+                                                        ) : method.price === 0 ? 'ฟรี' : (
+                                                            enableFreeShipping && cartTotal >= freeShippingThreshold && method.code === 'standard'
+                                                                ? <><s style={{ color: '#999' }}>฿{method.price}</s> <span style={{ color: '#2E7D32' }}>ฟรี!</span></>
+                                                                : `+฿${method.price}`
+                                                        )}
+                                                    </Typography>
+                                                </Paper>
+                                            ))}
                                         </Stack>
                                     </RadioGroup>
+                                    {enableFreeShipping && isStandardEnabled && cartTotal < freeShippingThreshold && freeShippingThreshold > 0 && (
+                                        <Alert severity="info" sx={{ mt: 2, borderRadius: '12px' }}>
+                                            ซื้อเพิ่มอีก ฿{(freeShippingThreshold - cartTotal).toLocaleString()} รับสิทธิ์ส่งฟรี!
+                                        </Alert>
+                                    )}
                                 </Paper>
                             </Box>
 
@@ -358,76 +480,102 @@ export default function CheckoutPage() {
                                                 '& .MuiTabs-indicator': { bgcolor: '#B76E79' }
                                             }}
                                         >
-                                            <Tab label="โอนเงินธนาคาร" sx={{ textTransform: 'none', fontSize: '1rem', fontWeight: 600, fontFamily: 'Inter' }} />
-                                            <Tab label="สแกน QR Code" sx={{ textTransform: 'none', fontSize: '1rem', fontWeight: 600, fontFamily: 'Inter' }} />
+                                            {paymentSettings.bank.enabled && <Tab label="โอนเงินธนาคาร" sx={{ textTransform: 'none', fontSize: '1rem', fontWeight: 600, fontFamily: 'Inter' }} />}
+                                            {paymentSettings.qr.enabled && <Tab label="สแกน QR Code" sx={{ textTransform: 'none', fontSize: '1rem', fontWeight: 600, fontFamily: 'Inter' }} />}
                                         </Tabs>
                                     </Box>
 
-                                    <CustomTabPanel value={tabValue} index={0}>
-                                        <Box sx={{
-                                            p: { xs: 3, md: 4 },
-                                            border: '1px solid #EAEAEA',
-                                            borderRadius: '20px',
-                                            position: 'relative',
-                                            overflow: 'hidden',
-                                            bgcolor: '#FAFAFA' // Very light gray for contrast with white paper
-                                        }}>
+                                    {/* Bank Panel */}
+                                    {paymentSettings.bank.enabled && tabValue === bankTabIndex && (
+                                        <Box sx={{ py: 3 }}>
+                                            <Fade in={true} timeout={500}>
+                                                <Box sx={{
+                                                    p: { xs: 3, md: 4 },
+                                                    border: '1px solid #EAEAEA',
+                                                    borderRadius: '20px',
+                                                    position: 'relative',
+                                                    overflow: 'hidden',
+                                                    bgcolor: '#FAFAFA'
+                                                }}>
 
-                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                    <Box sx={{ width: 48, height: 48, borderRadius: '12px', bgcolor: '#00CC00', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0, 204, 0, 0.2)' }}>
-                                                        <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#FFF' }}>KB</Typography>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                            <Box sx={{ width: 48, height: 48, borderRadius: '12px', bgcolor: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+                                                                {paymentSettings.bank.bankLogo ? (
+                                                                    <Image src={paymentSettings.bank.bankLogo} alt="Bank" width={48} height={48} style={{ objectFit: 'contain', padding: '4px' }} />
+                                                                ) : (
+                                                                    <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#999' }}>BK</Typography>
+                                                                )}
+                                                            </Box>
+                                                            <Box>
+                                                                <Typography sx={{ fontWeight: 600, color: '#1A1A1A', fontSize: '1.1rem' }}>{paymentSettings.bank.bankName}</Typography>
+                                                                <Typography variant="body2" color="text.secondary">ออมทรัพย์ {paymentSettings.bank.branch ? `(${paymentSettings.bank.branch})` : ''}</Typography>
+                                                            </Box>
+                                                        </Box>
                                                     </Box>
-                                                    <Box>
-                                                        <Typography sx={{ fontWeight: 600, color: '#1A1A1A', fontSize: '1.1rem' }}>ธนาคารกสิกรไทย (KBANK)</Typography>
-                                                        <Typography variant="body2" color="text.secondary">ออมทรัพย์</Typography>
+
+                                                    <Box sx={{ mb: 4, p: 3, bgcolor: '#FFF', borderRadius: '16px', border: '1px dashed #E0E0E0', textAlign: 'center' }}>
+                                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: '0.75rem' }}>เลขที่บัญชี</Typography>
+                                                        <Typography sx={{ fontSize: { xs: '1.5rem', sm: '2rem' }, fontFamily: 'monospace', fontWeight: 600, letterSpacing: '0.1em', color: '#1A1A1A' }}>
+                                                            {paymentSettings.bank.accountNo}
+                                                        </Typography>
+                                                        <Button
+                                                            onClick={() => {
+                                                                handleCopy(paymentSettings.bank.accountNo.replace(/-/g, '').replace(/ /g, ''));
+                                                            }}
+                                                            size="small"
+                                                            startIcon={copied ? <TickCircle size={18} variant="Outline" color="#4CAF50" /> : <Copy size={18} variant="Outline" color="#B76E79" />}
+                                                            sx={{
+                                                                color: copied ? '#4CAF50' : '#B76E79',
+                                                                borderColor: copied ? '#4CAF50' : alpha('#B76E79', 0.5),
+                                                                textTransform: 'none',
+                                                                mt: 2,
+                                                                borderRadius: '20px',
+                                                                px: 3,
+                                                                py: 0.5,
+                                                                border: '1px solid',
+                                                                bgcolor: copied ? alpha('#4CAF50', 0.1) : 'transparent',
+                                                                '&:hover': { bgcolor: alpha('#B76E79', 0.05), borderColor: '#B76E79' }
+                                                            }}
+                                                        >
+                                                            {copied ? 'คัดลอกแล้ว' : 'คัดลอกเลขบัญชี'}
+                                                        </Button>
+                                                    </Box>
+
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 1 }}>
+                                                        <Typography sx={{ fontSize: '0.9rem', color: 'text.secondary' }}>ชื่อบัญชี</Typography>
+                                                        <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#1A1A1A' }}>{paymentSettings.bank.accountName}</Typography>
                                                     </Box>
                                                 </Box>
-                                            </Box>
-
-                                            <Box sx={{ mb: 4, p: 3, bgcolor: '#FFF', borderRadius: '16px', border: '1px dashed #E0E0E0', textAlign: 'center' }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1, letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: '0.75rem' }}>เลขที่บัญชี</Typography>
-                                                <Typography sx={{ fontSize: { xs: '1.5rem', sm: '2rem' }, fontFamily: 'monospace', fontWeight: 600, letterSpacing: '0.1em', color: '#1A1A1A' }}>
-                                                    012 345 6789
-                                                </Typography>
-                                                <Button
-                                                    onClick={handleCopy}
-                                                    size="small"
-                                                    startIcon={copied ? <TickCircle size={18} /> : <Copy size={18} />}
-                                                    sx={{
-                                                        color: copied ? '#4CAF50' : '#B76E79',
-                                                        borderColor: copied ? '#4CAF50' : alpha('#B76E79', 0.5),
-                                                        textTransform: 'none',
-                                                        mt: 2,
-                                                        borderRadius: '20px',
-                                                        px: 3,
-                                                        py: 0.5,
-                                                        border: '1px solid',
-                                                        bgcolor: copied ? alpha('#4CAF50', 0.1) : 'transparent',
-                                                        '&:hover': { bgcolor: alpha('#B76E79', 0.05), borderColor: '#B76E79' }
-                                                    }}
-                                                >
-                                                    {copied ? 'คัดลอกแล้ว' : 'คัดลอกเลขบัญชี'}
-                                                </Button>
-                                            </Box>
-
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 1 }}>
-                                                <Typography sx={{ fontSize: '0.9rem', color: 'text.secondary' }}>ชื่อบัญชี</Typography>
-                                                <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#1A1A1A' }}>HAN FLOWER CO., LTD.</Typography>
-                                            </Box>
+                                            </Fade>
                                         </Box>
-                                    </CustomTabPanel>
+                                    )}
 
-                                    <CustomTabPanel value={tabValue} index={1}>
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
-                                            <Box sx={{ p: 3, bgcolor: '#FFF', borderRadius: '24px', border: '1px solid #EEE', mb: 3, boxShadow: '0 10px 40px rgba(0,0,0,0.08)' }}>
-                                                <ScanBarcode size={140} color="#1A1A1A" />
-                                            </Box>
-                                            <Typography variant="body2" align="center" color="text.secondary">
-                                                สแกนเพื่อจ่ายเงินผ่านแอปธนาคาร
-                                            </Typography>
+                                    {/* QR Panel */}
+                                    {paymentSettings.qr.enabled && tabValue === qrTabIndex && (
+                                        <Box sx={{ py: 3 }}>
+                                            <Fade in={true} timeout={500}>
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
+                                                    <Box sx={{ p: 3, bgcolor: '#FFF', borderRadius: '24px', border: '1px solid #EEE', mb: 3, boxShadow: '0 10px 40px rgba(0,0,0,0.08)' }}>
+                                                        {paymentSettings.qr.image ? (
+                                                            <Image
+                                                                src={paymentSettings.qr.image}
+                                                                alt="QR Code"
+                                                                width={200}
+                                                                height={200}
+                                                                style={{ objectFit: 'contain' }}
+                                                            />
+                                                        ) : (
+                                                            <ScanBarcode size={140} color="#1A1A1A" />
+                                                        )}
+                                                    </Box>
+                                                    <Typography variant="body2" align="center" color="text.secondary">
+                                                        สแกนเพื่อจ่ายเงินผ่านแอปธนาคาร
+                                                    </Typography>
+                                                </Box>
+                                            </Fade>
                                         </Box>
-                                    </CustomTabPanel>
+                                    )}
                                 </Paper>
                             </Box>
                         </Stack>
@@ -665,7 +813,27 @@ export default function CheckoutPage() {
                 </Alert>
             </Snackbar>
 
-            <Footer />
+            {/* Validation Snackbar */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={() => setSnackbar({ ...snackbar, open: false })}
+                    severity={snackbar.severity}
+                    sx={{
+                        width: '100%',
+                        borderRadius: '12px',
+                        boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+                        '& .MuiAlert-icon': { alignItems: 'center' },
+                        fontWeight: 500
+                    }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box >
     );
 }
