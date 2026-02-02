@@ -364,16 +364,16 @@ function ProductCard({ product }: { product: Product }) {
                     {product.hasQrCode !== false && (
                         <Box sx={{
                             position: 'absolute',
-                            bottom: 25,
+                            bottom: 65,
                             right: 15,
-                            width: '24%',
+                            width: '26%',
                             aspectRatio: '1/1.3',
                             zIndex: 5,
-                            filter: 'drop-shadow(0 8px 15px rgba(0,0,0,0.12))',
+                            filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.15))',
                             animation: 'floatShort 3s ease-in-out infinite',
                             '@keyframes floatShort': {
                                 '0%, 100%': { transform: 'translateY(0) rotate(5deg)' },
-                                '50%': { transform: 'translateY(-10px) rotate(8deg)' }
+                                '50%': { transform: 'translateY(-15px) rotate(8deg)' }
                             }
                         }}>
                             <Image
