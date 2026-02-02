@@ -51,9 +51,9 @@ export default function Header() {
                 top: 0,
                 width: '100%',
                 zIndex: 1000,
-                bgcolor: isProductPage || !isScrolled ? 'transparent' : 'rgba(255, 255, 255, 0.98)',
-                backdropFilter: isProductPage ? 'none' : (isScrolled ? 'blur(20px)' : 'none'),
-                borderBottom: isProductPage ? 'none' : (isScrolled ? '1px solid rgba(0, 0, 0, 0.05)' : 'none'),
+                bgcolor: (isProductPage || isScrolled) ? 'rgba(255, 255, 255, 0.98)' : 'transparent',
+                backdropFilter: (isProductPage || isScrolled) ? 'blur(20px)' : 'none',
+                borderBottom: (isProductPage || isScrolled) ? '1px solid rgba(0, 0, 0, 0.05)' : 'none',
                 transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
             }}
         >
