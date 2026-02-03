@@ -4,6 +4,7 @@ import { Box, Typography, Stack } from '@mui/material';
 import { TruckFast } from 'iconsax-react';
 import Image from 'next/image';
 import { forwardRef } from 'react';
+import { getImageUrl } from '@/lib/utils';
 
 interface OrderItem {
     id: string;
@@ -130,7 +131,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(({ order }, r
                                     flexShrink: 0,
                                     position: 'relative'
                                 }}>
-                                    {item.image && <Image src={item.image} alt={item.title} fill style={{ objectFit: 'cover' }} />}
+                                    {item.image && <Image src={getImageUrl(item.image)} alt={item.title} fill style={{ objectFit: 'cover' }} />}
                                 </Box>
                                 <Box sx={{ flex: 1 }}>
                                     <Typography variant="body2" sx={{

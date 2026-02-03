@@ -44,6 +44,7 @@ export default function AdminValentinePage() {
     const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
     const [qrTitle, setQrTitle] = useState("Happy Valentine's Day");
     const [cardPreviewUrl, setCardPreviewUrl] = useState<string | null>(null);
+    const [qrOrientation, setQrOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
 
     const fetchCards = async () => {
         setLoading(true);
@@ -191,16 +192,103 @@ export default function AdminValentinePage() {
                 )}
             </Box>
 
-            <Dialog open={qrDialogOpen} onClose={() => setQrDialogOpen(false)} maxWidth="xs" fullWidth>
-                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h6" fontWeight="bold">QR Code</Typography>
+            <Dialog open={qrDialogOpen} onClose={() => setQrDialogOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle component="div" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box>
+                        <Typography variant="h6" fontWeight="bold">QR Code Card Preview</Typography>
+                        <Typography variant="caption" color="textSecondary">เลือกรูปแบบการแสดงผลที่ต้องการ</Typography>
+                    </Box>
                     <IconButton onClick={() => setQrDialogOpen(false)}><CloseCircle size="24" /></IconButton>
                 </DialogTitle>
                 <DialogContent>
+                    <Box sx={{ mb: 3, display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <Button
+                            variant={qrOrientation === 'horizontal' ? 'contained' : 'outlined'}
+                            onClick={() => setQrOrientation('horizontal')}
+                            size="small"
+                            sx={{ borderRadius: '20px', textTransform: 'none', bgcolor: qrOrientation === 'horizontal' ? '#B76E79' : 'transparent', color: qrOrientation === 'horizontal' ? '#fff' : '#B76E79', borderColor: '#B76E79' }}
+                        >
+                            แนวนอน
+                        </Button>
+                        <Button
+                            variant={qrOrientation === 'vertical' ? 'contained' : 'outlined'}
+                            onClick={() => setQrOrientation('vertical')}
+                            size="small"
+                            sx={{ borderRadius: '20px', textTransform: 'none', bgcolor: qrOrientation === 'vertical' ? '#B76E79' : 'transparent', color: qrOrientation === 'vertical' ? '#fff' : '#B76E79', borderColor: '#B76E79' }}
+                        >
+                            แนวตั้ง
+                        </Button>
+                    </Box>
+
                     <Box sx={{ textAlign: 'center', py: 2 }}>
-                        {qrPreviewUrl && <img src={qrPreviewUrl} className="w-full h-auto rounded-xl shadow-inner border" alt="QR Code" />}
-                        <Typography variant="subtitle1" fontWeight="bold" sx={{ mt: 2 }}>{qrTitle}</Typography>
-                        <Button variant="contained" fullWidth startIcon={<Printer color="#fff" />} sx={{ mt: 3, bgcolor: '#D4AF37', py: 1.5, borderRadius: '50px' }}>Download QR</Button>
+                        {/* Card Mockup */}
+                        <Box sx={{
+                            width: '100%',
+                            maxWidth: qrOrientation === 'horizontal' ? '500px' : '350px',
+                            mx: 'auto',
+                            aspectRatio: qrOrientation === 'horizontal' ? '1.6 / 1' : '1 / 1.6',
+                            backgroundImage: `url(/images/card_blank${qrOrientation === 'vertical' ? '_vertical' : ''}.jpg)`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            borderRadius: '12px',
+                            boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+                            display: 'flex',
+                            flexDirection: qrOrientation === 'horizontal' ? 'row' : 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            p: 3,
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}>
+                            {/* QR Section */}
+                            <Box sx={{
+                                flex: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 1
+                            }}>
+                                <Typography sx={{ fontSize: qrOrientation === 'horizontal' ? '12px' : '14px', fontWeight: 800, mb: 1, color: '#2C1A1D', letterSpacing: '0.1em' }}>
+                                    FOR MY LOVE
+                                </Typography>
+                                {qrPreviewUrl && (
+                                    <Box sx={{ p: 1, bgcolor: '#fff', borderRadius: '4px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+                                        <img src={qrPreviewUrl} style={{ width: qrOrientation === 'horizontal' ? '120px' : '160px', height: 'auto', display: 'block' }} alt="QR" />
+                                    </Box>
+                                )}
+                                <Typography sx={{ fontSize: '10px', mt: 1, color: '#666', fontWeight: 500 }}>
+                                    สแกนเพื่อดูข้อความ
+                                </Typography>
+                            </Box>
+
+                            {/* Heart Section */}
+                            <Box sx={{
+                                flex: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                mt: qrOrientation === 'vertical' ? 2 : 0,
+                                zIndex: 1
+                            }}>
+                                <img
+                                    src="/images/heart.png"
+                                    style={{
+                                        width: qrOrientation === 'horizontal' ? '85%' : '75%',
+                                        height: 'auto',
+                                        filter: 'drop-shadow(0 5px 15px rgba(183,110,121,0.2))'
+                                    }}
+                                    alt="Heart"
+                                />
+                            </Box>
+                        </Box>
+
+                        <Typography variant="subtitle2" fontWeight="bold" sx={{ mt: 3, color: '#5D4037' }}>{qrTitle}</Typography>
+                        <Typography variant="caption" sx={{ display: 'block', mb: 2, color: '#999' }}>Preview for display only</Typography>
+
+                        <Button variant="contained" fullWidth startIcon={<Printer color="#fff" />} sx={{ mt: 1, bgcolor: '#D4AF37', py: 1.5, borderRadius: '50px', '&:hover': { bgcolor: '#B8962D' } }}>
+                            Download Full Card Image
+                        </Button>
                     </Box>
                 </DialogContent>
             </Dialog>

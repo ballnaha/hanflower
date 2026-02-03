@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from "next/image";
 import Link from "next/link";
 import { Container, Typography, Button, Box, Skeleton } from "@mui/material";
+import { getImageUrl } from '@/lib/utils';
 
 // Fallback image for production when product image is missing or fails to load
 const FALLBACK_IMAGE = "/images/placeholder-product.png";
@@ -165,7 +166,7 @@ export default function ProductSneakPeek() {
 }
 
 function ProductCard({ product }: { product: Product }) {
-    const [imgSrc, setImgSrc] = useState(product.image || FALLBACK_IMAGE);
+    const [imgSrc, setImgSrc] = useState(getImageUrl(product.image));
     const [imgError, setImgError] = useState(false);
     const [selectedVariant, setSelectedVariant] = useState<'fresh' | 'velvet'>('fresh');
 
@@ -187,13 +188,7 @@ function ProductCard({ product }: { product: Product }) {
 
     // Check if image URL is valid (absolute URL or starts with /)
     const getImageSrc = (src: string) => {
-        if (!src) return FALLBACK_IMAGE;
-        // If it's an absolute URL (http/https) or starts with /, use as is
-        if (src.startsWith('http') || src.startsWith('/')) {
-            return src;
-        }
-        // Otherwise, prepend /
-        return `/${src}`;
+        return getImageUrl(src);
     };
 
     // Handle variant toggle without navigating

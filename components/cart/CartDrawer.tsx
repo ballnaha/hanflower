@@ -15,6 +15,7 @@ import { CloseCircle, Trash, Add, Minus, ShoppingBag } from 'iconsax-react';
 import { useCart } from '@/context/CartContext';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getImageUrl } from '@/lib/utils';
 
 export default function CartDrawer() {
     const {
@@ -58,7 +59,7 @@ export default function CartDrawer() {
                             <Box key={item.id} sx={{ display: 'flex', gap: 2 }}>
                                 <Box sx={{ position: 'relative', width: 80, height: 80, borderRadius: 2, overflow: 'hidden', bgcolor: '#F5F5F5', flexShrink: 0 }}>
                                     <Image
-                                        src={item.images && item.images.length > 0 && item.images[0] ? item.images[0] : '/images/placeholder-product.png'}
+                                        src={getImageUrl(item.image)}
                                         alt={item.title}
                                         fill
                                         style={{ objectFit: 'contain' }}

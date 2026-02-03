@@ -39,6 +39,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Product } from '@/lib/products';
 import ProductSidebar from './ProductSidebar';
+import { getImageUrl } from '@/lib/utils';
 
 interface ProductDetailProps {
     productId: string;
@@ -163,7 +164,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                                 }}
                             >
                                 <Image
-                                    src={img}
+                                    src={getImageUrl(img)}
                                     alt={`${product.title} - ${idx + 1}`}
                                     fill
                                     style={{ objectFit: 'contain', padding: '10%' }}
@@ -246,7 +247,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                                         bgcolor: '#F2F2F2'
                                     }}>
                                         <Image
-                                            src={img}
+                                            src={getImageUrl(img)}
                                             alt={`${product.title} - ${idx + 1}`}
                                             fill
                                             style={{ objectFit: 'contain', padding: '12%' }}

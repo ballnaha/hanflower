@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Container, Typography, Box, Skeleton, Select, MenuItem, FormControl, InputLabel, Chip, Breadcrumbs } from "@mui/material";
 import { ArrowRight2 } from 'iconsax-react';
 import { useSearchParams } from 'next/navigation';
+import { getImageUrl } from '@/lib/utils';
 
 import { Suspense } from 'react';
 
@@ -314,7 +315,7 @@ export default function ProductsPage() {
 }
 
 function ProductCard({ product }: { product: Product }) {
-    const [imgSrc, setImgSrc] = useState(product.image || FALLBACK_IMAGE);
+    const [imgSrc, setImgSrc] = useState(getImageUrl(product.image));
     const [imgError, setImgError] = useState(false);
     const [selectedVariant, setSelectedVariant] = useState<'fresh' | 'velvet'>('fresh');
 
@@ -331,11 +332,7 @@ function ProductCard({ product }: { product: Product }) {
     };
 
     const getImageSrc = (src: string) => {
-        if (!src) return FALLBACK_IMAGE;
-        if (src.startsWith('http') || src.startsWith('/')) {
-            return src;
-        }
-        return `/${src}`;
+        return getImageUrl(src);
     };
 
     const handleVariantClick = (e: React.MouseEvent, variant: 'fresh' | 'velvet') => {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Container, Typography, Box } from "@mui/material";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
+import { getImageUrl } from '@/lib/utils';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -173,7 +174,7 @@ function FeatureCard({ item }: { item: any }) {
                     }
                 }}>
                     <Image
-                        src={item.src || '/images/img2.webp'}
+                        src={getImageUrl(item.src)}
                         alt={item.title}
                         fill
                         style={{
