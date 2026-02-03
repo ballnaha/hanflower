@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
                     .toFile(filePath);
 
                 console.log('Successfully processed image with Sharp:', filename);
-                uploadedPaths.push(`/uploads/${filename}`);
+                uploadedPaths.push(`/api/images/${filename}`);
             } catch (sharpError) {
                 console.error('Sharp processing failed, falling back to original upload:', sharpError);
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
                 const originalFilename = `${crypto.randomUUID()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
                 const originalPath = join(uploadDir, originalFilename);
                 await writeFile(originalPath, buffer);
-                uploadedPaths.push(`/uploads/${originalFilename}`);
+                uploadedPaths.push(`/api/images/${originalFilename}`);
             }
         }
 
