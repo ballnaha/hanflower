@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
                 productshipping: true
             },
             orderBy: [
-                { priority: 'desc' }, // Higher priority first (desc)
+                { priority: 'asc' }, // Lower priority value first (asc)
                 { createdAt: 'desc' } // Then by newest
             ],
             ...(limit && { take: limit })

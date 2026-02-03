@@ -3,6 +3,33 @@ import { prisma } from '@/lib/prisma';
 import fs from 'fs/promises';
 import path from 'path';
 
+const deleteFile = async (imageUrl: string) => {
+    if (!imageUrl || imageUrl.startsWith('http')) return;
+
+    try {
+        let filename = '';
+        if (imageUrl.includes('/api/images/')) {
+            filename = imageUrl.split('/').pop() || '';
+        } else if (imageUrl.includes('uploads/')) {
+            filename = imageUrl.split('/').pop() || '';
+        } else if (imageUrl.startsWith('/')) {
+            // If it's just a root-relative path, try to delete it directly from public
+            const filePath = path.join(process.cwd(), 'public', imageUrl.slice(1));
+            await fs.unlink(filePath);
+            console.log(`Deleted file: ${filePath}`);
+            return;
+        }
+
+        if (filename) {
+            const filePath = path.join(process.cwd(), 'public', 'uploads', filename);
+            await fs.unlink(filePath);
+            console.log(`Deleted file from uploads: ${filePath}`);
+        }
+    } catch (error) {
+        console.error('Error deleting file:', error);
+    }
+};
+
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -21,26 +48,14 @@ export async function PATCH(
         if (priority !== undefined) data.priority = Number(priority);
         if (isActive !== undefined) data.isActive = isActive;
 
-        if (image) {
+        if (image !== undefined) {
             const oldCategory = await prisma.category.findUnique({
                 where: { id },
                 select: { image: true }
             });
 
             if (oldCategory?.image && oldCategory.image !== image) {
-                try {
-                    // Remove leading slash if present to get relative path in public
-                    const relativePath = oldCategory.image.startsWith('/')
-                        ? oldCategory.image.slice(1)
-                        : oldCategory.image;
-
-                    const filePath = path.join(process.cwd(), 'public', relativePath);
-                    await fs.unlink(filePath);
-                    console.log(`Deleted old image: ${filePath}`);
-                } catch (error) {
-                    console.error('Error deleting old image:', error);
-                    // Continue even if delete fails
-                }
+                await deleteFile(oldCategory.image);
             }
         }
 
@@ -65,6 +80,16 @@ export async function DELETE(
 ) {
     try {
         const { id } = await params;
+
+        // Get the category first to find the image path
+        const category = await prisma.category.findUnique({
+            where: { id },
+            select: { image: true }
+        });
+
+        if (category?.image) {
+            await deleteFile(category.image);
+        }
 
         await prisma.category.delete({
             where: { id },
