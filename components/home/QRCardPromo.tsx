@@ -248,15 +248,19 @@ export default function QRCardPromo() {
                                 fontWeight: 600,
                                 color: '#1A1A1A',
                                 mb: 1.5,
-                                lineHeight: 1.3
+                                lineHeight: 1.3,
+                                fontFamily: 'var(--font-prompt)',
                             }}
                         >
                             Feeling Card
                             <Box component="span" sx={{
-                                fontFamily: '"Playfair Display", serif',
+                                fontFamily: 'var(--font-prompt)',
                                 fontStyle: 'italic',
                                 color: '#B76E79',
-                                display: 'block'
+                                display: 'block',
+                                fontSize: '1rem',
+                                lineHeight: 1.8,
+
                             }}>
                                 ส่งความรู้สึกผ่าน QR Code
                             </Box>
@@ -269,7 +273,8 @@ export default function QRCardPromo() {
                                 mb: 2,
                                 fontSize: '1rem',
                                 lineHeight: 1.8,
-                                maxWidth: { md: 480 }
+                                maxWidth: { md: 480 },
+                                fontFamily: 'var(--font-prompt)',
                             }}
                         >
                             ทุกช่อดอกไม้มาพร้อม <strong style={{ color: '#B76E79' }}>Feeling Card</strong> ฟรี!
@@ -284,14 +289,16 @@ export default function QRCardPromo() {
                             bgcolor: 'rgba(183, 110, 121, 0.05)',
                             borderRadius: '12px',
                             border: '1px dashed rgba(183, 110, 121, 0.2)',
-                            maxWidth: { md: 480 }
+                            maxWidth: { md: 480 },
+                            fontFamily: 'var(--font-prompt)',
                         }}>
                             <Typography variant="caption" sx={{
                                 color: '#B76E79',
                                 fontWeight: 700,
                                 letterSpacing: '0.1em',
                                 display: 'block',
-                                mb: 1.5
+                                mb: 1.5,
+                                fontFamily: 'var(--font-prompt)',
                             }}>
                                 ใส่ได้มากกว่าแค่ข้อความ
                             </Typography>
@@ -308,7 +315,8 @@ export default function QRCardPromo() {
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 0.75
+                                    gap: 0.75,
+                                    fontFamily: 'var(--font-prompt)',
                                 }}>
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="#B76E79">
                                         <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />

@@ -7,6 +7,8 @@ import { Container, Typography, Box, Skeleton, Select, MenuItem, FormControl, In
 import { ArrowRight2 } from 'iconsax-react';
 import { useSearchParams } from 'next/navigation';
 
+import { Suspense } from 'react';
+
 // Fallback image for production
 const FALLBACK_IMAGE = "/images/placeholder-product.png";
 
@@ -40,7 +42,7 @@ interface FilterOption {
     label: string;
 }
 
-export default function ProductsPage() {
+function ProductsContent() {
     const searchParams = useSearchParams();
     const initialCategory = searchParams.get('category');
 
@@ -169,7 +171,7 @@ export default function ProductsPage() {
                         letterSpacing: '0.05em',
                         mb: 2
                     }}>
-                        สินค้า<span style={{ fontStyle: 'italic', fontFamily: '"Playfair Display", serif', color: '#B76E79' }}>ทั้งหมด</span>
+                        <span style={{ fontStyle: 'normal', fontFamily: 'var(--font-prompt)' }}>สินค้า</span><span style={{ fontStyle: 'italic', fontFamily: 'var(--font-prompt)', color: '#B76E79' }}>ทั้งหมด</span>
                     </Typography>
                     <Typography variant="body1" sx={{ color: '#666', maxWidth: '600px', mx: 'auto' }}>
                         เลือกชมคอลเลกชันดอกไม้และของขวัญสุดพิเศษจากเรา ทุกชิ้นจัดทำด้วยความใส่ใจ
@@ -296,6 +298,18 @@ export default function ProductsPage() {
                 )}
             </Container>
         </Box>
+    );
+}
+
+export default function ProductsPage() {
+    return (
+        <Suspense fallback={
+            <Box sx={{ pt: { xs: '100px', md: '120px' }, pb: { xs: 8, md: 14 }, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Skeleton variant="rectangular" width="100%" height="100vh" />
+            </Box>
+        }>
+            <ProductsContent />
+        </Suspense>
     );
 }
 

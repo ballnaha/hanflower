@@ -67,7 +67,7 @@ export default function ProductSneakPeek() {
                             RECOMMENDED
                         </Typography>
                         <Typography variant="h2" sx={{ fontSize: { xs: '1.7rem', sm: '2.2rem', md: '2.5rem' }, color: '#1A1A1A', letterSpacing: '0.05em' }}>
-                            สินค้า<span style={{ fontStyle: 'italic', fontFamily: '"Playfair Display", serif', color: '#B76E79' }}>ยอดนิยม</span>
+                            <span style={{ fontStyle: 'normal', fontFamily: 'var(--font-prompt)' }}>สินค้า</span><span style={{ fontStyle: 'italic', fontFamily: 'var(--font-prompt)', color: '#B76E79' }}>ยอดนิยม</span>
                         </Typography>
                     </Box>
                     <Box sx={{ display: { xs: 'none', md: 'block' } }}>

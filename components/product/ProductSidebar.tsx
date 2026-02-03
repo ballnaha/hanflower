@@ -126,7 +126,7 @@ export default function ProductSidebar({
                     <Typography variant="h1" sx={{
                         fontSize: { xs: '1.8rem', md: '2.4rem' },
                         fontWeight: 300,
-                        fontFamily: '"Playfair Display", serif',
+                        fontFamily: 'var(--font-prompt), serif',
                         color: '#1A1A1A',
                         lineHeight: 1.1
                     }}>
@@ -163,7 +163,7 @@ export default function ProductSidebar({
                             fontSize: '1.8rem',
                             fontWeight: 400,
                             color: '#1A1A1A',
-                            fontFamily: '"Inter", sans-serif'
+                            fontFamily: 'var(--font-prompt), sans-serif'
                         }}>
                             ฿{displayPrice}
                         </Typography>
@@ -317,7 +317,7 @@ export default function ProductSidebar({
                     color: '#444',
                     lineHeight: 1.8,
                     fontSize: '0.95rem',
-                    fontFamily: '"Inter", sans-serif',
+                    fontFamily: 'var(--font-prompt), sans-serif',
                     fontWeight: 300,
                     textAlign: 'justify',
                     borderLeft: '2px solid #F5EDED',

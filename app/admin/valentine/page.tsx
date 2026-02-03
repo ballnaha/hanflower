@@ -93,6 +93,7 @@ interface ValentineCardFormData {
     swipeHintText: string;
     isActive: boolean;
     showGame: boolean;
+    campaignName: string;
     memories: MemoryItem[];
     productIds: string[];
 }
@@ -163,6 +164,9 @@ export default function AdminValentinePage() {
     const [downloading, setDownloading] = useState(false);
     const [videoUrlInput, setVideoUrlInput] = useState("");
     const [videoTypeInput, setVideoTypeInput] = useState<"youtube" | "tiktok">("youtube");
+    const [editMemoryDialogOpen, setEditMemoryDialogOpen] = useState(false);
+    const [editingMemoryIndex, setEditingMemoryIndex] = useState<number | null>(null);
+    const [editingCaption, setEditingCaption] = useState("");
 
     // Helper to extract Video ID from URL
     const extractVideoId = (url: string, type: "youtube" | "tiktok") => {
@@ -188,9 +192,27 @@ export default function AdminValentinePage() {
         appendMemory({
             type: videoTypeInput,
             url: videoId,
-            caption: videoTypeInput === "youtube" ? "YouTube Video" : "TikTok Video"
+            caption: "" // Default to empty caption
         });
         setVideoUrlInput("");
+    };
+
+    const handleOpenEditMemory = (index: number) => {
+        const memory = watchedMemories[index];
+        setEditingMemoryIndex(index);
+        setEditingCaption(memory.caption || "");
+        setEditMemoryDialogOpen(true);
+    };
+
+    const handleSaveMemoryCaption = () => {
+        if (editingMemoryIndex !== null) {
+            updateMemory(editingMemoryIndex, {
+                ...watchedMemories[editingMemoryIndex],
+                caption: editingCaption
+            });
+            setEditMemoryDialogOpen(false);
+            setEditingMemoryIndex(null);
+        }
     };
 
     const { control, handleSubmit, reset, watch, setValue, register, formState: { errors } } = useForm<ValentineCardFormData>({
@@ -209,6 +231,7 @@ export default function AdminValentinePage() {
             swipeHintText: "Swipe up",
             isActive: true, // Default active
             showGame: true,
+            campaignName: "Valentine's",
             memories: [],
             productIds: [] // For associated products
         }
@@ -275,6 +298,7 @@ export default function AdminValentinePage() {
             swipeHintText: "Swipe up",
             isActive: true,
             showGame: true,
+            campaignName: "Valentine's",
             memories: [],
             productIds: []
         });
@@ -600,6 +624,11 @@ export default function AdminValentinePage() {
                 )} />
             </Box>
             <Box>
+                <Controller name="campaignName" control={control} render={({ field }) => (
+                    <TextField {...field} label="Campaign Name (e.g. Valentine's)" fullWidth margin="normal" />
+                )} />
+            </Box>
+            <Box>
                 <FormControlLabel control={<Switch {...register("isActive")} defaultChecked />} label="Active" />
                 <FormControlLabel control={<Switch {...register("showGame")} defaultChecked />} label="Enable Game" />
             </Box>
@@ -670,7 +699,7 @@ export default function AdminValentinePage() {
                 }}>
                     <SortableContext items={watchedMemories.map((m, i) => m.id || `memory-${i}`)} strategy={verticalListSortingStrategy}>
                         {watchedMemories.map((memory, index) => (
-                            <SortableMemoryItem key={memory.id || `memory-${index}`} memory={memory} index={index} onRemove={removeMemory} onEdit={() => { }} />
+                            <SortableMemoryItem key={memory.id || `memory-${index}`} memory={memory} index={index} onRemove={removeMemory} onEdit={handleOpenEditMemory} />
                         ))}
                     </SortableContext>
                 </DndContext>
@@ -914,6 +943,29 @@ export default function AdminValentinePage() {
                         </Box>
                     </Box>
                 </DialogContent>
+            </Dialog>
+
+            {/* Memory Caption Editor */}
+            <Dialog open={editMemoryDialogOpen} onClose={() => setEditMemoryDialogOpen(false)} fullWidth maxWidth="xs">
+                <DialogTitle sx={{ fontWeight: 'bold', color: '#D4AF37' }}>Edit Caption</DialogTitle>
+                <DialogContent>
+                    <Typography variant="caption" color="textSecondary" sx={{ mb: 2, display: 'block' }}>
+                        ใส่คำบรรยายใต้ภาพ/วิดีโอ เพื่อสื่อความหมายดีๆ
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        multiline
+                        rows={3}
+                        placeholder="พิมพ์คำหวานๆ ที่นี่..."
+                        value={editingCaption}
+                        onChange={(e) => setEditingCaption(e.target.value)}
+                        autoFocus
+                    />
+                </DialogContent>
+                <DialogActions sx={{ p: 3 }}>
+                    <Button onClick={() => setEditMemoryDialogOpen(false)}>ยกเลิก</Button>
+                    <Button onClick={handleSaveMemoryCaption} variant="contained" sx={{ bgcolor: '#D4AF37', '&:hover': { bgcolor: '#B8860B' } }}>บันทึก</Button>
+                </DialogActions>
             </Dialog>
 
             {/* Delete Confirmation */}

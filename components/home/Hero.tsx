@@ -69,10 +69,10 @@ export default function Hero() {
                         lineHeight: 1.1,
                         mb: { xs: 2, md: 4 },
                         textShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                        fontFamily: '"Playfair Display", serif'
+                        fontFamily: 'var(--font-playfair), serif'
                     }}>
-                        บอกรัก <br />
-                        <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#D4AF37' }}>ยังไงให้โลกจำ</span>
+                        <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#FFFFFF', fontFamily: 'var(--font-prompt)' }}>บอกรัก</span> <br />
+                        <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#D4AF37', fontFamily: 'var(--font-prompt)' }}>ยังไงให้โลกจำ</span>
                     </Typography>
 
                     <Typography variant="h6" sx={{

@@ -29,7 +29,7 @@ const theme = createTheme({
     typography: {
         fontFamily: 'var(--font-prompt), sans-serif',
         h1: {
-            fontFamily: '"Playfair Display", serif',
+            fontFamily: 'var(--font-playfair), serif',
             fontWeight: 500,
             letterSpacing: '0.05em',
             color: '#5D4037',
@@ -37,14 +37,14 @@ const theme = createTheme({
             lineHeight: 1.1,
         },
         h2: {
-            fontFamily: '"Playfair Display", serif',
+            fontFamily: 'var(--font-playfair), serif',
             fontWeight: 400,
             letterSpacing: '0.05em',
             color: '#5D4037',
             textTransform: 'uppercase',
         },
         h3: {
-            fontFamily: '"Playfair Display", serif',
+            fontFamily: 'var(--font-playfair), serif',
             fontWeight: 400,
         },
         h4: {

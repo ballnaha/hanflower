@@ -29,6 +29,7 @@ const DEFAULT_CONTENT = {
     swipeHintColor: "white" as "white" | "red",
     swipeHintText: "Swipe to see more",
     isGameEnabled: true,
+    campaignName: "Valentine's",
 };
 
 interface ValentineContent {
@@ -44,6 +45,7 @@ interface ValentineContent {
     swipeHintColor: "white" | "red";
     swipeHintText: string;
     isGameEnabled: boolean;
+    campaignName: string;
 }
 
 export default function ValentineSlugPage() {
@@ -70,6 +72,20 @@ export default function ValentineSlugPage() {
     const [showHeartGame, setShowHeartGame] = useState(false);
     const [heartGameScore, setHeartGameScore] = useState(0);
     const [heartBurstSource, setHeartBurstSource] = useState<'interaction' | 'completion'>('interaction');
+    const [introHearts, setIntroHearts] = useState<{ id: number; left: string; size: number; duration: number; delay: number }[]>([]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            const hearts = Array.from({ length: 15 }).map((_, i) => ({
+                id: i,
+                left: `${Math.random() * 100}%`,
+                size: 15 + Math.random() * 25,
+                duration: 4 + Math.random() * 6,
+                delay: Math.random() * 5
+            }));
+            setIntroHearts(hearts);
+        }
+    }, [isOpen]);
 
     // Swiper Config
     const swiperCreativeConfig = useMemo(() => ({
@@ -172,6 +188,7 @@ export default function ValentineSlugPage() {
                         swipeHintColor: data.swipeHintColor || DEFAULT_CONTENT.swipeHintColor,
                         swipeHintText: data.swipeHintText || DEFAULT_CONTENT.swipeHintText,
                         isGameEnabled: data.showGame !== undefined ? data.showGame : true,
+                        campaignName: data.campaignName || "Valentine's",
                     });
 
                     if (data.showGame === false) {
@@ -552,6 +569,34 @@ export default function ValentineSlugPage() {
                 @keyframes heartPulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; } }
                 @keyframes swipeHint { 0% { transform: translateX(60px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateX(-60px); opacity: 0; } }
                 @keyframes ring-spread { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(2.5); opacity: 0; } }
+                @keyframes float-heart-up {
+                    0% { transform: translateY(120vh) rotate(0deg); opacity: 0; }
+                    10% { opacity: 0.6; }
+                    90% { opacity: 0.4; }
+                    100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+                }
+
+                .valentine-swiper .swiper-pagination {
+                    bottom: 12px !important;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 6px;
+                }
+                .valentine-swiper .swiper-pagination-bullet {
+                    width: 7px;
+                    height: 7px;
+                    background: #FF3366 !important;
+                    opacity: 0.25;
+                    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                    margin: 0 !important;
+                }
+                .valentine-swiper .swiper-pagination-bullet-active {
+                    width: 22px;
+                    border-radius: 10px;
+                    opacity: 1;
+                    box-shadow: 0 4px 10px rgba(255, 51, 102, 0.3);
+                }
             `}</style>
 
             {/* Transition Mask */}
@@ -620,6 +665,27 @@ export default function ValentineSlugPage() {
                 <div className="w-full h-full flex flex-col justify-between items-center z-10 relative overflow-hidden py-12" onClick={handleOpen}>
                     <div className="sunburst-bg" />
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent pointer-events-none" />
+
+                    {/* Floating Hearts Layer */}
+                    <div className="absolute inset-0 pointer-events-none z-0">
+                        {introHearts.map((h) => (
+                            <Heart
+                                key={h.id}
+                                variant="Bold"
+                                color="#FF3366"
+                                style={{
+                                    position: 'absolute',
+                                    left: h.left,
+                                    width: h.size,
+                                    height: h.size,
+                                    opacity: 0,
+                                    animation: `float-heart-up ${h.duration}s linear infinite`,
+                                    animationDelay: `${h.delay}s`,
+                                    filter: 'blur(1px)'
+                                }}
+                            />
+                        ))}
+                    </div>
 
                     {/* Top Section: Lid */}
                     <div className="flex flex-col items-center animate-[float-lid_3s_ease-in-out_infinite] z-20">
@@ -697,15 +763,12 @@ export default function ValentineSlugPage() {
 
                     {/* Luxury Footer Card */}
                     <div className="w-[85%] max-w-sm h-32 bg-white/40 backdrop-blur-xl rounded-[40px] flex flex-col items-center justify-center p-4 shadow-[0_20px_40px_rgba(0,0,0,0.1)] border border-white/60 relative mb-4">
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[#BF953F] to-[#AA771C] rounded-full shadow-lg">
-                            <Typography sx={{ color: 'white', letterSpacing: '0.2em', fontWeight: 800, fontSize: '0.6rem' }}>EXCLUSIVE</Typography>
-                        </div>
                         <div className="w-10 h-1 bg-gray-300/50 rounded-full mb-3 mt-2" />
                         <div className="flex flex-col items-center">
                             <Typography sx={{ color: '#8B1A1A', letterSpacing: '0.4em', fontWeight: 800, fontSize: '0.8rem', opacity: 0.8 }}>PREMIUM</Typography>
                             <div className="flex items-center gap-3 my-1">
                                 <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#BF953F]" />
-                                <Typography sx={{ fontFamily: 'var(--font-dancing)', fontSize: '1.4rem', color: '#4A151B', fontWeight: 600 }}>Valentine's</Typography>
+                                <Typography sx={{ fontFamily: 'var(--font-dancing)', fontSize: '1.4rem', color: '#4A151B', fontWeight: 600 }}>{displayContent.campaignName}</Typography>
                                 <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#BF953F]" />
                             </div>
                             <Typography sx={{ color: '#8B1A1A', letterSpacing: '0.4em', fontWeight: 800, fontSize: '0.8rem', opacity: 0.8 }}>EXPERIENCE</Typography>
@@ -732,22 +795,14 @@ export default function ValentineSlugPage() {
                         <div className="h-16" /> {/* Spacer */}
 
                         <div className="flex-1 w-full flex items-center justify-center max-h-[750px] relative">
-                            {/* Swipe Hint */}
-                            {currentSlideIndex === 0 && !hasSwiped && (
-                                <div className="absolute top-4 z-[60] flex flex-col items-center pointer-events-none animate-[swipeHint_3.5s_infinite]">
-                                    <div className="relative mb-2"><Heart size={32} variant="Bold" color="white" className="drop-shadow-md" /></div>
-                                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.2em', color: 'white', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                                        {displayContent.swipeHintText}
-                                    </Typography>
-                                </div>
-                            )}
+
 
                             <Swiper
                                 effect={"creative"}
                                 grabCursor={true}
                                 modules={[EffectCreative, Pagination, Autoplay]}
                                 className="valentine-swiper w-[300px] h-[55dvh] sm:w-[360px] sm:h-[65dvh]"
-                                pagination={{ clickable: true, dynamicBullets: true }}
+                                pagination={{ clickable: true }}
                                 onSwiper={(swiper) => { swiperRef.current = swiper; }}
                                 onSlideChange={handleSlideChange}
                                 creativeEffect={swiperCreativeConfig}
@@ -757,28 +812,35 @@ export default function ValentineSlugPage() {
                                         <div className="w-full h-full relative overflow-hidden rounded-2xl">
                                             <div className="card-shine animate-shine opacity-40" />
                                             {memory.type === 'video' || memory.type === 'youtube' || memory.type === 'tiktok' ? (
-                                                <div className="w-full h-full bg-black relative flex items-center justify-center">
+                                                <div className="w-full h-full bg-[#1A0A0C] relative flex items-center justify-center">
                                                     {memory.type === 'youtube' ? (
-                                                        <img src={`https://img.youtube.com/vi/${memory.url}/hqdefault.jpg`} className="w-full h-full object-cover opacity-80" alt="Video thumbnail" />
+                                                        <img src={`https://img.youtube.com/vi/${memory.url}/maxresdefault.jpg`} className="w-full h-full object-cover opacity-90" alt="Video thumbnail" />
                                                     ) : (
-                                                        <div className="w-full h-full bg-gradient-to-br from-pink-500 to-red-600 opacity-80" />
+                                                        <div className="w-full h-full bg-gradient-to-br from-[#4A151B] via-[#D41442] to-[#8B1D36] opacity-90" />
                                                     )}
-                                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                        <div className="bg-white/20 p-4 rounded-full backdrop-blur-sm border border-white/40 mb-2">
-                                                            <Play size={32} variant="Bold" color="white" />
-                                                        </div>
-                                                        <Typography className="text-white font-bold tracking-widest uppercase text-xs">Play Video</Typography>
-                                                    </div>
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
                                                 </div>
                                             ) : (
-                                                <img src={memory.url} alt={memory.caption} className="w-full h-full object-cover" />
+                                                <div className="w-full h-full relative">
+                                                    <img src={memory.url} alt={memory.caption} className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                                                </div>
                                             )}
 
                                             {memory.caption && (
-                                                <div className="absolute bottom-10 left-0 right-0 px-4 text-center">
-                                                    <div className="bg-black/40 backdrop-blur-sm p-4 rounded-xl border border-white/20">
-                                                        <Typography className="text-white font-bold drop-shadow-md" sx={{ fontFamily: 'var(--font-mali)', fontSize: '1.2rem' }}>{memory.caption}</Typography>
-                                                    </div>
+                                                <div className="absolute bottom-6 left-0 right-0 px-6 text-center z-20">
+                                                    <Typography
+                                                        sx={{
+                                                            color: 'white',
+                                                            fontWeight: 600,
+                                                            fontFamily: 'var(--font-mali)',
+                                                            fontSize: '1.1rem',
+                                                            textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                                                            lineHeight: 1.3
+                                                        }}
+                                                    >
+                                                        {memory.caption}
+                                                    </Typography>
                                                 </div>
                                             )}
                                         </div>
@@ -818,8 +880,14 @@ export default function ValentineSlugPage() {
 
                             {/* Action Button for Video */}
                             {(memories[currentSlideIndex]?.type === 'video' || memories[currentSlideIndex]?.type === 'youtube' || memories[currentSlideIndex]?.type === 'tiktok') && (
-                                <div className="absolute bottom-16 z-50">
-                                    <button onClick={() => handleOpenVideoModal(memories[currentSlideIndex])} className="bg-white text-[#FF3366] px-6 py-2 rounded-full font-bold shadow-lg flex items-center gap-2 hover:scale-105 transition-transform"><Play size={20} variant="Bold" /> Play Video</button>
+                                <div className="absolute bottom-12 z-50">
+                                    <button
+                                        onClick={() => handleOpenVideoModal(memories[currentSlideIndex])}
+                                        className="bg-[#FF3366] text-white px-8 py-3 rounded-full font-bold shadow-[0_8px_20px_rgba(255,51,102,0.4)] flex items-center gap-3 hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-wider"
+                                    >
+                                        <Play size={20} variant="Bold" />
+                                        Watch Video
+                                    </button>
                                 </div>
                             )}
 
@@ -837,11 +905,42 @@ export default function ValentineSlugPage() {
                         {/* Footer Message */}
                         <div className="w-full max-w-sm px-6 pb-8 text-center" style={{ zIndex: 50 }}>
                             <Typography className="text-[#8B1D36] font-bold tracking-widest uppercase mb-2 text-[10px] opacity-70" sx={{ fontFamily: 'var(--font-prompt)' }}>{displayContent.subtitle}</Typography>
-                            <Paper elevation={0} sx={{ bgcolor: 'rgba(255,255,255,0.7)', p: 3, borderRadius: '24px', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.5)' }}>
-                                <Typography className="text-gray-800 italic" sx={{ fontFamily: 'var(--font-prompt)', fontSize: '1rem', lineHeight: 1.6 }}>
-                                    {showMessage ? `"${displayContent.message}"` : ''}
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    bgcolor: 'rgba(255,255,255,0.7)',
+                                    p: 3,
+                                    borderRadius: '24px',
+                                    backdropFilter: 'blur(12px)',
+                                    border: '1px solid rgba(255,255,255,0.5)',
+                                    minHeight: '160px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.5s ease-in-out'
+                                }}
+                            >
+                                <Typography
+                                    className="text-gray-800 italic"
+                                    sx={{
+                                        fontFamily: 'var(--font-prompt)',
+                                        fontSize: '1rem',
+                                        lineHeight: 1.6,
+                                        opacity: showMessage ? 1 : 0,
+                                        transform: showMessage ? 'translateY(0)' : 'translateY(10px)',
+                                        transition: 'all 0.8s ease-out'
+                                    }}
+                                >
+                                    {displayContent.message ? `"${displayContent.message}"` : ''}
                                 </Typography>
-                                <Typography className="text-[#FF3366] font-bold mt-4 text-xl block" sx={{ fontFamily: 'var(--font-dancing), cursive' }}>
+                                <Typography
+                                    className="text-[#FF3366] font-bold mt-4 text-xl block"
+                                    sx={{
+                                        fontFamily: 'var(--font-dancing), cursive',
+                                        opacity: showMessage ? 1 : 0,
+                                        transition: 'opacity 0.8s ease-out 0.3s'
+                                    }}
+                                >
                                     - {displayContent.signer} -
                                 </Typography>
                             </Paper>

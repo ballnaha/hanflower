@@ -21,10 +21,13 @@ async function main() {
     console.log('✅ Seeded shipping methods!');
 
     // Clear existing data
+    await prisma.orderitem.deleteMany();
+    await prisma.order.deleteMany();
     await prisma.productfeature.deleteMany();
     await prisma.productdetail.deleteMany();
     await prisma.productimage.deleteMany();
     await prisma.product.deleteMany();
+    await prisma.category.deleteMany();
 
     const productsData = [
         {
@@ -210,13 +213,14 @@ async function main() {
         await prisma.product.create({
             data: {
                 ...product,
-                images: {
+                id: product.sku, // Use SKU as ID since it's unique
+                productimage: {
                     create: images.map(url => ({ url }))
                 },
-                details: {
+                productdetail: {
                     create: details.map(text => ({ text }))
                 },
-                features: {
+                productfeature: {
                     create: features.map(text => ({ text }))
                 }
             }
@@ -225,9 +229,10 @@ async function main() {
 
     console.log('✅ Seeded 7 products with Thai slugs successfully!');
 
-    // Seed Collections
+    // Seed Collections (category in schema)
     const collectionsData = [
         {
+            id: 'bouquet',
             slug: 'bouquet',
             title: 'ช่อดอกไม้',
             subtitle: 'SIGNATURE',
@@ -236,6 +241,7 @@ async function main() {
             priority: 100
         },
         {
+            id: 'succulent',
             slug: 'succulent',
             title: 'ไม้มงคล & ไม้อวบน้ำ',
             subtitle: 'LUCKY & SUCCULENTS',
@@ -244,6 +250,7 @@ async function main() {
             priority: 90
         },
         {
+            id: 'fruit-basket',
             slug: 'fruit-basket',
             title: 'กระเช้าผลไม้',
             subtitle: 'PREMIUM FRUITS',
@@ -252,6 +259,7 @@ async function main() {
             priority: 80
         },
         {
+            id: 'souvenir',
             slug: 'souvenir',
             title: 'ของชำร่วย',
             subtitle: 'SOUVENIRS',
@@ -262,8 +270,10 @@ async function main() {
     ];
 
     for (const collection of collectionsData) {
-        await prisma.collection.create({
-            data: collection
+        await prisma.category.upsert({
+            where: { id: collection.id },
+            update: collection,
+            create: collection
         });
     }
 

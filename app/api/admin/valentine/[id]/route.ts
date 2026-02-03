@@ -44,7 +44,7 @@ export async function PUT(
         const body = await req.json();
         const {
             slug, jobName, title, openingText, greeting, subtitle, message,
-            signer, backgroundColor, backgroundMusicYoutubeId, backgroundMusicUrl, swipeHintColor, swipeHintText, showGame, customerPhone, customerAddress, note, status, disabledAt, memories, orderedProducts
+            signer, backgroundColor, backgroundMusicYoutubeId, backgroundMusicUrl, swipeHintColor, swipeHintText, showGame, campaignName, customerPhone, customerAddress, note, status, disabledAt, memories, orderedProducts
         } = body;
 
         // Update main card data
@@ -65,6 +65,7 @@ export async function PUT(
                 swipeHintColor,
                 swipeHintText,
                 showGame: showGame ?? true,
+                campaignName,
                 customerPhone,
                 customerAddress,
                 note,

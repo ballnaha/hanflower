@@ -69,7 +69,8 @@ export default function Features({ categories = [] }: FeaturesProps) {
                             mb: 2,
                             fontSize: { xs: '1.7rem', sm: '2.2rem', md: '3rem' },
                             color: '#1A1A1A',
-                            letterSpacing: '0.05em'
+                            letterSpacing: '0.05em',
+                            fontFamily: 'var(--font-prompt)',
                         }}
                     >
                         หมวดหมู่สินค้า

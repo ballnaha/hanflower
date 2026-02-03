@@ -51,7 +51,7 @@ export default function AboutContent() {
                             <Typography
                                 variant="h1"
                                 sx={{
-                                    fontFamily: '"Playfair Display", serif',
+                                    fontFamily: 'var(--font-playfair), serif',
                                     fontSize: { xs: '3.5rem', md: '6rem' },
                                     fontWeight: 500,
                                     color: '#2C1A1D',
@@ -67,7 +67,7 @@ export default function AboutContent() {
                                 <Typography
                                     variant="h5"
                                     sx={{
-                                        fontFamily: '"Playfair Display", serif',
+                                        fontFamily: 'var(--font-prompt)',
                                         fontStyle: 'italic',
                                         color: '#B76E79',
                                         fontWeight: 400
@@ -129,7 +129,7 @@ export default function AboutContent() {
                         <Typography variant="overline" color="#B76E79" fontWeight={700} letterSpacing="0.2em" sx={{ display: 'block', mb: 2 }}>
                             OUR ORIGINS
                         </Typography>
-                        <Typography variant="h2" sx={{ fontFamily: '"Playfair Display", serif', mb: 3, fontSize: { xs: '2rem', md: '3rem' }, color: '#2C1A1D' }}>
+                        <Typography variant="h2" sx={{ fontFamily: 'var(--font-playfair), serif', mb: 3, fontSize: { xs: '2rem', md: '3rem' }, color: '#2C1A1D' }}>
                             จุดเริ่มต้นจากความรัก
                         </Typography>
                         <Typography variant="body1" sx={{ color: '#666', lineHeight: 1.8, mb: 3, fontSize: '1.1rem' }}>
@@ -157,7 +157,7 @@ export default function AboutContent() {
                     boxShadow: '0 10px 40px rgba(183, 110, 121, 0.05)'
                 }}>
                     <Heart size="48" color="#B76E79" variant="Bold" style={{ margin: '0 auto', marginBottom: '24px' }} />
-                    <Typography variant="h3" sx={{ fontFamily: '"Playfair Display", serif', mb: 3, color: '#2C1A1D' }}>
+                    <Typography variant="h3" sx={{ fontFamily: 'var(--font-playfair), serif', mb: 3, color: '#2C1A1D' }}>
                         ส่งมอบความสุข
                     </Typography>
                     <Typography variant="h6" sx={{ color: '#555', lineHeight: 1.6, fontWeight: 400, fontStyle: 'italic' }}>
@@ -203,7 +203,7 @@ export default function AboutContent() {
                                     }}>
                                         <feature.icon size="32" variant="Bold" color="#FFFFFF" />
                                     </Box>
-                                    <Typography variant="h5" fontFamily='"Playfair Display", serif' color="#2C1A1D">{feature.title}</Typography>
+                                    <Typography variant="h5" fontFamily='var(--font-playfair), serif' color="#2C1A1D">{feature.title}</Typography>
                                     <Typography variant="body1" color="#666" lineHeight={1.6}>
                                         {feature.desc}
                                     </Typography>
@@ -251,7 +251,7 @@ export default function AboutContent() {
                             <Typography variant="overline" sx={{ color: '#B76E79', fontWeight: 700, letterSpacing: '0.2em' }}>
                                 THE INNOVATION
                             </Typography>
-                            <Typography variant="h3" sx={{ fontFamily: '"Playfair Display", serif', mb: 3, mt: 1, color: '#3E2723' }}>
+                            <Typography variant="h3" sx={{ fontFamily: 'var(--font-playfair), serif', mb: 3, mt: 1, color: '#3E2723' }}>
                                 Feeling Card <span style={{ color: '#B76E79', fontStyle: 'italic' }}>QR Code</span>
                             </Typography>
                             <Typography variant="body1" sx={{ color: '#5D4037', lineHeight: 1.8, mb: 3, fontSize: '1.1rem', fontWeight: 500 }}>

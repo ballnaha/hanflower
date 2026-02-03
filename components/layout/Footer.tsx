@@ -28,7 +28,7 @@ export default function Footer() {
                     <Typography
                         variant="h5"
                         sx={{
-                            fontFamily: '"Playfair Display", serif',
+                            fontFamily: 'var(--font-prompt), serif',
                             fontWeight: 700,
                             letterSpacing: '0.3em',
                             mb: 5,

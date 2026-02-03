@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Prompt, Mali, Dancing_Script } from "next/font/google";
+import { Prompt, Mali, Dancing_Script, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import { ThemeProvider } from '@mui/material/styles';
@@ -20,6 +20,12 @@ const mali = Mali({
 
 const dancingScript = Dancing_Script({
   variable: "--font-dancing",
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+});
+
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
   weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
@@ -53,9 +59,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th">
+    <html lang="th" translate="no">
       <body
-        className={`${prompt.variable} ${mali.variable} ${dancingScript.variable} font-sans antialiased bg-[#FFFFFF] text-[#000000]`}
+        className={`${prompt.variable} ${mali.variable} ${dancingScript.variable} ${playfair.variable} font-sans antialiased bg-[#FFFFFF] text-[#000000]`}
       >
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>

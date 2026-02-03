@@ -184,6 +184,7 @@ model ValentineCard {
   swipeHintColor           String?  @default("white") // white, red
   swipeHintText            String?  @default("Swipe to see more")
   showGame                 Boolean  @default(true)
+  campaignName             String?  @default("Valentine's") // For the footer card
 
   // Customer Contact Info (Optional)
   customerPhone            String?

@@ -36,7 +36,7 @@ export default function CartDrawer() {
             }}
         >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h5" sx={{ fontWeight: 600, fontFamily: '"Playfair Display", serif' }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, fontFamily: 'var(--font-playfair), serif' }}>
                     ตะกร้าสินค้า ({cartItems.length})
                 </Typography>
                 <IconButton onClick={() => toggleCart(false)}>
