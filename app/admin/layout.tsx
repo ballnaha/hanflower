@@ -1,6 +1,3 @@
-'use client';
-
-import { SnackbarProvider } from '@/components/admin/AdminSnackbar';
 import { AdminUIProvider } from '@/context/AdminUIContext';
 
 export default function AdminRootLayout({
@@ -10,9 +7,7 @@ export default function AdminRootLayout({
 }) {
     return (
         <AdminUIProvider>
-            <SnackbarProvider>
-                {children}
-            </SnackbarProvider>
+            {children}
         </AdminUIProvider>
     );
 }

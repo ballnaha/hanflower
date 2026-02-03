@@ -35,6 +35,8 @@ import {
 } from 'iconsax-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import Link from 'next/link';
+import { useNotification } from '@/context/NotificationContext';
+import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 
 interface Product {
     id: string;
@@ -58,6 +60,8 @@ export default function AdminProductsPage() {
     const [deleting, setDeleting] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState('all');
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const { showSuccess, showError, showWarning } = useNotification();
 
     const fetchCategories = async () => {
         try {
@@ -86,13 +90,13 @@ export default function AdminProductsPage() {
         }
     };
 
-    const handleDeleteProduct = async () => {
-        if (!selectedProduct) return;
+    const handleDeleteClick = () => {
+        handleMenuClose();
+        setOpenDeleteDialog(true);
+    };
 
-        if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบสินค้านี้?')) {
-            handleMenuClose();
-            return;
-        }
+    const handleConfirmDelete = async () => {
+        if (!selectedProduct) return;
 
         setDeleting(true);
         try {
@@ -102,13 +106,14 @@ export default function AdminProductsPage() {
 
             if (res.ok) {
                 setProducts(prev => prev.filter(p => p.id !== selectedProduct));
-                handleMenuClose();
+                showSuccess('ลบสินค้าเรียบร้อยแล้ว');
+                setOpenDeleteDialog(false);
             } else {
-                alert('เกิดข้อผิดพลาดในการลบสินค้า');
+                showError('เกิดข้อผิดพลาดในการลบสินค้า');
             }
         } catch (error) {
             console.error('Error deleting product:', error);
-            alert('ไม่สามารถลบสินค้าได้');
+            showError('ไม่สามารถลบสินค้าได้');
         } finally {
             setDeleting(false);
         }
@@ -338,13 +343,22 @@ export default function AdminProductsPage() {
                     <Edit2 size={18} color="#B76E79" variant="Bulk" /> แก้ไขข้อมูล
                 </MenuItem>
                 <MenuItem
-                    onClick={handleDeleteProduct}
+                    onClick={handleDeleteClick}
                     disabled={deleting}
                     sx={{ gap: 1.5, py: 1.2, color: '#FF4D4F', fontSize: '0.85rem' }}
                 >
-                    {deleting ? <CircularProgress size={18} color="inherit" /> : <Trash size={18} color="#FF4D4F" variant="Bulk" />} ลบสินค้า
+                    <Trash size={18} color="#FF4D4F" variant="Bulk" /> ลบสินค้า
                 </MenuItem>
             </Menu>
+
+            <AdminConfirmDialog
+                open={openDeleteDialog}
+                onClose={() => setOpenDeleteDialog(false)}
+                onConfirm={handleConfirmDelete}
+                title="ยืนยันการลบสินค้า"
+                message="คุณแน่ใจหรือไม่ว่าต้องการลบสินค้านี้? การกระทำนี้ไม่สามารถย้อนกลับได้"
+                isLoading={deleting}
+            />
         </AdminLayout>
     );
 }

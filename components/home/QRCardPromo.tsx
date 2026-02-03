@@ -5,6 +5,13 @@ import { Heart, Gift } from 'iconsax-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
+// Swiper
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, EffectFade, Pagination } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/effect-fade';
+import 'swiper/css/pagination';
+
 export default function QRCardPromo() {
     return (
         <Box
@@ -45,120 +52,177 @@ export default function QRCardPromo() {
                     }}>
                         <Box sx={{
                             position: 'relative',
-                            width: { xs: 240, md: 300 },
-                            height: { xs: 155, md: 195 },
-                            perspective: '1000px'
+                            width: { xs: '100%', md: '110%' },
+                            maxWidth: 500,
+                            aspectRatio: '1.58/1', // Credit card / horizontal card ratio
+                            perspective: '1000px',
+                            zIndex: 2
                         }}>
-                            {/* Card Design */}
+                            {/* Actual Card Image */}
                             <Box sx={{
                                 position: 'relative',
                                 width: '100%',
                                 height: '100%',
-                                background: 'linear-gradient(135deg, #B76E79 0%, #D4A5AA 50%, #C9888F 100%)',
-                                borderRadius: '16px',
-                                boxShadow: '0 25px 50px -12px rgba(183, 110, 121, 0.35)',
-                                p: 3,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'space-between',
-                                transform: 'rotateY(-5deg) rotateX(5deg)',
-                                transition: 'all 0.5s ease',
+                                borderRadius: '12px',
+                                overflow: 'hidden',
+                                boxShadow: '0 30px 60px -12px rgba(0,0,0,0.15)',
+                                transform: 'rotateY(-15deg) rotateX(10deg) rotateZ(-2deg)',
+                                transition: 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
                                 '&:hover': {
-                                    transform: 'rotateY(0deg) rotateX(0deg)',
-                                    boxShadow: '0 30px 60px -15px rgba(183, 110, 121, 0.45)'
+                                    transform: 'rotateY(-5deg) rotateX(5deg) rotateZ(0deg) scale(1.02)',
+                                    boxShadow: '0 40px 80px -20px rgba(0,0,0,0.25)'
+                                },
+                                '& .swiper-pagination-bullet': {
+                                    backgroundColor: '#fff',
+                                    opacity: 0.8
+                                },
+                                '& .swiper-pagination-bullet-active': {
+                                    backgroundColor: '#B76E79',
+                                    opacity: 1
                                 }
                             }}>
-                                {/* Top Section */}
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <Box>
-                                        <Typography sx={{
-                                            fontFamily: '"Playfair Display", serif',
-                                            fontSize: { xs: '1.2rem', md: '1.5rem' },
-                                            fontWeight: 600,
-                                            color: '#FFF',
-                                            textShadow: '0 2px 10px rgba(0,0,0,0.1)'
-                                        }}>
-                                            HAN FLOWER
-                                        </Typography>
-                                        <Typography sx={{
-                                            fontSize: { xs: '0.6rem', md: '0.7rem' },
-                                            letterSpacing: '0.2em',
-                                            color: 'rgba(255,255,255,0.8)',
-                                            mt: 0.5
-                                        }}>
-                                            FEELING CARD
-                                        </Typography>
-                                    </Box>
-                                    <Heart size={24} variant="Bold" color="#FFF" />
-                                </Box>
+                                <Swiper
+                                    modules={[Autoplay, EffectFade, Pagination]}
+                                    effect="fade"
+                                    spaceBetween={0}
+                                    slidesPerView={1}
+                                    loop={true}
+                                    autoplay={{
+                                        delay: 3000,
+                                        disableOnInteraction: false,
+                                    }}
+                                    pagination={{
+                                        clickable: true,
+                                        dynamicBullets: true,
+                                    }}
+                                    style={{ width: '100%', height: '100%' }}
+                                >
+                                    {/* Slide 1: QR Code */}
+                                    <SwiperSlide>
+                                        <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+                                            <Image
+                                                src="/images/qr_code_mockup.webp"
+                                                alt="Scan QR Code"
+                                                fill
+                                                style={{ objectFit: 'cover' }}
+                                                priority
+                                            />
+                                        </Box>
+                                    </SwiperSlide>
 
-                                {/* Bottom Section */}
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                                    <Box>
-                                        <Typography sx={{
-                                            fontSize: { xs: '0.65rem', md: '0.75rem' },
-                                            color: 'rgba(255,255,255,0.7)',
-                                            mb: 0.5
-                                        }}>
-                                            แสกนเพื่ออ่านข้อความ
-                                        </Typography>
-                                        <Typography sx={{
-                                            fontSize: { xs: '0.9rem', md: '1rem' },
-                                            fontWeight: 600,
-                                            color: '#FFF',
-                                            letterSpacing: '0.05em'
-                                        }}>
-                                            ส่งความรู้สึกผ่านดอกไม้
-                                        </Typography>
-                                    </Box>
-
-                                    {/* QR Code Placeholder */}
-                                    <Box sx={{
-                                        width: { xs: 50, md: 65 },
-                                        height: { xs: 50, md: 65 },
-                                        bgcolor: '#FFF',
-                                        borderRadius: '8px',
-                                        p: 1,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}>
+                                    {/* Slide 2: Mobile UI Preview (3 Images) */}
+                                    <SwiperSlide>
                                         <Box sx={{
                                             width: '100%',
                                             height: '100%',
-                                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23B76E79' x='10' y='10' width='20' height='20'/%3E%3Crect fill='%23B76E79' x='40' y='10' width='10' height='10'/%3E%3Crect fill='%23B76E79' x='60' y='10' width='10' height='10'/%3E%3Crect fill='%23B76E79' x='70' y='10' width='20' height='20'/%3E%3Crect fill='%23B76E79' x='10' y='40' width='10' height='10'/%3E%3Crect fill='%23B76E79' x='30' y='40' width='10' height='10'/%3E%3Crect fill='%23B76E79' x='50' y='40' width='10' height='10'/%3E%3Crect fill='%23B76E79' x='80' y='40' width='10' height='10'/%3E%3Crect fill='%23B76E79' x='10' y='60' width='10' height='10'/%3E%3Crect fill='%23B76E79' x='40' y='60' width='10' height='10'/%3E%3Crect fill='%23B76E79' x='60' y='60' width='20' height='10'/%3E%3Crect fill='%23B76E79' x='10' y='70' width='20' height='20'/%3E%3Crect fill='%23B76E79' x='40' y='70' width='10' height='10'/%3E%3Crect fill='%23B76E79' x='70' y='70' width='20' height='20'/%3E%3C/svg%3E")`,
-                                            backgroundSize: 'contain',
-                                            backgroundRepeat: 'no-repeat',
-                                            backgroundPosition: 'center'
-                                        }} />
-                                    </Box>
-                                </Box>
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            bgcolor: '#FFF0F3', // Light pink background
+                                            p: 2,
+                                            gap: 1.5,
+                                            position: 'relative'
+                                        }}>
+                                            {/* decorative background circle */}
+                                            <Box sx={{
+                                                position: 'absolute',
+                                                top: '50%',
+                                                left: '50%',
+                                                transform: 'translate(-50%, -50%)',
+                                                width: '80%',
+                                                height: '80%',
+                                                background: 'radial-gradient(circle, rgba(183,110,121,0.1) 0%, rgba(255,255,255,0) 70%)',
+                                                zIndex: 0
+                                            }} />
 
-                                {/* Decorative Circles */}
-                                <Box sx={{
-                                    position: 'absolute',
-                                    top: -20,
-                                    right: -20,
-                                    width: 100,
-                                    height: 100,
-                                    borderRadius: '50%',
-                                    bgcolor: 'rgba(255,255,255,0.1)',
-                                    filter: 'blur(20px)'
-                                }} />
+                                            {[
+                                                '/images/love1.png',
+                                                '/images/love2.png',
+                                                '/images/love3.png'
+                                            ].map((img, index) => (
+                                                <Box
+                                                    key={index}
+                                                    sx={{
+                                                        position: 'relative',
+                                                        height: '100%', // Fit to container height
+                                                        flex: 1,
+                                                        borderRadius: '8px',
+                                                        overflow: 'hidden',
+                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                        zIndex: 1,
+                                                        border: '1px solid rgba(183,110,121,0.2)',
+                                                        bgcolor: '#fff'
+                                                    }}
+                                                >
+                                                    <Image
+                                                        src={img}
+                                                        alt={`Mobile Screen ${index + 1}`}
+                                                        fill
+                                                        style={{ objectFit: 'cover' }}
+                                                    />
+                                                </Box>
+                                            ))}
+
+                                            {/* Overlay Text */}
+                                            <Box sx={{
+                                                position: 'absolute',
+                                                bottom: 0,
+                                                left: 0,
+                                                right: 0,
+                                                py: 1,
+                                                background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
+                                                color: 'white',
+                                                textAlign: 'center',
+                                                zIndex: 2
+                                            }}>
+                                                <Typography variant="body2" fontWeight={500} fontSize="0.75rem">
+                                                    Online Card!
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </SwiperSlide>
+                                </Swiper>
                             </Box>
 
-                            {/* Shadow Card Behind */}
+                            {/* Decorative Shadow Card Behind */}
                             <Box sx={{
                                 position: 'absolute',
-                                top: 15,
-                                left: 15,
+                                top: 20,
+                                left: -20,
                                 width: '100%',
                                 height: '100%',
-                                background: 'linear-gradient(135deg, #9D5D66 0%, #B8888E 100%)',
-                                borderRadius: '16px',
+                                bgcolor: '#B76E79',
+                                borderRadius: '12px',
                                 zIndex: -1,
-                                opacity: 0.5
+                                opacity: 0.1,
+                                transform: 'rotateY(-20deg) rotateX(15deg) translateZ(-50px)',
                             }} />
+
+                            {/* Floating Element: Heart Icon or Tag */}
+                            <Box sx={{
+                                position: 'absolute',
+                                top: -20,
+                                right: -20,
+                                width: 60,
+                                height: 60,
+                                bgcolor: '#B76E79',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyCenter: 'center',
+                                color: '#FFF',
+                                boxShadow: '0 10px 25px rgba(183, 110, 121, 0.4)',
+                                animation: 'floatAnim 3s ease-in-out infinite',
+                                zIndex: 3,
+                                '@keyframes floatAnim': {
+                                    '0%, 100%': { transform: 'translateY(0)' },
+                                    '50%': { transform: 'translateY(-10px)' }
+                                }
+                            }}>
+                                <Box sx={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Heart size={32} variant="Bold" color="#fff" />
+                                </Box>
+                            </Box>
                         </Box>
                     </Box>
 

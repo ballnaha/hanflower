@@ -199,7 +199,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                                                 }
                                             }}>
                                                 <Image
-                                                    src="/images/qr_code.png"
+                                                    src="/images/qr_code_mockup.webp"
                                                     alt="QR Code Feeling Card"
                                                     fill
                                                     style={{ objectFit: 'contain' }}
@@ -277,7 +277,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                                                         filter: 'drop-shadow(0 8px 15px rgba(0,0,0,0.12))'
                                                     }}>
                                                         <Image
-                                                            src="/images/qr_code.png"
+                                                            src="/images/qr_code_mockup.webp"
                                                             alt="QR Code Feeling Card"
                                                             fill
                                                             style={{ objectFit: 'contain' }}

@@ -35,6 +35,7 @@ import Footer from "@/components/layout/Footer";
 import MobileNav from "@/components/layout/MobileNav";
 
 import CartProviderWrapper from "@/components/providers/CartProviderWrapper";
+import { NotificationProvider } from "@/context/NotificationContext";
 
 export default function RootLayout({
   children,
@@ -48,14 +49,16 @@ export default function RootLayout({
       >
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
-            <CartProviderWrapper>
-              <Header />
-              <Box component="main" sx={{ pb: { xs: '100px', md: 0 } }}>
-                {children}
-              </Box>
-              <Footer />
-              <MobileNav />
-            </CartProviderWrapper>
+            <NotificationProvider>
+              <CartProviderWrapper>
+                <Header />
+                <Box component="main" sx={{ pb: { xs: '100px', md: 0 } }}>
+                  {children}
+                </Box>
+                <Footer />
+                <MobileNav />
+              </CartProviderWrapper>
+            </NotificationProvider>
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>

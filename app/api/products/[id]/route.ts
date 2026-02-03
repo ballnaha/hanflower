@@ -87,7 +87,7 @@ export async function PUT(
             title, sku, slug, type, price, originalPrice,
             discount, priceVelvet, originalPriceVelvet, discountVelvet,
             description, image, images,
-            details, features, stock, priority,
+            details, features, stock, stockVelvet, priority,
             categoryId, hasQrCode, qrCodePrice
         } = body;
 
@@ -122,6 +122,7 @@ export async function PUT(
                 description,
                 image,
                 stock: parseInt(stock.toString()),
+                stockVelvet: parseInt(stockVelvet?.toString() || '0'),
                 priority: parseInt(priority.toString()),
                 categoryId: categoryId || null,
                 hasQrCode: hasQrCode !== undefined ? hasQrCode : true,

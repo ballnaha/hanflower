@@ -6,27 +6,47 @@ export async function GET(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const id = (await params).id;
     try {
-        const order = await prisma.order.findUnique({
-            where: { id },
-            include: { orderitem: true }
+        const id = (await params).id;
+        const { searchParams } = new URL(request.url);
+        const tel = searchParams.get('tel');
+
+        const whereCondition: any = {
+            OR: [
+                { id: id },
+                { id: { endsWith: id } }
+            ]
+        };
+
+        // If phone number is provided, verify it matches
+        if (tel) {
+            whereCondition.tel = tel;
+        }
+
+        const order = await prisma.order.findFirst({
+            where: whereCondition,
+            include: {
+                orderitem: {
+                    include: {
+                        product: true
+                    }
+                }
+            }
         });
 
         if (!order) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
 
-        // Transform for frontend compatibility
-        const transformedOrder = {
+        // Map orderitem to items for consistency with frontend
+        const formattedOrder = {
             ...order,
-            items: order.orderitem // Map orderitem to items for frontend
+            items: order.orderitem
         };
 
-        return NextResponse.json(transformedOrder);
-    } catch (error) {
-        console.error('Error fetching order:', error);
-        return NextResponse.json({ error: 'Failed to fetch order' }, { status: 500 });
+        return NextResponse.json(formattedOrder);
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
 
@@ -34,19 +54,17 @@ export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const id = (await params).id;
     try {
+        const id = (await params).id;
         const body = await request.json();
-        const { status, slipUrl } = body;
 
-        const order = await prisma.order.update({
+        const updatedOrder = await prisma.order.update({
             where: { id },
-            data: { status, slipUrl }
+            data: { ...body }
         });
 
-        return NextResponse.json({ success: true, order });
-    } catch (error) {
-        console.error('Error updating order:', error);
-        return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
+        return NextResponse.json(updatedOrder);
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

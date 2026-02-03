@@ -64,9 +64,14 @@ export async function POST(request: Request) {
         // Verify Products exist to prevent FK errors
         // Cart IDs may have -fresh or -velvet suffix, so we need to extract the original product ID
         const extractProductId = (cartId: string): string => {
-            if (cartId.endsWith('-fresh')) return cartId.replace('-fresh', '');
-            if (cartId.endsWith('-velvet')) return cartId.replace('-velvet', '');
-            return cartId;
+            if (!cartId) return '';
+            // Cart ID format: uuid-flowerType-cardType
+            // Potential suffixes: -fresh, -velvet, -standard, -custom
+            return cartId
+                .replace(/-fresh(-\w+)?$/, '')
+                .replace(/-velvet(-\w+)?$/, '')
+                .split('-standard')[0]
+                .split('-custom')[0];
         };
 
         const productIds = cartItems.map((item: any) => extractProductId(item.id)).filter(Boolean);

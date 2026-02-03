@@ -101,8 +101,9 @@ const theme = createTheme({
                     color: '#5D4037',
                     '&:hover': {
                         borderWidth: '1px',
-                        bgcolor: '#D4AF37',
-                        color: '#FFFFFF',
+                        bgcolor: '#FADAD8', // Soft Pink (Primary)
+                        color: '#5D4037',
+                        borderColor: '#FADAD8',
                         transform: 'translateY(-2px)',
                     },
                 },

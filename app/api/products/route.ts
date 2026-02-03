@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
                     details: product.productdetail?.map((d: any) => d.text) || [],
                     features: product.productfeature?.map((f: any) => f.text) || [],
                     stock: product.stock,
+                    stockVelvet: product.stockVelvet,
                     priority: product.priority,
                     categoryId: product.categoryId,
                     hasQrCode: product.hasQrCode,
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
             title, sku, slug, type, price, originalPrice,
             discount, priceVelvet, originalPriceVelvet, discountVelvet,
             description, image, images,
-            details, features, stock, priority,
+            details, features, stock, stockVelvet, priority,
             categoryId, hasQrCode, qrCodePrice
         } = body;
 
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest) {
                 description,
                 image,
                 stock: parseInt(stock.toString() || '0'),
+                stockVelvet: parseInt(stockVelvet?.toString() || '0'),
                 priority: parseInt(priority.toString() || '0'),
                 categoryId: categoryId || null,
                 hasQrCode: hasQrCode !== undefined ? hasQrCode : true,

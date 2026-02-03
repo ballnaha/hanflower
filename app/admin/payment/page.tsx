@@ -17,11 +17,11 @@ import {
 } from '@mui/material';
 import { Save2, Bank, ScanBarcode, Image as ImageIcon, Trash } from 'iconsax-react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { useSnackbar } from '@/components/admin/AdminSnackbar';
+import { useNotification } from '@/context/NotificationContext';
 import Image from 'next/image';
 
 export default function PaymentSettingsPage() {
-    const { showSuccess, showError } = useSnackbar();
+    const { showSuccess, showError } = useNotification();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);

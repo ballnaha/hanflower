@@ -40,8 +40,6 @@ import {
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
 import { useCart } from '@/context/CartContext';
 
 interface TabPanelProps {
@@ -241,7 +239,8 @@ export default function CheckoutPage() {
     };
 
     const getOrderMessage = () => {
-        return `ยืนยันคำสั่งซื้อ\n------------------\n\n👤 ลูกค้า:\nชื่อ: ${shippingInfo.name}\nโทร: ${shippingInfo.tel}\nที่อยู่: ${shippingInfo.address}\nหมายเหตุ: ${shippingInfo.note || '-'}\n\n🚚 การจัดส่ง: ${shippingMethod === 'express' ? 'ส่งด่วน (Lalamove/Grab)' : 'ขนส่งมาตรฐาน (1-2 วัน)'}\n\n🛒 รายการสินค้า:\n${cartItems.map(item => `- ${item.title} x ${item.quantity} (${item.price})`).join('\n')}\n\n------------------\nยอดสินค้า: ${cartTotal.toLocaleString()} บ.\nค่าส่ง: ${shippingCost} บ.\nส่วนลด: -${appliedDiscount?.amount || 0} บ.\n\n💰 ยอดสุทธิ: ${finalTotal.toLocaleString()} บาท`;
+        const shippingText = (shippingCost === 0 && (shippingMethod === 'express' || shippingMethod === 'cod') && !qualifiesForFreeShipping) ? 'เก็บค่าส่งปลายทาง' : `${shippingCost} บ.`;
+        return `ยืนยันคำสั่งซื้อ\n------------------\n\n👤 ลูกค้า:\nชื่อ: ${shippingInfo.name}\nโทร: ${shippingInfo.tel}\nที่อยู่: ${shippingInfo.address}\nหมายเหตุ: ${shippingInfo.note || '-'}\n\n🚚 การจัดส่ง: ${shippingMethod === 'express' ? 'ส่งด่วน (Lalamove/Grab)' : 'ขนส่งมาตรฐาน (1-2 วัน)'}\n\n🛒 รายการสินค้า:\n${cartItems.map(item => `- ${item.title} x ${item.quantity} (${item.price})`).join('\n')}\n\n------------------\nยอดสินค้า: ${cartTotal.toLocaleString()} บ.\nค่าส่ง: ${shippingText}\nส่วนลด: -${appliedDiscount?.amount || 0} บ.\n\n💰 ยอดสุทธิ: ${finalTotal.toLocaleString()} บาท`;
     };
 
     const handlePlaceOrder = async () => {
@@ -336,7 +335,6 @@ export default function CheckoutPage() {
 
     return (
         <Box sx={{ bgcolor: '#FFF', minHeight: '100vh', backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(183, 110, 121, 0.05) 0%, rgba(255,255,255,0) 70%)' }}>
-            <Header />
 
             <Container maxWidth="xl" sx={{ py: { xs: 12, md: 16 } }}>
                 <Typography variant="h3" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, mb: 6, textAlign: 'center', color: '#1A1A1A' }}>
@@ -444,9 +442,13 @@ export default function CheckoutPage() {
                                                     <Typography sx={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)', fontWeight: 600, textAlign: 'right' }}>
                                                         {method.code === 'pickup' ? (
                                                             <span style={{ color: '#2E7D32' }}>รับเอง</span>
-                                                        ) : method.code === 'cod' ? (
+                                                        ) : method.code === 'cod' && method.price > 0 ? (
                                                             <span style={{ color: '#9C27B0' }}>+฿{method.price} <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>(ค่า COD)</span></span>
-                                                        ) : method.price === 0 ? 'ฟรี' : (
+                                                        ) : (method.code === 'express' || method.code === 'cod') && method.price === 0 ? (
+                                                            <span style={{ color: '#B76E79', fontSize: '0.9rem' }}>เก็บค่าส่งปลายทาง</span>
+                                                        ) : method.price === 0 ? (
+                                                            <span style={{ color: '#2E7D32' }}>ฟรี</span>
+                                                        ) : (
                                                             enableFreeShipping && cartTotal >= freeShippingThreshold && method.code === 'standard'
                                                                 ? <><s style={{ color: '#999' }}>฿{method.price}</s> <span style={{ color: '#2E7D32' }}>ฟรี!</span></>
                                                                 : `+฿${method.price}`
@@ -750,7 +752,11 @@ export default function CheckoutPage() {
                                     </Box>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                         <Typography color="text.secondary" variant="body2">ค่าจัดส่ง</Typography>
-                                        <Typography fontWeight={600}>฿{shippingCost.toLocaleString()}</Typography>
+                                        <Typography fontWeight={600}>
+                                            {shippingCost === 0 && (shippingMethod === 'express' || shippingMethod === 'cod') && !qualifiesForFreeShipping
+                                                ? <span style={{ color: '#B76E79' }}>เก็บปลายทาง</span>
+                                                : `฿${shippingCost.toLocaleString()}`}
+                                        </Typography>
                                     </Box>
                                     {appliedDiscount && (
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', color: '#06C755' }}>

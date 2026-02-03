@@ -50,12 +50,11 @@ export default function Footer() {
                     >
                         {[
                             { label: 'Shop', href: '/products' },
-                            { label: 'Story', href: '/#about' },
-                            { label: 'AR Scan', href: '/ar-scan' },
+                            { label: 'Story', href: '/about' },
+                            { label: 'Payment', href: '/payment-notification' },
                             { label: 'Contact', href: '/contact' },
                         ].map((item) => {
-                            const isAR = item.href === '/ar-scan';
-                            const Component = isAR ? 'a' : Link;
+                            const Component = Link;
 
                             return (
                                 <Component

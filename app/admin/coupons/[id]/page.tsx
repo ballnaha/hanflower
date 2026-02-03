@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import { Save2, Ticket, Calendar } from 'iconsax-react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { useSnackbar } from '@/components/admin/AdminSnackbar';
+import { useNotification } from '@/context/NotificationContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -44,7 +44,7 @@ function CouponEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
     const router = useRouter();
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
-    const { showSuccess, showError } = useSnackbar();
+    const { showSuccess, showError } = useNotification();
 
     const [form, setForm] = useState({
         code: '',

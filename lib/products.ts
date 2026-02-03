@@ -17,6 +17,7 @@ export interface Product {
     details: string[];
     features: string[];
     stock: number;
+    stockVelvet: number;
     priority?: number;
     hasQrCode?: boolean;
     qrCodePrice?: string;

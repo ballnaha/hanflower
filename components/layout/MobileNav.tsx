@@ -14,7 +14,6 @@ export default function MobileNav() {
     const navItems = [
         { label: 'HOME', icon: Home, href: '/' },
         { label: 'SHOP', icon: Shop, href: '/products' },
-        { label: 'AR SCAN', icon: ScanBarcode, href: '/ar-scan', isSpecial: true },
         { label: 'FAVORITES', icon: Heart, href: '/favorites' },
         { label: 'ACCOUNT', icon: User, href: '/account' },
     ];
@@ -42,36 +41,6 @@ export default function MobileNav() {
         >
             {navItems.map((item) => {
                 const isActive = pathname === item.href;
-
-                if (item.isSpecial) {
-                    return (
-                        <a
-                            key={item.label}
-                            href={item.href}
-                            style={{
-                                textDecoration: 'none',
-                                position: 'relative',
-                                top: '-25px',
-                            }}
-                        >
-                            <Box sx={{
-                                width: '60px',
-                                height: '60px',
-                                borderRadius: '50%',
-                                background: 'linear-gradient(135deg, #D4AF37 0%, #B2952E 100%)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 10px 25px rgba(212, 175, 55, 0.4)',
-                                border: '4px solid #FDFBF7',
-                                transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                                '&:active': { transform: 'scale(0.9)' }
-                            }}>
-                                <item.icon size="28" variant="Outline" color="#FFFFFF" />
-                            </Box>
-                        </a>
-                    );
-                }
 
                 return (
                     <Link

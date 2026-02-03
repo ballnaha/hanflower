@@ -153,10 +153,20 @@ export default function Header() {
                 </Box>
             ) : (
                 <Container maxWidth="xl">
-                    <Box sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'space-between' }, alignItems: 'center', height: isScrolled ? '70px' : '100px', transition: 'height 0.5s ease' }}>
-                        <Box sx={{ flex: 1, display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: isScrolled ? '70px' : '100px', transition: 'height 0.5s ease' }}>
+                        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 2 }}>
+                            <IconButton
+                                onClick={handleDrawerToggle}
+                                sx={{
+                                    display: { xs: 'flex', md: 'none' }, // Show only on mobile
+                                    color: (pathname === '/' && !isScrolled) ? '#FFF' : '#5D4037'
+                                }}
+                            >
+                                <HambergerMenu size={24} variant="Outline" color={(pathname === '/' && !isScrolled) ? '#FFF' : '#5D4037'} />
+                            </IconButton>
+
                             <Link href="/" style={{ textDecoration: 'none' }}>
-                                <Box sx={{ position: 'relative', width: { xs: '150px', md: '220px' }, height: isScrolled ? '50px' : '80px', transition: 'all 0.5s ease' }}>
+                                <Box sx={{ position: 'relative', width: { xs: '120px', md: '220px' }, height: isScrolled ? '50px' : '80px', transition: 'all 0.5s ease' }}>
                                     <Image
                                         src="/images/logo5.png"
                                         alt="HanFlower Logo"
@@ -174,13 +184,14 @@ export default function Header() {
 
                         <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 8 }}>
                             {[
-                                { label: 'สินค้าทั้งหมด', href: '/products' },
-                                { label: 'OUR STORY', href: '/about' },
-                                { label: 'แจ้งชำระเงิน', href: '/payment' },
-                                { label: 'ติดต่อเรา', href: '/contact' },
+                                { label: 'FLOWERS', href: '/products?category=bouquet' },
+                                { label: 'EVENTS', href: '/events' },
+                                { label: 'ABOUT US', href: '/about' },
+                                { label: 'OUR CUSTOMERS', href: '/customers' },
+
                             ].map((link) => {
-                                const isExternal = link.href === '/payment';
-                                const Component = isExternal ? 'a' : Link;
+                                const isExternal = false;
+                                const Component = Link;
 
                                 return (
                                     <Box key={link.label} sx={{ position: 'relative' }}>
@@ -308,12 +319,11 @@ export default function Header() {
                     </Box>
                     <List>
                         {[
-                            { label: 'Home', href: '/' },
-                            { label: 'Products', href: '/products' },
-                            { label: 'Our Story', href: '/about' },
-                            { label: 'Payment', href: '/payment' },
-                            { label: 'Digital Card', href: '/ar-scan' },
-                            { label: 'Contact', href: '/contact' },
+                            { label: 'HOME', href: '/' },
+                            { label: 'FLOWERS', href: '/products?category=bouquet' },
+                            { label: 'EVENTS', href: '/events' },
+                            { label: 'ABOUT US', href: '/about' },
+                            { label: 'OUR CUSTOMERS', href: '/customers' },
                         ].map((item) => (
                             <ListItem key={item.label} disablePadding>
                                 <ListItemButton sx={{ textAlign: 'center', py: 2 }} component={Link} href={item.href}>

@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import Image from "next/image";
 import Link from "next/link";
-import { Container, Typography, Box, Skeleton, Select, MenuItem, FormControl, InputLabel, Chip } from "@mui/material";
+import { Container, Typography, Box, Skeleton, Select, MenuItem, FormControl, InputLabel, Chip, Breadcrumbs } from "@mui/material";
 import { ArrowRight2 } from 'iconsax-react';
+import { useSearchParams } from 'next/navigation';
 
 // Fallback image for production
 const FALLBACK_IMAGE = "/images/placeholder-product.png";
@@ -40,12 +41,15 @@ interface FilterOption {
 }
 
 export default function ProductsPage() {
+    const searchParams = useSearchParams();
+    const initialCategory = searchParams.get('category');
+
     const [products, setProducts] = useState<Product[]>([]);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [filterOptions, setFilterOptions] = useState<FilterOption[]>([{ value: 'all', label: 'ทั้งหมด' }]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedType, setSelectedType] = useState('all');
+    const [selectedType, setSelectedType] = useState(initialCategory ? 'SIGNATURE BOUQUETS' : 'all');
     const [sortBy, setSortBy] = useState('priority');
 
     useEffect(() => {
@@ -152,35 +156,13 @@ export default function ProductsPage() {
         <Box sx={{ pt: { xs: '100px', md: '120px' }, pb: { xs: 8, md: 14 }, minHeight: '100vh', bgcolor: '#FAFAFA' }}>
             <Container maxWidth="xl">
                 {/* Breadcrumb */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 4, fontSize: '0.85rem' }}>
-                    <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-                        <Typography
-                            component="span"
-                            sx={{
-                                color: '#999',
-                                fontSize: 'inherit',
-                                transition: 'color 0.2s',
-                                '&:hover': { color: '#B76E79' }
-                            }}
-                        >
-                            หน้าแรก
-                        </Typography>
-                    </Link>
-                    <ArrowRight2 size={12} color="#CCC" variant="Broken" />
-                    <Typography
-                        component="span"
-                        sx={{
-                            color: '#1A1A1A',
-                            fontSize: 'inherit',
-                            fontWeight: 500
-                        }}
-                    >
-                        สินค้าทั้งหมด
-                    </Typography>
-                </Box>
+                <Breadcrumbs sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
+                    <Link href="/" style={{ textDecoration: 'none', color: '#888', fontSize: '0.9rem' }}>หน้าแรก</Link>
+                    <Typography color="text.primary" sx={{ fontSize: '0.9rem' }}>สินค้าทั้งหมด</Typography>
+                </Breadcrumbs>
 
                 {/* Header */}
-                <Box sx={{ mb: 6 }}>
+                <Box sx={{ mb: 6, textAlign: 'center' }}>
                     <Typography variant="h1" sx={{
                         fontSize: { xs: '2rem', md: '3rem' },
                         color: '#1A1A1A',
@@ -189,7 +171,7 @@ export default function ProductsPage() {
                     }}>
                         สินค้า<span style={{ fontStyle: 'italic', fontFamily: '"Playfair Display", serif', color: '#B76E79' }}>ทั้งหมด</span>
                     </Typography>
-                    <Typography variant="body1" sx={{ color: '#666', maxWidth: '600px' }}>
+                    <Typography variant="body1" sx={{ color: '#666', maxWidth: '600px', mx: 'auto' }}>
                         เลือกชมคอลเลกชันดอกไม้และของขวัญสุดพิเศษจากเรา ทุกชิ้นจัดทำด้วยความใส่ใจ
                     </Typography>
                 </Box>
@@ -493,7 +475,7 @@ function ProductCard({ product }: { product: Product }) {
                                 pointerEvents: 'none',
                             }}>
                             <Image
-                                src="/images/qr_code.png"
+                                src="/images/qr_code_mockup.webp"
                                 alt="QR Code Feeling Card"
                                 fill
                                 style={{ objectFit: 'contain' }}

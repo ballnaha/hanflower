@@ -376,7 +376,7 @@ function ProductCard({ product }: { product: Product }) {
                                 pointerEvents: 'none',
                             }}>
                             <Image
-                                src="/images/qr_code.png"
+                                src="/images/qr_code_mockup.webp"
                                 alt="QR Code Feeling Card"
                                 fill
                                 style={{ objectFit: 'contain' }}

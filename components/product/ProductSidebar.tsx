@@ -66,6 +66,8 @@ export default function ProductSidebar({
     const displayDiscount = flowerType === 'fresh' ? product.discount : (product.discountVelvet || product.discount);
 
     const hasVelvet = !!product.priceVelvet;
+    const currentStock = flowerType === 'fresh' ? product.stock : (product.stockVelvet ?? 0);
+    const isOutOfStock = currentStock <= 0;
 
     const getFinalTitle = () => {
         let title = product.title;
@@ -140,7 +142,7 @@ export default function ProductSidebar({
             {/* Price & Description Section (Core Change) */}
             <Box sx={{ mb: 6 }}>
                 {/* Hide price when out of stock */}
-                {product.stock !== undefined && product.stock <= 0 ? (
+                {isOutOfStock ? (
                     <Box sx={{ mb: 2 }}>
                         <Chip
                             label="สินค้าหมด"
@@ -333,7 +335,7 @@ export default function ProductSidebar({
                 </Typography>
 
                 {/* Show disabled state when out of stock */}
-                {product.stock !== undefined && product.stock <= 0 ? (
+                {isOutOfStock ? (
                     <Box>
                         <Box sx={{
                             p: 3,

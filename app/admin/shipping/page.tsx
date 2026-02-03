@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import { TruckFast, Box1, TickCircle, Timer1, Wallet3, Information, RefreshCircle, Shop, MoneyRecive, Add } from 'iconsax-react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { useNotification } from '@/context/NotificationContext';
 
 interface ShippingMethod {
     id?: string;
@@ -51,7 +52,7 @@ export default function ShippingSettingsPage() {
     const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
     const [freeShippingThreshold, setFreeShippingThreshold] = useState<number>(0);
     const [enableFreeShipping, setEnableFreeShipping] = useState(false);
-    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+    const { showSuccess, showError, showWarning } = useNotification();
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(true);
     const [hasChanges, setHasChanges] = useState(false);
@@ -120,7 +121,7 @@ export default function ShippingSettingsPage() {
             }
         } catch (error) {
             console.error('Failed to fetch shipping methods:', error);
-            setSnackbar({ open: true, message: 'ไม่สามารถโหลดข้อมูลได้', severity: 'error' });
+            showError('ไม่สามารถโหลดข้อมูลได้');
         } finally {
             setLoading(false);
         }
@@ -150,19 +151,15 @@ export default function ShippingSettingsPage() {
         if (missingMethods.length > 0) {
             setShippingMethods([...shippingMethods, ...missingMethods]);
             setHasChanges(true);
-            setSnackbar({ open: true, message: `เพิ่ม ${missingMethods.length} รูปแบบใหม่แล้ว กดบันทึกเพื่อยืนยัน`, severity: 'success' });
+            showSuccess(`เพิ่ม ${missingMethods.length} รูปแบบใหม่แล้ว กดบันทึกเพื่อยืนยัน`);
         } else {
-            setSnackbar({ open: true, message: 'มีรูปแบบครบถ้วนแล้ว', severity: 'success' });
+            showSuccess('มีรูปแบบครบถ้วนแล้ว');
         }
     };
 
     const handleMethodChange = (code: string, field: keyof ShippingMethod, value: any) => {
         if (code === 'standard' && field === 'enabled' && value === false && enableFreeShipping) {
-            setSnackbar({
-                open: true,
-                message: 'คำเตือน: โปรโมชันส่งฟรีจะถูกปิดการทำงานอัตโนมัติหากไม่มีการส่งแบบ Standard',
-                severity: 'error'
-            });
+            showError('คำเตือน: โปรโมชันส่งฟรีจะถูกปิดการทำงานอัตโนมัติหากไม่มีการส่งแบบ Standard');
         }
         setShippingMethods(prev =>
             prev.map(method =>
@@ -188,13 +185,13 @@ export default function ShippingSettingsPage() {
             const data = await res.json();
 
             if (data.success) {
-                setSnackbar({ open: true, message: 'บันทึกการตั้งค่าเรียบร้อยแล้ว', severity: 'success' });
+                showSuccess('บันทึกการตั้งค่าเรียบร้อยแล้ว');
                 setHasChanges(false);
             } else {
                 throw new Error(data.error);
             }
         } catch (error) {
-            setSnackbar({ open: true, message: 'เกิดข้อผิดพลาดในการบันทึก', severity: 'error' });
+            showError('เกิดข้อผิดพลาดในการบันทึก');
         } finally {
             setSaving(false);
         }
@@ -539,11 +536,7 @@ export default function ShippingSettingsPage() {
                             onChange={(e) => {
                                 const isStandardEnabled = shippingMethods.find(m => m.code === 'standard')?.enabled;
                                 if (e.target.checked && !isStandardEnabled) {
-                                    setSnackbar({
-                                        open: true,
-                                        message: 'กรุณาเปิดใช้งาน "ขนส่งพัสดุ (Standard)" ก่อนเปิดโปรโมชันส่งฟรี',
-                                        severity: 'error'
-                                    });
+                                    showError('กรุณาเปิดใช้งาน "ขนส่งพัสดุ (Standard)" ก่อนเปิดโปรโมชันส่งฟรี');
                                     return;
                                 }
                                 setEnableFreeShipping(e.target.checked);
@@ -643,27 +636,6 @@ export default function ShippingSettingsPage() {
                     </Box>
                 </Box>
             </Box>
-
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={3000}
-                onClose={() => setSnackbar({ ...snackbar, open: false })}
-                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-            >
-                <Alert
-                    onClose={() => setSnackbar({ ...snackbar, open: false })}
-                    severity={snackbar.severity}
-                    icon={snackbar.severity === 'success' ? <TickCircle size={20} variant="Bold" /> : undefined}
-                    sx={{
-                        borderRadius: '14px',
-                        boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-                        fontWeight: 600,
-                        '& .MuiAlert-icon': { alignItems: 'center' }
-                    }}
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
         </AdminLayout>
     );
 }

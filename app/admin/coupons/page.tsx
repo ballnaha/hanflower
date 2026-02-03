@@ -29,6 +29,8 @@ import {
 } from 'iconsax-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import Link from 'next/link';
+import { useNotification } from '@/context/NotificationContext';
+import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 
 interface Coupon {
     id: string;
@@ -49,6 +51,8 @@ export default function AdminCouponsPage() {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [selectedCoupon, setSelectedCoupon] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const { showSuccess, showError, showWarning } = useNotification();
 
     const fetchCoupons = async () => {
         setLoading(true);
@@ -65,13 +69,13 @@ export default function AdminCouponsPage() {
         }
     };
 
-    const handleDeleteCoupon = async () => {
-        if (!selectedCoupon) return;
+    const handleDeleteClick = () => {
+        handleMenuClose();
+        setOpenDeleteDialog(true);
+    };
 
-        if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบคูปองนี้?')) {
-            handleMenuClose();
-            return;
-        }
+    const handleConfirmDelete = async () => {
+        if (!selectedCoupon) return;
 
         setDeleting(true);
         try {
@@ -81,13 +85,14 @@ export default function AdminCouponsPage() {
 
             if (res.ok) {
                 setCoupons(prev => prev.filter(c => c.id !== selectedCoupon));
-                handleMenuClose();
+                showSuccess('ลบคูปองเรียบร้อยแล้ว');
+                setOpenDeleteDialog(false);
             } else {
-                alert('เกิดข้อผิดพลาดในการลบคูปอง');
+                showError('เกิดข้อผิดพลาดในการลบคูปอง');
             }
         } catch (error) {
             console.error('Error deleting coupon:', error);
-            alert('ไม่สามารถลบคูปองได้');
+            showError('ไม่สามารถลบคูปองได้');
         } finally {
             setDeleting(false);
         }
@@ -284,13 +289,22 @@ export default function AdminCouponsPage() {
                     <Edit2 size={18} color="#B76E79" variant="Bulk" /> แก้ไขข้อมูล
                 </MenuItem>
                 <MenuItem
-                    onClick={handleDeleteCoupon}
+                    onClick={handleDeleteClick}
                     disabled={deleting}
                     sx={{ gap: 1.5, py: 1.2, color: '#FF4D4F', fontSize: '0.85rem' }}
                 >
-                    {deleting ? <CircularProgress size={18} color="inherit" /> : <Trash size={18} color="#FF4D4F" variant="Bulk" />} ลบคูปอง
+                    <Trash size={18} color="#FF4D4F" variant="Bulk" /> ลบคูปอง
                 </MenuItem>
             </Menu>
+
+            <AdminConfirmDialog
+                open={openDeleteDialog}
+                onClose={() => setOpenDeleteDialog(false)}
+                onConfirm={handleConfirmDelete}
+                title="ยืนยันการลบคูปอง"
+                message="คุณแน่ใจหรือไม่ว่าต้องการลบคูปองนี้? การกระทำนี้ไม่สามารถย้อนกลับได้"
+                isLoading={deleting}
+            />
         </AdminLayout>
     );
 }

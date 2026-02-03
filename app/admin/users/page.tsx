@@ -24,7 +24,7 @@ import {
 } from '@mui/material';
 import { UserAdd, Trash, Edit2, ProfileCircle } from 'iconsax-react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { useSnackbar } from '@/components/admin/AdminSnackbar';
+import { useNotification } from '@/context/NotificationContext';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 
 interface User {
@@ -44,7 +44,7 @@ export default function AdminUsersPage() {
     const [formData, setFormData] = useState({ username: '', password: '', role: 'ADMIN' });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    const { showMessage } = useSnackbar();
+    const { showSuccess, showError, showWarning } = useNotification();
 
     const fetchUsers = async () => {
         try {
@@ -53,10 +53,10 @@ export default function AdminUsersPage() {
             if (response.ok) {
                 setUsers(data);
             } else {
-                showMessage(data.error || 'Failed to fetch users', 'error');
+                showError(data.error || 'Failed to fetch users');
             }
         } catch (error) {
-            showMessage('Error fetching users', 'error');
+            showError('Error fetching users');
         } finally {
             setLoading(false);
         }
@@ -89,7 +89,7 @@ export default function AdminUsersPage() {
 
     const handleSubmit = async () => {
         if (!formData.username || (!selectedUser && !formData.password)) {
-            showMessage('กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
+            showWarning('กรุณากรอกข้อมูลให้ครบถ้วน');
             return;
         }
 
@@ -116,14 +116,14 @@ export default function AdminUsersPage() {
             const data = await response.json();
 
             if (response.ok) {
-                showMessage(selectedUser ? 'แก้ไขข้อมูลสำเร็จ' : 'สร้างผู้ดูแลระบบสำเร็จ', 'success');
+                showSuccess(selectedUser ? 'แก้ไขข้อมูลสำเร็จ' : 'สร้างผู้ดูแลระบบสำเร็จ');
                 handleCloseDialog();
                 fetchUsers();
             } else {
-                showMessage(data.error || 'Failed to process request', 'error');
+                showError(data.error || 'Failed to process request');
             }
         } catch (error) {
-            showMessage('Error processing request', 'error');
+            showError('Error processing request');
         } finally {
             setIsSubmitting(false);
         }
@@ -144,15 +144,15 @@ export default function AdminUsersPage() {
             });
 
             if (response.ok) {
-                showMessage('ลบผู้ดูแลระบบสำเร็จ', 'success');
+                showSuccess('ลบผู้ดูแลระบบสำเร็จ');
                 fetchUsers();
                 setOpenDeleteConfirm(false);
             } else {
                 const data = await response.json();
-                showMessage(data.error || 'Failed to delete user', 'error');
+                showError(data.error || 'Failed to delete user');
             }
         } catch (error) {
-            showMessage('Error deleting user', 'error');
+            showError('Error deleting user');
         } finally {
             setIsDeleting(false);
             setUserToDelete(null);

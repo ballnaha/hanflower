@@ -18,7 +18,7 @@ import {
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useSnackbar } from './AdminSnackbar';
+import { useNotification } from '@/context/NotificationContext';
 import { useAdminUI } from '@/context/AdminUIContext';
 
 const SIDEBAR_WIDTH = 280;
@@ -60,7 +60,7 @@ const menuGroups = [
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
-    const { showMessage } = useSnackbar();
+    const { showSuccess, showError } = useNotification();
     const { isSidebarOpen, closeSidebar, isCollapsed } = useAdminUI();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
@@ -74,14 +74,14 @@ export default function Sidebar() {
                 });
 
                 if (response.ok) {
-                    showMessage('ออกจากระบบสำเร็จ', 'success');
+                    showSuccess('ออกจากระบบสำเร็จ');
                     router.push('/admin/login');
                     router.refresh();
                 } else {
-                    showMessage('เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
+                    showError('เกิดข้อผิดพลาดในการออกจากระบบ');
                 }
             } catch (error) {
-                showMessage('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
             }
         }
     };
@@ -218,7 +218,7 @@ export default function Sidebar() {
             </Box>
 
             {/* Bottom Section */}
-            <Box sx={{ p: isCollapsed && !isMobile ? 1 : 2 }}>
+            <Box sx={{ p: isCollapsed && !isMobile ? 1 : 2, mt: 'auto' }}>
                 <Divider sx={{ mb: 2, opacity: 0.5 }} />
                 <Tooltip title={isCollapsed && !isMobile ? "ออกจากระบบ" : ""} placement="right">
                     <ListItemButton
@@ -251,14 +251,6 @@ export default function Sidebar() {
                         )}
                     </ListItemButton>
                 </Tooltip>
-
-                {(!isCollapsed || isMobile) && (
-                    <Box sx={{ mt: 3, p: 2, bgcolor: '#FAFAFA', borderRadius: '12px', textAlign: 'center' }}>
-                        <Typography variant="caption" sx={{ color: '#AAA', display: 'block' }}>
-                            v1.0.0
-                        </Typography>
-                    </Box>
-                )}
             </Box>
         </Box>
     );

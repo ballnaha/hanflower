@@ -36,7 +36,7 @@ import {
     Save2
 } from 'iconsax-react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { useSnackbar } from '@/components/admin/AdminSnackbar';
+import { useNotification } from '@/context/NotificationContext';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 
 interface Category {
@@ -75,7 +75,7 @@ export default function AdminCategoriesPage() {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
 
-    const { showMessage, showSuccess, showError } = useSnackbar();
+    const { showSuccess, showError, showWarning } = useNotification();
 
     const fetchCategories = async () => {
         setLoading(true);
@@ -86,7 +86,7 @@ export default function AdminCategoriesPage() {
                 setCategories(data);
             }
         } catch (error) {
-            showMessage('ไม่สามารถโหลดข้อมูลหมวดหมู่ได้', 'error');
+            showError('ไม่สามารถโหลดข้อมูลหมวดหมู่ได้');
         } finally {
             setLoading(false);
         }
@@ -165,7 +165,7 @@ export default function AdminCategoriesPage() {
 
     const handleSubmit = async () => {
         if (!formData.title || !formData.slug) {
-            showMessage('กรุณากรอกข้อมูลที่จำเป็น (ชื่อหมวดหมู่ และ Slug)', 'warning');
+            showWarning('กรุณากรอกข้อมูลที่จำเป็น (ชื่อหมวดหมู่ และ Slug)');
             return;
         }
 

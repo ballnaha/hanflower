@@ -19,10 +19,10 @@ import {
 } from '@mui/material';
 import { ArrowLeft, Trash, Add, Save2, Image as ImageIcon } from 'iconsax-react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { useSnackbar } from '@/components/admin/AdminSnackbar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import NextImage from 'next/image';
+import { useNotification } from '@/context/NotificationContext';
 
 // Wrapper component that provides the AdminLayout with SnackbarProvider
 export default function ProductEditorPage({ params }: { params: Promise<{ id: string }> }) {
@@ -41,7 +41,7 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
     const router = useRouter();
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
-    const { showSuccess, showError } = useSnackbar();
+    const { showSuccess, showError } = useNotification();
 
     const [form, setForm] = useState({
         id: '',
@@ -58,6 +58,7 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
         description: '',
         image: '',
         stock: '0',
+        stockVelvet: '0',
         priority: '0',
         images: [''],
         details: [''],
@@ -87,6 +88,7 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                             originalPriceVelvet: data.originalPriceVelvet?.toString().replace(/,/g, '') || '',
                             discountVelvet: data.discountVelvet?.toString() || '',
                             stock: data.stock?.toString() || '0',
+                            stockVelvet: data.stockVelvet?.toString() || '0',
                             priority: data.priority?.toString() || '0',
                             image: data.image || '',
                             images: data.images.length > 0 ? data.images : [''],
@@ -709,6 +711,15 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                     value={form.stock}
                                     onChange={handleChange}
                                     required
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="จำนวนสต็อกดอกกำมะหยี่"
+                                    name="stockVelvet"
+                                    type="number"
+                                    value={form.stockVelvet}
+                                    onChange={handleChange}
+                                    helperText="ถ้าเปิดตัวเลือกดอกกำมะหยี่ กรุณาระบุสต็อกแยกที่นี่"
                                 />
                                 <TextField
                                     fullWidth
