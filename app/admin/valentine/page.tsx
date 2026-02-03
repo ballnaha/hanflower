@@ -127,15 +127,24 @@ function SortableMemoryItem({ memory, index, onRemove, onEdit }: SortableMemoryI
                 <Typography variant="caption" className="text-gray-500 truncate block">
                     {memory.type.toUpperCase()} - {memory.url?.substring(0, 30)}...
                 </Typography>
+                {!memory.caption && (
+                    <Typography variant="caption" className="text-orange-400 italic text-[10px]">
+                        * No caption added
+                    </Typography>
+                )}
             </div>
 
-            <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                <IconButton size="small" onClick={() => onEdit(index)}>
-                    <Edit size="16" color="#D4AF37" />
-                </IconButton>
-                <IconButton size="small" onClick={() => onRemove(index)}>
-                    <Trash size="16" color="#F87171" />
-                </IconButton>
+            <div className="flex items-center gap-1">
+                <Tooltip title="Edit Caption">
+                    <IconButton size="small" onClick={() => onEdit(index)}>
+                        <Edit size="18" color="#D4AF37" />
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title="Remove">
+                    <IconButton size="small" onClick={() => onRemove(index)}>
+                        <Trash size="18" color="#F87171" />
+                    </IconButton>
+                </Tooltip>
             </div>
         </div>
     );
@@ -215,7 +224,7 @@ export default function AdminValentinePage() {
         }
     };
 
-    const { control, handleSubmit, reset, watch, setValue, register, formState: { errors } } = useForm<ValentineCardFormData>({
+    const { control, handleSubmit, reset, watch, setValue, register, getValues, formState: { errors } } = useForm<ValentineCardFormData>({
         defaultValues: {
             title: "FOR MY LOVE",
             openingText: "Tap to open",
@@ -573,19 +582,51 @@ export default function AdminValentinePage() {
 
 
     // --- File Upload Helpers ---
-    const onDropMemory = useCallback((acceptedFiles: File[]) => {
-        // Mock upload logic - ideally upload to server API and get URL
-        // For now, we'll create object URLs for preview
-        const newMemories = acceptedFiles.map(file => ({
-            type: file.type.startsWith('video') ? 'video' : 'image',
-            url: URL.createObjectURL(file), // Replace with real S3/Local URL after upload
-            file: file, // Keep file for form submission if using FormData
-            caption: file.name
-        }));
-        // Note: Field Array with files can be tricky. Better to upload immediately.
-        // Simplified:
-        appendMemory(newMemories);
-    }, [appendMemory]);
+    const onDropMemory = useCallback(async (acceptedFiles: File[]) => {
+        const currentSlug = getValues("slug");
+        if (!currentSlug) {
+            alert("กรุณาสร้างหรือระบุ URL Slug (ในหน้า Basic Info) ก่อนอัปโหลดไฟล์ เพื่อแยกโฟลเดอร์ให้ถูกต้อง");
+            return;
+        }
+
+        // Upload files in parallel
+        const uploadPromises = acceptedFiles.map(async (file) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('slug', currentSlug);
+
+            try {
+                const res = await fetch('/api/upload/valentine', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    return {
+                        type: file.type.startsWith('video') ? 'video' : 'image',
+                        url: data.url, // URL from server
+                        caption: file.name
+                    };
+                } else {
+                    console.error("Upload failed for:", file.name);
+                    return null;
+                }
+            } catch (error) {
+                console.error("Upload error:", error);
+                return null;
+            }
+        });
+
+        const results = await Promise.all(uploadPromises);
+        const successfulMemories = results.filter(m => m !== null);
+
+        if (successfulMemories.length > 0) {
+            appendMemory(successfulMemories);
+        } else {
+            alert("ไม่สามารถอัปโหลดไฟล์ได้ กรุณาลองใหม่อีกครั้ง");
+        }
+    }, [appendMemory, getValues]);
 
     const { getRootProps, getInputProps } = useDropzone({ onDrop: onDropMemory, accept: { 'image/*': [], 'video/*': [] } });
 

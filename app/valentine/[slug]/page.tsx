@@ -75,6 +75,7 @@ export default function ValentineSlugPage() {
     const [introHearts, setIntroHearts] = useState<{ id: number; left: string; size: number; duration: number; delay: number }[]>([]);
 
     useEffect(() => {
+        // Intro hearts
         if (!isOpen) {
             const hearts = Array.from({ length: 15 }).map((_, i) => ({
                 id: i,
@@ -84,6 +85,16 @@ export default function ValentineSlugPage() {
                 delay: Math.random() * 5
             }));
             setIntroHearts(hearts);
+        } else {
+            // Ambient floating hearts for main view (behind bg)
+            const hearts = Array.from({ length: 12 }).map((_, i) => ({
+                id: i + 100,
+                left: `${Math.random() * 100}%`,
+                size: 10 + Math.random() * 20,
+                duration: 15 + Math.random() * 20, // Much Slower (15-35s)
+                delay: Math.random() * 10
+            }));
+            setIntroHearts(hearts); // Reusing state for ambient hearts as well
         }
     }, [isOpen]);
 
@@ -153,7 +164,8 @@ export default function ValentineSlugPage() {
                 { name: 'apple-mobile-web-app-capable', content: 'yes' },
                 { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
                 { name: 'mobile-web-app-capable', content: 'yes' },
-                { name: 'theme-color', content: content?.backgroundColor || '#FFF0F3' }
+                { name: 'theme-color', content: content?.backgroundColor || '#FFF0F3' },
+                { name: 'google', content: 'notranslate' }
             ];
 
             metaTags.forEach(tag => {
@@ -528,7 +540,22 @@ export default function ValentineSlugPage() {
     }
 
     return (
-        <Box sx={{ height: "100dvh", width: "100vw", background: displayContent.backgroundColor || "#FFF0F3", display: "flex", flexDirection: "column", alignItems: "center", overflow: "hidden", position: "relative", fontFamily: "'Comfortaa', sans-serif" }}>
+        <Box className="notranslate" sx={{
+            height: "100dvh",
+            width: "100vw",
+            background: displayContent.backgroundColor || "#FFF0F3",
+            backgroundImage: `
+                radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 240, 243, 0.5) 100%),
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E")
+            `,
+            backgroundBlendMode: 'normal, overlay',
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            overflow: "hidden",
+            position: "relative",
+            fontFamily: "'Comfortaa', sans-serif"
+        }}>
             <style jsx global>{`
                 @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
                 @keyframes float-lid { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-15px) rotate(1deg); } }
@@ -542,8 +569,14 @@ export default function ValentineSlugPage() {
                     0% { background-position: -200% 0; }
                     100% { background-position: 200% 0; }
                 }
-                .valentine-swiper { overflow: visible !important; }
-                .valentine-swiper .swiper-slide { border-radius: 16px !important; background: white; border: 6px solid white; box-shadow: 0 8px 24px rgba(0,0,0,0.15); overflow: hidden; }
+                .valentine-swiper { overflow: visible !important; padding: 20px 0 40px 0 !important; }
+                .valentine-swiper .swiper-slide { 
+                    background: transparent !important; 
+                    border: none !important; 
+                    box-shadow: none !important; 
+                    overflow: visible !important; 
+                    height: 100% !important;
+                }
                 .music-bar { width: 3px; background-color: white; border-radius: 2px; animation: music-bar 0.8s ease-in-out infinite; }
                 .music-playing { animation: music-pulse 2s ease-in-out infinite; }
                 .music-icon-spin { animation: music-spin 4s linear infinite; }
@@ -592,10 +625,22 @@ export default function ValentineSlugPage() {
                     margin: 0 !important;
                 }
                 .valentine-swiper .swiper-pagination-bullet-active {
-                    width: 22px;
-                    border-radius: 10px;
+                    width: 24px;
+                    border-radius: 12px;
                     opacity: 1;
-                    box-shadow: 0 4px 10px rgba(255, 51, 102, 0.3);
+                    background: linear-gradient(90deg, #FF3366, #FF99AA);
+                    box-shadow: 0 4px 12px rgba(255, 51, 102, 0.4);
+                }
+                .photo-gloss::after {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 50%;
+                    background: linear-gradient(to bottom, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+                    pointer-events: none;
+                    z-index: 10;
                 }
             `}</style>
 
@@ -781,6 +826,26 @@ export default function ValentineSlugPage() {
             {isOpen && (
                 <>
                     {/* Decorative Hearts */}
+                    <div className="fixed inset-0 pointer-events-none z-0">
+                        {introHearts.map((h) => (
+                            <Heart
+                                key={h.id}
+                                variant="Bold"
+                                color="#FF99AA"
+                                style={{
+                                    position: 'absolute',
+                                    left: h.left,
+                                    width: h.size,
+                                    height: h.size,
+                                    opacity: 0.25,
+                                    animation: `float-heart-up ${h.duration}s linear infinite`,
+                                    animationDelay: `${h.delay}s`,
+                                    filter: 'blur(1px)'
+                                }}
+                            />
+                        ))}
+                    </div>
+
                     <div className="fixed inset-0 pointer-events-none">
                         {borderHearts.map((h) => (
                             <Heart key={h.id} variant="Bold" color={h.color} style={{ position: 'absolute', top: `${h.top}%`, left: `${h.left}%`, width: h.size, height: h.size, transform: `rotate(${h.rotation}deg)`, zIndex: 1, opacity: 0.9 }} />
@@ -801,7 +866,7 @@ export default function ValentineSlugPage() {
                                 effect={"creative"}
                                 grabCursor={true}
                                 modules={[EffectCreative, Pagination, Autoplay]}
-                                className="valentine-swiper w-[300px] h-[55dvh] sm:w-[360px] sm:h-[65dvh]"
+                                className="valentine-swiper w-[300px] h-[65dvh] sm:w-[360px] sm:h-[75dvh]"
                                 pagination={{ clickable: true }}
                                 onSwiper={(swiper) => { swiperRef.current = swiper; }}
                                 onSlideChange={handleSlideChange}
@@ -809,40 +874,54 @@ export default function ValentineSlugPage() {
                             >
                                 {memories.map((memory, index) => (
                                     <SwiperSlide key={index}>
-                                        <div className="w-full h-full relative overflow-hidden rounded-2xl">
-                                            <div className="card-shine animate-shine opacity-40" />
-                                            {memory.type === 'video' || memory.type === 'youtube' || memory.type === 'tiktok' ? (
-                                                <div className="w-full h-full bg-[#1A0A0C] relative flex items-center justify-center">
-                                                    {memory.type === 'youtube' ? (
-                                                        <img src={`https://img.youtube.com/vi/${memory.url}/maxresdefault.jpg`} className="w-full h-full object-cover opacity-90" alt="Video thumbnail" />
-                                                    ) : (
-                                                        <div className="w-full h-full bg-gradient-to-br from-[#4A151B] via-[#D41442] to-[#8B1D36] opacity-90" />
-                                                    )}
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
-                                                </div>
-                                            ) : (
-                                                <div className="w-full h-full relative">
-                                                    <img src={memory.url} alt={memory.caption} className="w-full h-full object-cover" />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-                                                </div>
-                                            )}
+                                        <div className="w-full h-full relative bg-gradient-to-b from-white via-white to-[#FFF5F7] rounded-[24px] p-3 pb-5 shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col border border-[#E5E5E5] ring-1 ring-white/60 backdrop-blur-md">
+                                            {/* Gold Accent Border */}
+                                            <div className="absolute inset-0 rounded-[24px] border border-[#D4AF37]/20 pointer-events-none" />
+                                            {/* Photo/Video Container */}
+                                            <div className="relative flex-grow w-full overflow-hidden rounded-[20px] bg-slate-50 shadow-inner group photo-gloss">
+                                                {memory.type === 'video' || memory.type === 'youtube' || memory.type === 'tiktok' ? (
+                                                    <div className="w-full h-full bg-[#1A0A0C] relative flex items-center justify-center">
+                                                        {memory.type === 'youtube' ? (
+                                                            <img src={`https://img.youtube.com/vi/${memory.url}/maxresdefault.jpg`} className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" alt="Video thumbnail" />
+                                                        ) : (
+                                                            <div className="w-full h-full bg-gradient-to-br from-[#4A151B] via-[#D41442] to-[#8B1D36] opacity-90" />
+                                                        )}
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10 pointer-events-none" />
 
-                                            {memory.caption && (
-                                                <div className="absolute bottom-6 left-0 right-0 px-6 text-center z-20">
+                                                        {/* Play Button Overlay */}
+
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-full h-full relative">
+                                                        <img src={memory.url} alt={memory.caption} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none opacity-50" />
+                                                    </ div>
+                                                )}
+
+                                                {/* Shine Effect */}
+                                                <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                            </div>
+
+                                            {/* Caption Area */}
+                                            <div className="mt-2 px-1 text-center min-h-[2.5rem] flex items-center justify-center relative">
+                                                {memory.caption ? (
                                                     <Typography
                                                         sx={{
-                                                            color: 'white',
+                                                            color: '#4A151B',
                                                             fontWeight: 600,
                                                             fontFamily: 'var(--font-mali)',
-                                                            fontSize: '1.1rem',
-                                                            textShadow: '0 2px 8px rgba(0,0,0,0.8)',
-                                                            lineHeight: 1.3
+                                                            fontSize: '1rem',
+                                                            lineHeight: 1.4,
                                                         }}
                                                     >
                                                         {memory.caption}
                                                     </Typography>
-                                                </div>
-                                            )}
+                                                ) : (
+                                                    <div className="opacity-20 flex justify-center w-full">
+                                                        <Heart size={24} variant="Bold" color="#FF3366" />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </SwiperSlide>
                                 ))}
@@ -850,29 +929,35 @@ export default function ValentineSlugPage() {
                                 {/* Last Slide: Puzzle/Game */}
                                 {memories.length > 0 && (
                                     <SwiperSlide key="game-slide">
-                                        <div className="w-full h-full relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 to-white flex flex-col items-center justify-center p-4">
-                                            {!isPuzzleComplete ? (
-                                                <div className="text-center">
-                                                    <div className="bg-white/50 p-6 rounded-full inline-block mb-6 shadow-xl relative">
-                                                        <Heart size={48} variant="Bold" color="#FF3366" className="animate-pulse" />
-                                                    </div>
-                                                    <Typography className="text-[#8B1D36] font-black mb-2" sx={{ fontFamily: 'var(--font-mali)', fontSize: '2rem' }}>สะสมใจแทนคำรัก</Typography>
-                                                    <Typography className="text-pink-500 font-bold mb-8 opacity-80">สะสมหัวใจให้ครบ เพื่อรับรางวัลพิเศษ 🎁</Typography>
-                                                </div>
-                                            ) : (
-                                                <div className="text-center animate-[scaleIn_0.8s_ease-out]">
-                                                    <Heart size={80} variant="Bold" color="#FF3366" className="inline-block mb-6 drop-shadow-xl animate-bounce" />
-                                                    <Typography className="text-[#FF3366] font-bold mb-4" sx={{ fontFamily: 'var(--font-dancing)', fontSize: '2.5rem' }}>Forever Yours 💕</Typography>
-                                                    {heartGameScore >= 1000 ? (
-                                                        <div className="bg-orange-50 p-4 rounded-xl border border-orange-200">
-                                                            <Typography className="text-[#8B1D36] font-bold">Exclusive Reward! 🎁</Typography>
-                                                            <Typography className="text-sm text-gray-600">You scored {heartGameScore} points. รับรางวัลพิเศษจากคนรักของคุณได้เลย!</Typography>
+                                        <div className="w-full h-full relative bg-white rounded-[24px] p-3 pb-5 shadow-[0_15px_35px_rgba(0,0,0,0.15)] flex flex-col ring-1 ring-white/50 border border-gray-100/50 backdrop-blur-sm">
+                                            <div className="w-full h-full relative overflow-hidden rounded-[20px] bg-gradient-to-br from-pink-50 to-white flex flex-col items-center justify-center p-4 border border-pink-100">
+                                                {!isPuzzleComplete ? (
+                                                    <div className="text-center z-10">
+                                                        <div className="bg-white p-6 rounded-full inline-block mb-6 shadow-lg shadow-pink-100/50 relative border border-pink-50">
+                                                            <Heart size={48} variant="Bold" color="#FF3366" className="animate-pulse drop-shadow-md" />
                                                         </div>
-                                                    ) : (
-                                                        <Typography className="text-[#8B1D36] opacity-80 font-mali">Thank you for being my everything.</Typography>
-                                                    )}
-                                                </div>
-                                            )}
+                                                        <Typography className="text-[#8B1D36] font-black mb-2" sx={{ fontFamily: 'var(--font-mali)', fontSize: '2rem' }}>สะสมใจแทนคำรัก</Typography>
+                                                        <Typography className="text-pink-500 font-bold mb-8 opacity-80" sx={{ fontFamily: 'var(--font-prompt)' }}>สะสมหัวใจให้ครบ เพื่อรับรางวัลพิเศษ 🎁</Typography>
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-center animate-[scaleIn_0.8s_ease-out] z-10">
+                                                        <Heart size={80} variant="Bold" color="#FF3366" className="inline-block mb-6 drop-shadow-xl animate-bounce" />
+                                                        <Typography className="text-[#FF3366] font-bold mb-4" sx={{ fontFamily: 'var(--font-dancing)', fontSize: '2.5rem' }}>Forever Yours 💕</Typography>
+                                                        {heartGameScore >= 1000 ? (
+                                                            <div className="bg-orange-50 p-4 rounded-xl border border-orange-200 shadow-sm">
+                                                                <Typography className="text-[#8B1D36] font-bold" sx={{ fontFamily: 'var(--font-prompt)' }}>Exclusive Reward! 🎁</Typography>
+                                                                <Typography className="text-sm text-gray-600 mt-1" sx={{ fontFamily: 'var(--font-prompt)' }}>You scored {heartGameScore} points. รับรางวัลพิเศษจากคนรักของคุณได้เลย!</Typography>
+                                                            </div>
+                                                        ) : (
+                                                            <Typography className="text-[#8B1D36] opacity-80" sx={{ fontFamily: 'var(--font-mali)' }}>Thank you for being my everything.</Typography>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Decorative Background Elements */}
+                                                <div className="absolute top-0 left-0 w-32 h-32 bg-pink-200/20 rounded-full blur-3xl" />
+                                                <div className="absolute bottom-0 right-0 w-40 h-40 bg-red-200/20 rounded-full blur-3xl" />
+                                            </div>
                                         </div>
                                     </SwiperSlide>
                                 )}
@@ -885,7 +970,7 @@ export default function ValentineSlugPage() {
                                         onClick={() => handleOpenVideoModal(memories[currentSlideIndex])}
                                         className="bg-[#FF3366] text-white px-8 py-3 rounded-full font-bold shadow-[0_8px_20px_rgba(255,51,102,0.4)] flex items-center gap-3 hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-wider"
                                     >
-                                        <Play size={20} variant="Bold" />
+                                        <Play size={20} variant="Bold" color="#FFD700" />
                                         Watch Video
                                     </button>
                                 </div>
@@ -904,20 +989,23 @@ export default function ValentineSlugPage() {
 
                         {/* Footer Message */}
                         <div className="w-full max-w-sm px-6 pb-8 text-center" style={{ zIndex: 50 }}>
-                            <Typography className="text-[#8B1D36] font-bold tracking-widest uppercase mb-2 text-[10px] opacity-70" sx={{ fontFamily: 'var(--font-prompt)' }}>{displayContent.subtitle}</Typography>
+                            <Typography className="text-[#8B1D36] font-bold tracking-widest uppercase mb-2 text-[10px] opacity-90" sx={{ fontFamily: 'var(--font-dancing)' }}>{displayContent.subtitle}</Typography>
                             <Paper
                                 elevation={0}
                                 sx={{
-                                    bgcolor: 'rgba(255,255,255,0.7)',
-                                    p: 3,
-                                    borderRadius: '24px',
-                                    backdropFilter: 'blur(12px)',
-                                    border: '1px solid rgba(255,255,255,0.5)',
-                                    minHeight: '160px',
+                                    bgcolor: 'rgba(255,255,255,0.65)',
+                                    p: 2,
+                                    borderRadius: '20px',
+                                    backdropFilter: 'blur(16px)',
+                                    border: '1px solid rgba(212, 175, 55, 0.3)', // Gold border
+                                    boxShadow: '0 8px 32px rgba(212, 175, 55, 0.1)',
+                                    minHeight: '80px',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     justifyContent: 'center',
-                                    transition: 'all 0.5s ease-in-out'
+                                    transition: 'all 0.5s ease-in-out',
+                                    position: 'relative',
+                                    overflow: 'hidden'
                                 }}
                             >
                                 <Typography
