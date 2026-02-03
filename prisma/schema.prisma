@@ -84,6 +84,7 @@ model product {
   category            category?        @relation(fields: [categoryId], references: [id], map: "Product_categoryId_fkey")
   productdetail       productdetail[]
   productfeature      productfeature[]
+  productshipping     productshipping[]
   productimage        productimage[]
 
   @@index([categoryId], map: "Product_categoryId_fkey")
@@ -105,6 +106,15 @@ model productfeature {
   product   product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductFeature_productId_fkey")
 
   @@index([productId], map: "ProductFeature_productId_fkey")
+}
+
+model productshipping {
+  id        String  @id @default(uuid())
+  text      String
+  productId String
+  product   product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductShipping_productId_fkey")
+
+  @@index([productId], map: "ProductShipping_productId_fkey")
 }
 
 model productimage {

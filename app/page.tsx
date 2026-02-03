@@ -5,6 +5,8 @@ import ProductSneakPeek from "@/components/home/ProductSneakPeek";
 import QRCardPromo from "@/components/home/QRCardPromo";
 import { prisma } from "@/lib/prisma";
 
+export const revalidate = 0; // Ensure fresh data on every visit
+
 // Define interface locally since prisma generate failed or is locked
 interface Category {
   id: string;

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
@@ -12,7 +14,8 @@ export async function GET(request: NextRequest) {
             include: {
                 productimage: true,
                 productdetail: true,
-                productfeature: true
+                productfeature: true,
+                productshipping: true
             },
             orderBy: [
                 { priority: 'desc' }, // Higher priority first (desc)
@@ -43,6 +46,7 @@ export async function GET(request: NextRequest) {
                     description: product.description,
                     details: product.productdetail?.map((d: any) => d.text) || [],
                     features: product.productfeature?.map((f: any) => f.text) || [],
+                    shipping: product.productshipping?.map((s: any) => s.text) || [],
                     stock: product.stock,
                     stockVelvet: product.stockVelvet,
                     priority: product.priority,
@@ -70,7 +74,7 @@ export async function POST(request: NextRequest) {
             title, sku, slug, type, price, originalPrice,
             discount, priceVelvet, originalPriceVelvet, discountVelvet,
             description, image, images,
-            details, features, stock, stockVelvet, priority,
+            details, features, shipping, stock, stockVelvet, priority,
             categoryId, hasQrCode, qrCodePrice
         } = body;
 
@@ -104,12 +108,16 @@ export async function POST(request: NextRequest) {
                 },
                 productfeature: {
                     create: features?.map((text: string) => ({ text })) || []
+                },
+                productshipping: {
+                    create: shipping?.map((text: string) => ({ text })) || []
                 }
             },
             include: {
                 productimage: true,
                 productdetail: true,
-                productfeature: true
+                productfeature: true,
+                productshipping: true
             }
         });
 

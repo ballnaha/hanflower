@@ -16,6 +16,7 @@ export interface Product {
     description: string;
     details: string[];
     features: string[];
+    shipping: string[];
     stock: number;
     stockVelvet: number;
     priority?: number;

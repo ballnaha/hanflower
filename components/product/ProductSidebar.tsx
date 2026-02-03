@@ -491,19 +491,32 @@ export default function ProductSidebar({
                     )}
                     {activeTab === 2 && (
                         <Box>
-                            <Typography variant="body2" sx={{ color: '#666', fontSize: '0.85rem', lineHeight: 1.8, mb: 2 }}>
-                                เราจัดส่งด้วยความปราณีตผ่านบริการขนส่งระดับพรีเมียม เพื่อให้มั่นใจว่าดอกไม้ถึงมือท่านในสภาพที่สมบูรณ์ที่สุด
-                            </Typography>
-                            <Stack spacing={1.5}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    <Truck size={16} color="#B76E79" />
-                                    <Typography variant="body2" sx={{ fontSize: '0.85rem', color: '#444' }}>จัดส่งฟรีในกรุงเทพฯ สำหรับออเดอร์ 1,500 บาทขึ้นไป</Typography>
-                                </Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    <Gift size={16} color="#B76E79" />
-                                    <Typography variant="body2" sx={{ fontSize: '0.85rem', color: '#444' }}>บรรจุในกล่องของขวัญสุดพิเศษ</Typography>
-                                </Box>
-                            </Stack>
+                            {product.shipping && product.shipping.length > 0 ? (
+                                <Stack spacing={1.5}>
+                                    {product.shipping.map((text, idx) => (
+                                        <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                                            {idx === 0 ? <Truck size={16} color="#B76E79" /> : <Gift size={16} color="#B76E79" />}
+                                            <Typography variant="body2" sx={{ fontSize: '0.85rem', color: '#444', lineHeight: 1.6 }}>{text}</Typography>
+                                        </Box>
+                                    ))}
+                                </Stack>
+                            ) : (
+                                <>
+                                    <Typography variant="body2" sx={{ color: '#666', fontSize: '0.85rem', lineHeight: 1.8, mb: 2 }}>
+                                        เราจัดส่งด้วยความปราณีตผ่านบริการขนส่งระดับพรีเมียม เพื่อให้มั่นใจว่าดอกไม้ถึงมือท่านในสภาพที่สมบูรณ์ที่สุด
+                                    </Typography>
+                                    <Stack spacing={1.5}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                            <Truck size={16} color="#B76E79" />
+                                            <Typography variant="body2" sx={{ fontSize: '0.85rem', color: '#444' }}>จัดส่งฟรีในกรุงเทพฯ สำหรับออเดอร์ 1,500 บาทขึ้นไป</Typography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                            <Gift size={16} color="#B76E79" />
+                                            <Typography variant="body2" sx={{ fontSize: '0.85rem', color: '#444' }}>บรรจุในกล่องของขวัญสุดพิเศษ</Typography>
+                                        </Box>
+                                    </Stack>
+                                </>
+                            )}
                         </Box>
                     )}
                 </Box>
@@ -548,9 +561,20 @@ export default function ProductSidebar({
                         <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.7rem', letterSpacing: '0.1em' }}>DELIVERY & RETURNS</Typography>
                     </AccordionSummary>
                     <AccordionDetails sx={{ pt: 0 }}>
-                        <Typography variant="body2" sx={{ color: '#666', fontSize: '0.8rem', lineHeight: 1.8 }}>
-                            เราจัดส่งด้วยความปราณีตผ่านบริการขนส่งระดับพรีเมียม เพื่อให้มั่นใจว่าดอกไม้ถึงมือท่านในสภาพที่สมบูรณ์ที่สุด
-                        </Typography>
+                        {product.shipping && product.shipping.length > 0 ? (
+                            <Stack spacing={1.5}>
+                                {product.shipping.map((text, idx) => (
+                                    <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                                        {idx === 0 ? <Truck size={14} color="#B76E79" /> : <Gift size={14} color="#B76E79" />}
+                                        <Typography variant="body2" sx={{ fontSize: '0.8rem', color: '#444', lineHeight: 1.6 }}>{text}</Typography>
+                                    </Box>
+                                ))}
+                            </Stack>
+                        ) : (
+                            <Typography variant="body2" sx={{ color: '#666', fontSize: '0.8rem', lineHeight: 1.8 }}>
+                                เราจัดส่งด้วยความปราณีตผ่านบริการขนส่งระดับพรีเมียม เพื่อให้มั่นใจว่าดอกไม้ถึงมือท่านในสภาพที่สมบูรณ์ที่สุด
+                            </Typography>
+                        )}
                     </AccordionDetails>
                 </Accordion>
             </Box>

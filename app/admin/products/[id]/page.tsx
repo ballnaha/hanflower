@@ -63,6 +63,7 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
         images: [''],
         details: [''],
         features: [''],
+        shipping: [''],
         categoryId: '',
         hasQrCode: true,
         qrCodePrice: '150'
@@ -94,6 +95,7 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                             images: data.images.length > 0 ? data.images : [''],
                             details: data.details.length > 0 ? data.details : [''],
                             features: data.features.length > 0 ? data.features : [''],
+                            shipping: data.shipping.length > 0 ? data.shipping : [''],
                             categoryId: data.categoryId || '',
                             hasQrCode: data.hasQrCode !== undefined ? data.hasQrCode : true,
                             qrCodePrice: data.qrCodePrice?.toString() || '150'
@@ -198,17 +200,17 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
         }
     };
 
-    const handleArrayChange = (index: number, value: string, field: 'images' | 'details' | 'features') => {
+    const handleArrayChange = (index: number, value: string, field: 'images' | 'details' | 'features' | 'shipping') => {
         const newArray = [...form[field]];
         newArray[index] = value;
         setForm(prev => ({ ...prev, [field]: newArray }));
     };
 
-    const addArrayItem = (field: 'images' | 'details' | 'features') => {
+    const addArrayItem = (field: 'images' | 'details' | 'features' | 'shipping') => {
         setForm(prev => ({ ...prev, [field]: [...prev[field], ''] }));
     };
 
-    const removeArrayItem = async (index: number, field: 'images' | 'details' | 'features') => {
+    const removeArrayItem = async (index: number, field: 'images' | 'details' | 'features' | 'shipping') => {
         if (field === 'images') {
             const imageUrl = form.images[index];
             if (imageUrl && imageUrl.startsWith('/uploads/')) {
@@ -403,7 +405,8 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                     image: finalMainImage,
                     images: finalAdditionalImages,
                     details: form.details.filter(text => text.trim() !== ''),
-                    features: form.features.filter(text => text.trim() !== '')
+                    features: form.features.filter(text => text.trim() !== ''),
+                    shipping: form.shipping.filter(text => text.trim() !== '')
                 }),
             });
 
@@ -636,6 +639,32 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                     </Box>
                                 ))}
                                 <Button startIcon={<Add size={18} color="#B76E79" variant="Bold" />} onClick={() => addArrayItem('features')} sx={{ alignSelf: 'flex-start', color: '#B76E79' }}>เพิ่มคุณสมบัติ</Button>
+                            </Stack>
+
+                            <Divider sx={{ my: 4 }} />
+
+                            <Typography variant="subtitle2" sx={{ mb: 2, color: '#666' }}>การจัดส่ง (Shipping/Delivery)</Typography>
+                            <Stack spacing={2}>
+                                {form.shipping.map((text, idx) => (
+                                    <Box key={`shipping-${idx}`} sx={{ display: 'flex', gap: 1 }}>
+                                        <TextField
+                                            fullWidth
+                                            value={text}
+                                            onChange={(e) => handleArrayChange(idx, e.target.value, 'shipping')}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    addArrayItem('shipping');
+                                                }
+                                            }}
+                                            placeholder="ระบุการจัดส่ง..."
+                                        />
+                                        <IconButton color="error" onClick={() => removeArrayItem(idx, 'shipping')} disabled={form.shipping.length === 1}>
+                                            <Trash size={20} color="#FF4D4F" variant="Bulk" />
+                                        </IconButton>
+                                    </Box>
+                                ))}
+                                <Button startIcon={<Add size={18} color="#B76E79" variant="Bold" />} onClick={() => addArrayItem('shipping')} sx={{ alignSelf: 'flex-start', color: '#B76E79' }}>เพิ่มข้อมูลการจัดส่ง</Button>
                             </Stack>
                         </Paper>
                     </Box>

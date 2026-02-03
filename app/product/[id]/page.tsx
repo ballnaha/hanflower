@@ -16,7 +16,8 @@ async function getProduct(identifier: string) {
         include: {
             productimage: true,
             productdetail: true,
-            productfeature: true
+            productfeature: true,
+            productshipping: true
         }
     });
 
@@ -26,7 +27,8 @@ async function getProduct(identifier: string) {
             include: {
                 productimage: true,
                 productdetail: true,
-                productfeature: true
+                productfeature: true,
+                productshipping: true
             }
         });
     }
@@ -38,7 +40,8 @@ async function getProduct(identifier: string) {
         ...product,
         images: product.productimage.map(img => img.url),
         details: product.productdetail.map(d => d.text),
-        features: product.productfeature.map(f => f.text)
+        features: product.productfeature.map(f => f.text),
+        shipping: product.productshipping.map(s => s.text)
     };
 }
 

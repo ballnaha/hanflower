@@ -18,7 +18,8 @@ export async function GET(
                 include: {
                     productimage: true,
                     productdetail: true,
-                    productfeature: true
+                    productfeature: true,
+                    productshipping: true
                 }
             });
             console.log(`Product API: Slug lookup result: ${product ? 'FOUND' : 'NOT FOUND'}`);
@@ -34,7 +35,8 @@ export async function GET(
                     include: {
                         productimage: true,
                         productdetail: true,
-                        productfeature: true
+                        productfeature: true,
+                        productshipping: true
                     }
                 });
                 console.log(`Product API: ID lookup result: ${product ? 'FOUND' : 'NOT FOUND'}`);
@@ -58,6 +60,7 @@ export async function GET(
                 images: product.productimage.map(img => img.url),
                 details: product.productdetail.map(det => det.text),
                 features: product.productfeature.map(feat => feat.text),
+                shipping: product.productshipping?.map(ship => ship.text) || [],
                 categoryId: product.categoryId,
                 hasQrCode: product.hasQrCode,
                 qrCodePrice: product.qrCodePrice?.toString() || "0"
@@ -87,7 +90,7 @@ export async function PUT(
             title, sku, slug, type, price, originalPrice,
             discount, priceVelvet, originalPriceVelvet, discountVelvet,
             description, image, images,
-            details, features, stock, stockVelvet, priority,
+            details, features, shipping, stock, stockVelvet, priority,
             categoryId, hasQrCode, qrCodePrice
         } = body;
 
@@ -104,6 +107,7 @@ export async function PUT(
             await tx.productimage.deleteMany({ where: { productId: id } });
             await tx.productdetail.deleteMany({ where: { productId: id } });
             await tx.productfeature.deleteMany({ where: { productId: id } });
+            await tx.productshipping.deleteMany({ where: { productId: id } });
 
             console.log('Product API PUT: Old relations deleted');
 
@@ -136,6 +140,9 @@ export async function PUT(
                 },
                 productfeature: {
                     create: features.filter((text: string) => text && text.trim() !== '').map((text: string) => ({ text }))
+                },
+                productshipping: {
+                    create: shipping ? shipping.filter((text: string) => text && text.trim() !== '').map((text: string) => ({ text })) : []
                 }
             };
 
