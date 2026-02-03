@@ -22,6 +22,8 @@ export interface Product {
     priority?: number;
     hasQrCode?: boolean;
     qrCodePrice?: string;
+    isNew?: boolean;
+    isBestSeller?: boolean;
 }
 
 // Mock data removed - now using database

@@ -52,7 +52,9 @@ export async function GET(request: NextRequest) {
                     priority: product.priority,
                     categoryId: product.categoryId,
                     hasQrCode: product.hasQrCode,
-                    qrCodePrice: product.qrCodePrice?.toString() || "0"
+                    qrCodePrice: product.qrCodePrice?.toString() || "0",
+                    isNew: product.isNew,
+                    isBestSeller: product.isBestSeller
                 };
             } catch (err) {
                 console.error(`Error transforming product ${product.id}:`, err);
@@ -75,7 +77,7 @@ export async function POST(request: NextRequest) {
             discount, priceVelvet, originalPriceVelvet, discountVelvet,
             description, image, images,
             details, features, shipping, stock, stockVelvet, priority,
-            categoryId, hasQrCode, qrCodePrice
+            categoryId, hasQrCode, qrCodePrice, isNew, isBestSeller
         } = body;
 
         const newProduct = await prisma.product.create({
@@ -99,6 +101,8 @@ export async function POST(request: NextRequest) {
                 categoryId: categoryId || null,
                 hasQrCode: hasQrCode !== undefined ? hasQrCode : true,
                 qrCodePrice: qrCodePrice ? parseFloat(qrCodePrice.toString().replace(/,/g, '')) : 0,
+                isNew: !!isNew,
+                isBestSeller: !!isBestSeller,
                 updatedAt: new Date(),
                 productimage: {
                     create: images?.map((url: string) => ({ url })) || []

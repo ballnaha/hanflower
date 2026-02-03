@@ -80,6 +80,8 @@ model product {
   categoryId          String?
   hasQrCode           Boolean          @default(true)
   qrCodePrice         Decimal?         @db.Decimal(10, 2) @default(150.00)
+  isNew               Boolean          @default(false)
+  isBestSeller        Boolean          @default(false)
   orderitem           orderitem[]
   category            category?        @relation(fields: [categoryId], references: [id], map: "Product_categoryId_fkey")
   productdetail       productdetail[]

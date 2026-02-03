@@ -59,9 +59,10 @@ export default async function Home() {
     <>
       <Hero />
       <AboutUs />
+      <ProductSneakPeek />
       <QRCardPromo />
       <Features categories={categories} />
-      <ProductSneakPeek />
+
     </>
   );
 }

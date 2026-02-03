@@ -70,8 +70,8 @@ export default function Hero() {
                         mb: { xs: 2, md: 4 },
                         textShadow: '0 4px 20px rgba(0,0,0,0.3)',
                     }}>
-                        <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#FFFFFF' }}>บอกรัก</span> <br />
-                        <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#D4AF37' }}>ยังไงให้โลกจำ</span>
+                        <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#FFFFFF' }}>บอกรัก ยังไง ...</span> <br />
+                        <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#D4AF37' }}>ให้โลกจำ</span>
                     </Typography>
 
                     <Typography variant="h6" sx={{

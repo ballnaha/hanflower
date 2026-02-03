@@ -63,7 +63,9 @@ export async function GET(
                 shipping: product.productshipping?.map(ship => ship.text) || [],
                 categoryId: product.categoryId,
                 hasQrCode: product.hasQrCode,
-                qrCodePrice: product.qrCodePrice?.toString() || "0"
+                qrCodePrice: product.qrCodePrice?.toString() || "0",
+                isNew: product.isNew,
+                isBestSeller: product.isBestSeller
             });
         } catch (err: any) {
             console.error('Product API: Error transforming product:', err.message);
@@ -91,7 +93,7 @@ export async function PUT(
             discount, priceVelvet, originalPriceVelvet, discountVelvet,
             description, image, images,
             details, features, shipping, stock, stockVelvet, priority,
-            categoryId, hasQrCode, qrCodePrice
+            categoryId, hasQrCode, qrCodePrice, isNew, isBestSeller
         } = body;
 
         if (!id) {
@@ -131,6 +133,8 @@ export async function PUT(
                 categoryId: categoryId || null,
                 hasQrCode: hasQrCode !== undefined ? hasQrCode : true,
                 qrCodePrice: qrCodePrice ? parseFloat(qrCodePrice.toString().replace(/,/g, '')) : 0,
+                isNew: !!isNew,
+                isBestSeller: !!isBestSeller,
                 updatedAt: new Date(),
                 productimage: {
                     create: images.filter((url: string) => url && url.trim() !== '').map((url: string) => ({ url }))

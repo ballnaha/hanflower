@@ -172,17 +172,49 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                                 />
                                 {idx === 0 && (
                                     <>
-                                        <Typography sx={{
+                                        <Box sx={{
                                             position: 'absolute',
                                             bottom: 30,
                                             left: 30,
-                                            fontSize: '0.75rem',
-                                            color: '#666',
-                                            fontWeight: 500,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 1,
                                             zIndex: 2
                                         }}>
-                                            New
-                                        </Typography>
+                                            {product.isNew && (
+                                                <Box sx={{
+                                                    bgcolor: '#B76E79',
+                                                    color: '#FFFFFF',
+                                                    px: 2,
+                                                    py: 0.6,
+                                                    fontSize: '0.65rem',
+                                                    fontWeight: 800,
+                                                    letterSpacing: '0.2em',
+                                                    textTransform: 'uppercase',
+                                                    borderRadius: '2px',
+                                                    boxShadow: '0 4px 15px rgba(183, 110, 121, 0.4)',
+                                                    animation: 'pulse 2s infinite'
+                                                }}>
+                                                    New Collection
+                                                </Box>
+                                            )}
+                                            {product.isBestSeller && (
+                                                <Box sx={{
+                                                    bgcolor: '#D4AF37',
+                                                    color: '#FFFFFF',
+                                                    px: 2,
+                                                    py: 0.6,
+                                                    fontSize: '0.65rem',
+                                                    fontWeight: 800,
+                                                    letterSpacing: '0.2em',
+                                                    textTransform: 'uppercase',
+                                                    borderRadius: '2px',
+                                                    boxShadow: '0 4px 15px rgba(212, 175, 55, 0.4)'
+                                                }}>
+                                                    Best Seller
+                                                </Box>
+                                            )}
+                                        </Box>
                                         {/* QR Code Card Overlay */}
                                         {product.hasQrCode !== false && (
                                             <Box sx={{
@@ -255,17 +287,48 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                                         />
                                         {idx === 0 && (
                                             <>
-                                                <Typography sx={{
+                                                <Box sx={{
                                                     position: 'absolute',
                                                     bottom: 20,
                                                     left: 20,
-                                                    fontSize: '0.75rem',
-                                                    color: '#666',
-                                                    fontWeight: 500,
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: 1,
                                                     zIndex: 2
                                                 }}>
-                                                    New
-                                                </Typography>
+                                                    {product.isNew && (
+                                                        <Box sx={{
+                                                            bgcolor: '#B76E79',
+                                                            color: '#FFFFFF',
+                                                            px: 1.5,
+                                                            py: 0.5,
+                                                            fontSize: '0.6rem',
+                                                            fontWeight: 800,
+                                                            letterSpacing: '0.15em',
+                                                            textTransform: 'uppercase',
+                                                            borderRadius: '2px',
+                                                            boxShadow: '0 4px 12px rgba(183, 110, 121, 0.3)'
+                                                        }}>
+                                                            New
+                                                        </Box>
+                                                    )}
+                                                    {product.isBestSeller && (
+                                                        <Box sx={{
+                                                            bgcolor: '#D4AF37',
+                                                            color: '#FFFFFF',
+                                                            px: 1.5,
+                                                            py: 0.5,
+                                                            fontSize: '0.6rem',
+                                                            fontWeight: 800,
+                                                            letterSpacing: '0.15em',
+                                                            textTransform: 'uppercase',
+                                                            borderRadius: '2px',
+                                                            boxShadow: '0 4px 12px rgba(212, 175, 55, 0.3)'
+                                                        }}>
+                                                            Best Seller
+                                                        </Box>
+                                                    )}
+                                                </Box>
                                                 {/* QR Code Card Overlay for Mobile */}
                                                 {product.hasQrCode !== false && (
                                                     <Box sx={{

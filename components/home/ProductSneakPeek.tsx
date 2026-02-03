@@ -23,6 +23,8 @@ interface Product {
     discountVelvet?: string;
     stock?: number;
     hasQrCode?: boolean;
+    isNew?: boolean;
+    isBestSeller?: boolean;
 }
 
 export default function ProductSneakPeek() {
@@ -240,6 +242,51 @@ function ProductCard({ product }: { product: Product }) {
                             onError={handleImageError}
                         />
 
+                        {/* Badges Overlay */}
+                        <Box sx={{
+                            position: 'absolute',
+                            top: 15,
+                            left: 15,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 1,
+                            zIndex: 3
+                        }}>
+                            {product.isNew && (
+                                <Box sx={{
+                                    bgcolor: '#B76E79',
+                                    color: '#FFFFFF',
+                                    px: 1.5,
+                                    py: 0.5,
+                                    fontSize: '0.6rem',
+                                    fontWeight: 800,
+                                    letterSpacing: '0.15em',
+                                    textTransform: 'uppercase',
+                                    borderRadius: '2px',
+                                    boxShadow: '0 4px 12px rgba(183, 110, 121, 0.3)',
+                                    animation: 'pulse 2s infinite'
+                                }}>
+                                    New
+                                </Box>
+                            )}
+                            {product.isBestSeller && (
+                                <Box sx={{
+                                    bgcolor: '#D4AF37',
+                                    color: '#FFFFFF',
+                                    px: 1.5,
+                                    py: 0.5,
+                                    fontSize: '0.6rem',
+                                    fontWeight: 800,
+                                    letterSpacing: '0.15em',
+                                    textTransform: 'uppercase',
+                                    borderRadius: '2px',
+                                    boxShadow: '0 4px 12px rgba(212, 175, 55, 0.3)'
+                                }}>
+                                    Best Seller
+                                </Box>
+                            )}
+                        </Box>
+
                         {/* Discount Badge Overlay */}
                         {currentDiscount && parseInt(currentDiscount) > 0 && (
                             <Box sx={{
@@ -390,8 +437,8 @@ function ProductCard({ product }: { product: Product }) {
                                     px: 1,
                                     py: 0.3,
                                     borderRadius: '10px',
-                                    fontSize: '0.5rem',
-                                    fontWeight: 600,
+                                    fontSize: '0.7rem',
+                                    fontWeight: 500,
                                     whiteSpace: 'nowrap',
                                     opacity: 0,
                                     transition: 'opacity 0.3s ease 0.2s',

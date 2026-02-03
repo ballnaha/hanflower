@@ -66,7 +66,9 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
         shipping: [''],
         categoryId: '',
         hasQrCode: true,
-        qrCodePrice: '150'
+        qrCodePrice: '150',
+        isNew: false,
+        isBestSeller: false
     });
 
     const [pendingImage, setPendingImage] = useState<{ file: File; preview: string } | null>(null);
@@ -98,6 +100,8 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                             shipping: data.shipping.length > 0 ? data.shipping : [''],
                             categoryId: data.categoryId || '',
                             hasQrCode: data.hasQrCode !== undefined ? data.hasQrCode : true,
+                            isNew: !!data.isNew,
+                            isBestSeller: !!data.isBestSeller,
                             qrCodePrice: data.qrCodePrice?.toString() || '150'
                         });
                     }
@@ -129,9 +133,8 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-
-        if (name === 'hasQrCode') {
-            setForm(prev => ({ ...prev, hasQrCode: !prev.hasQrCode }));
+        if (name === 'hasQrCode' || name === 'isNew' || name === 'isBestSeller') {
+            setForm(prev => ({ ...prev, [name]: !prev[name as 'hasQrCode' | 'isNew' | 'isBestSeller'] }));
             return;
         }
 
@@ -792,6 +795,44 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                         helperText="ราคาที่ระบุคือค่าธรรมเนียมปรับแต่งพิเศษ (รูปภาพ/วิดีโอ)"
                                     />
                                 )}
+
+                                <Divider sx={{ my: 2 }}>
+                                    <Chip label="🏷️ ป้ายสัญลักษณ์ (Badges)" size="small" sx={{ fontWeight: 600 }} />
+                                </Divider>
+
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Typography variant="body2" sx={{ color: '#666' }}>สินค้าใหม่ (New)</Typography>
+                                    <Button
+                                        onClick={() => handleChange({ target: { name: 'isNew' } } as any)}
+                                        sx={{
+                                            color: form.isNew ? '#FFF' : '#666',
+                                            bgcolor: form.isNew ? '#B76E79' : '#EEE',
+                                            borderRadius: '20px',
+                                            px: 2,
+                                            height: 32,
+                                            '&:hover': { bgcolor: form.isNew ? '#A45D68' : '#DDD' }
+                                        }}
+                                    >
+                                        {form.isNew ? 'เปิด' : 'ปิด'}
+                                    </Button>
+                                </Box>
+
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Typography variant="body2" sx={{ color: '#666' }}>สินค้าขายดี (Best Seller)</Typography>
+                                    <Button
+                                        onClick={() => handleChange({ target: { name: 'isBestSeller' } } as any)}
+                                        sx={{
+                                            color: form.isBestSeller ? '#FFF' : '#666',
+                                            bgcolor: form.isBestSeller ? '#B76E79' : '#EEE',
+                                            borderRadius: '20px',
+                                            px: 2,
+                                            height: 32,
+                                            '&:hover': { bgcolor: form.isBestSeller ? '#A45D68' : '#DDD' }
+                                        }}
+                                    >
+                                        {form.isBestSeller ? 'เปิด' : 'ปิด'}
+                                    </Button>
+                                </Box>
                             </Stack>
 
                             <Divider sx={{ my: 4 }} />
