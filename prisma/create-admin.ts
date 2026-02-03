@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -14,6 +15,7 @@ async function main() {
             password: hashedPassword,
         },
         create: {
+            id: randomUUID(),
             username,
             password: hashedPassword,
             role: 'ADMIN',

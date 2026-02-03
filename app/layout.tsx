@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Prompt } from "next/font/google";
+import { Prompt, Mali, Dancing_Script } from "next/font/google";
 import "./globals.css";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import { ThemeProvider } from '@mui/material/styles';
@@ -10,6 +10,18 @@ const prompt = Prompt({
   variable: "--font-prompt",
   weight: ["300", "400", "500", "600", "700"],
   subsets: ["latin", "thai"],
+});
+
+const mali = Mali({
+  variable: "--font-mali",
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["latin", "thai"],
+});
+
+const dancingScript = Dancing_Script({
+  variable: "--font-dancing",
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
 });
 
 export const viewport: Viewport = {
@@ -30,9 +42,7 @@ export const metadata: Metadata = {
   }
 };
 
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import MobileNav from "@/components/layout/MobileNav";
+import MainLayout from "@/components/layout/MainLayout";
 
 import CartProviderWrapper from "@/components/providers/CartProviderWrapper";
 import { NotificationProvider } from "@/context/NotificationContext";
@@ -45,18 +55,15 @@ export default function RootLayout({
   return (
     <html lang="th">
       <body
-        className={`${prompt.variable} font-sans antialiased bg-[#FFFFFF] text-[#000000]`}
+        className={`${prompt.variable} ${mali.variable} ${dancingScript.variable} font-sans antialiased bg-[#FFFFFF] text-[#000000]`}
       >
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <NotificationProvider>
               <CartProviderWrapper>
-                <Header />
-                <Box component="main" sx={{ pb: { xs: '100px', md: 0 } }}>
+                <MainLayout>
                   {children}
-                </Box>
-                <Footer />
-                <MobileNav />
+                </MainLayout>
               </CartProviderWrapper>
             </NotificationProvider>
           </ThemeProvider>

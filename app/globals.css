@@ -20,7 +20,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-prompt), sans-serif !important;
+  font-family: var(--font-prompt), sans-serif;
   overflow-x: hidden;
 }
 
@@ -37,5 +37,5 @@ button,
 input,
 textarea,
 select {
-  font-family: var(--font-prompt), sans-serif !important;
+  font-family: inherit;
 }

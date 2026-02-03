@@ -117,7 +117,7 @@ model productimage {
 }
 
 model user {
-  id        String   @id
+  id        String   @id @default(uuid())
   username  String   @unique(map: "User_username_key")
   password  String
   role      String   @default("ADMIN")
@@ -159,4 +159,102 @@ model coupon {
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+// Valentine Models
+model ValentineCard {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  jobName         String?  // Internal name for admin
+  title           String
+  openingText     String?
+  greeting        String?
+  subtitle        String?
+  message         String?  @db.Text
+  signer          String?
+  backgroundColor String?  @default("#FFF0F3")
+  status          String   @default("active") // active, inactive
+  disabledAt      DateTime? // วันที่จะ disabled อัตโนมัติ (ถ้าไม่ใส่ = ไม่มีวันหมดอายุ)
+
+  // Background Music (เลือกใช้ได้ทีละอันเท่านั้น - MP3 จะถูกใช้ก่อนถ้ามีทั้งคู่)
+  backgroundMusicYoutubeId String?  // YouTube Video ID for background music
+  backgroundMusicUrl       String?  @db.Text // Uploaded MP3 file URL
+  
+  // UI Customization
+  swipeHintColor           String?  @default("white") // white, red
+  swipeHintText            String?  @default("Swipe to see more")
+  showGame                 Boolean  @default(true)
+
+  // Customer Contact Info (Optional)
+  customerPhone            String?
+  customerAddress          String?  @db.Text
+  note                     String?  @db.Text
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  memories        ValentineMemory[]
+  orderedProducts ValentineProduct[]
+  scores          ValentineScore[]
+}
+
+model ValentineScore {
+  id        String   @id @default(cuid())
+  cardId    String
+  playerId  String   // persistent ID from localStorage
+  name      String
+  score     Int
+  createdAt DateTime @default(now())
+
+  card ValentineCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, playerId])
+  @@index([cardId])
+  @@index([playerId])
+  @@index([score(sort: Desc)])
+}
+
+model ValentineMemory {
+  id        String   @id @default(cuid())
+  cardId    String
+  type      String   @default("image") // image, youtube, tiktok, video
+  url       String   @db.Text
+  caption   String?
+  thumbnail String?  @db.Text
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  card ValentineCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+}
+
+// Valentine Catalog Models
+model ValentineProduct {
+  id            String   @id @default(cuid())
+  name          String
+  category      String   @default("General")
+  price         Float
+  originalPrice Float?   // For discount display
+  description   String?  @db.Text
+  image         String?  // Main image URL (will be used as thumbnail in list)
+  isHot         Boolean  @default(false)
+  isNew         Boolean  @default(false)
+  status        String   @default("active") // active, inactive, out_of_stock
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  images        ValentineProductImage[]
+  cards         ValentineCard[]
+}
+
+model ValentineProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String   @db.Text
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product ValentineProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
