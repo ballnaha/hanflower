@@ -5,7 +5,7 @@ import { existsSync } from 'fs';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { filename: string } }
+    { params }: { params: Promise<{ filename: string }> }
 ) {
     // Await params if it's a promise (Next.js 15+ requirement)
     const { filename } = await params;

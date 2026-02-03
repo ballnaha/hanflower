@@ -131,8 +131,9 @@ export default function Header() {
                             sx={{
                                 bgcolor: '#06C755',
                                 borderRadius: '100px',
-                                px: { xs: 2, md: 3 },
+                                px: { xs: 1.5, md: 3 },
                                 py: { xs: 0.8, md: 1.2 },
+                                minWidth: { xs: 'auto', md: '64px' },
                                 color: '#FFFFFF',
                                 textTransform: 'none',
                                 fontSize: { xs: '0.75rem', md: '0.85rem' },
@@ -147,7 +148,9 @@ export default function Header() {
                             }}
                             startIcon={<Image src="/images/line.png" alt="LINE" width={18} height={18} />}
                         >
-                            สั่งซื้อทางไลน์
+                            <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>
+                                สั่งซื้อทางไลน์
+                            </Box>
                         </Button>
                     </Box>
                 </Box>
@@ -265,8 +268,9 @@ export default function Header() {
                                     bgcolor: isScrolled || pathname !== '/' ? '#06C755' : 'rgba(255, 255, 255, 0.15)',
                                     backdropFilter: 'blur(10px)',
                                     borderRadius: '100px', // Tablet style pill
-                                    px: { xs: 2, md: 3 },
+                                    px: { xs: 1.5, md: 3 },
                                     py: { xs: 0.8, md: 1.2 },
+                                    minWidth: { xs: 'auto', md: '64px' },
                                     color: '#FFFFFF',
                                     textTransform: 'none',
                                     fontSize: { xs: '0.75rem', md: '0.85rem' },
@@ -284,7 +288,9 @@ export default function Header() {
                                 }}
                                 startIcon={<Image src="/images/line.png" alt="LINE" width={18} height={18} />}
                             >
-                                สั่งซื้อทางไลน์
+                                <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>
+                                    สั่งซื้อทางไลน์
+                                </Box>
                             </Button>
                         </Box>
                     </Box>

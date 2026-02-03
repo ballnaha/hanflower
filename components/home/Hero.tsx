@@ -49,7 +49,7 @@ export default function Hero() {
             }} />
 
             {/* Minimalist Left-Aligned Content */}
-            <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 10, textAlign: 'left', px: { xs: 4, md: 10 } }}>
+            <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 10, textAlign: 'left', px: { xs: 3, md: 10 } }}>
                 <Box sx={{
                     maxWidth: '800px',
                     opacity: 0,
@@ -64,15 +64,14 @@ export default function Hero() {
                     </Typography>
 
                     <Typography variant="h1" sx={{
-                        fontSize: { xs: '2.5rem', sm: '4.5rem', md: '5.5rem' },
+                        fontSize: { xs: '2.2rem', sm: '4rem', md: '5.5rem' },
                         color: '#FFFFFF',
                         lineHeight: 1.1,
                         mb: { xs: 2, md: 4 },
                         textShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                        fontFamily: 'var(--font-playfair), serif'
                     }}>
-                        <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#FFFFFF', fontFamily: 'var(--font-prompt)' }}>บอกรัก</span> <br />
-                        <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#D4AF37', fontFamily: 'var(--font-prompt)' }}>ยังไงให้โลกจำ</span>
+                        <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#FFFFFF' }}>บอกรัก</span> <br />
+                        <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#D4AF37' }}>ยังไงให้โลกจำ</span>
                     </Typography>
 
                     <Typography variant="h6" sx={{

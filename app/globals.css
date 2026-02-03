@@ -34,8 +34,9 @@ span,
 p,
 a,
 button,
+div,
 input,
 textarea,
 select {
-  font-family: inherit;
+  font-family: var(--font-prompt), sans-serif !important;
 }

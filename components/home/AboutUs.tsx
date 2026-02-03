@@ -9,7 +9,6 @@ import { Pagination, Autoplay, EffectFade } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
-import { fontFamily } from "html2canvas/dist/types/css/property-descriptors/font-family";
 
 export default function AboutUs() {
 
@@ -121,7 +120,7 @@ export default function AboutUs() {
                                     boxShadow: '0 15px 30px rgba(0,0,0,0.18)'
                                 }}
                             >
-                                <Typography variant="h4" sx={{ color: '#E0BFB8', mb: 0.5, fontFamily: 'var(--font-playfair), serif', fontSize: '0.9rem', letterSpacing: '0.15em' }}>
+                                <Typography variant="h4" sx={{ color: '#E0BFB8', mb: 0.5, fontSize: '0.9rem', letterSpacing: '0.15em' }}>
                                     ESTD
                                 </Typography>
                                 <Typography variant="caption" sx={{ letterSpacing: '0.2em', opacity: 0.8, fontWeight: 700, fontSize: '0.65rem' }}>
@@ -153,7 +152,6 @@ export default function AboutUs() {
                                                 letterSpacing: '0.4em',
                                                 mb: { xs: 2, md: 3 },
                                                 display: 'block',
-                                                fontFamily: 'var(--font-prompt)',
                                             }}
                                         >
                                             {slide.overline}
@@ -166,11 +164,10 @@ export default function AboutUs() {
                                                 fontSize: { xs: '2rem', md: '3.5rem' },
                                                 lineHeight: 1.2,
                                                 color: '#1A1A1A',
-                                                fontFamily: 'var(--font-prompt)',
                                             }}
                                         >
                                             {slide.title} <br />
-                                            <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-prompt)', color: '#B76E79' }}>{slide.titleItalic}</span>
+                                            <span style={{ fontStyle: 'italic', color: '#B76E79' }}>{slide.titleItalic}</span>
                                         </Typography>
 
                                         <Box sx={{ width: '60px', height: '1px', bgcolor: '#E0BFB8', mb: { xs: 4, md: 5 }, mx: { xs: 'auto', md: 0 } }} />

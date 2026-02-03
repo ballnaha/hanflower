@@ -52,7 +52,7 @@ export default function QRCardPromo() {
                     }}>
                         <Box sx={{
                             position: 'relative',
-                            width: { xs: '100%', md: '110%' },
+                            width: { xs: '85%', md: '110%' },
                             maxWidth: 500,
                             aspectRatio: '1.58/1', // Credit card / horizontal card ratio
                             perspective: '1000px',
@@ -66,10 +66,16 @@ export default function QRCardPromo() {
                                 borderRadius: '12px',
                                 overflow: 'hidden',
                                 boxShadow: '0 30px 60px -12px rgba(0,0,0,0.15)',
-                                transform: 'rotateY(-15deg) rotateX(10deg) rotateZ(-2deg)',
+                                transform: {
+                                    xs: 'rotateY(-5deg) rotateX(5deg) rotateZ(-1deg)',
+                                    md: 'rotateY(-15deg) rotateX(10deg) rotateZ(-2deg)'
+                                },
                                 transition: 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
                                 '&:hover': {
-                                    transform: 'rotateY(-5deg) rotateX(5deg) rotateZ(0deg) scale(1.02)',
+                                    transform: {
+                                        xs: 'rotateY(0deg) rotateX(0deg) rotateZ(0deg) scale(1.02)',
+                                        md: 'rotateY(-5deg) rotateX(5deg) rotateZ(0deg) scale(1.02)'
+                                    },
                                     boxShadow: '0 40px 80px -20px rgba(0,0,0,0.25)'
                                 },
                                 '& .swiper-pagination-bullet': {
@@ -187,24 +193,27 @@ export default function QRCardPromo() {
                             {/* Decorative Shadow Card Behind */}
                             <Box sx={{
                                 position: 'absolute',
-                                top: 20,
-                                left: -20,
+                                top: { xs: 10, md: 20 },
+                                left: { xs: -10, md: -20 },
                                 width: '100%',
                                 height: '100%',
                                 bgcolor: '#B76E79',
                                 borderRadius: '12px',
                                 zIndex: -1,
                                 opacity: 0.1,
-                                transform: 'rotateY(-20deg) rotateX(15deg) translateZ(-50px)',
+                                transform: {
+                                    xs: 'rotateY(-10deg) rotateX(5deg) translateZ(-20px)',
+                                    md: 'rotateY(-20deg) rotateX(15deg) translateZ(-50px)'
+                                },
                             }} />
 
                             {/* Floating Element: Heart Icon or Tag */}
                             <Box sx={{
                                 position: 'absolute',
-                                top: -20,
-                                right: -20,
-                                width: 60,
-                                height: 60,
+                                top: { xs: -10, md: -20 },
+                                right: { xs: -10, md: -20 },
+                                width: { xs: 40, md: 60 },
+                                height: { xs: 40, md: 60 },
                                 bgcolor: '#B76E79',
                                 borderRadius: '50%',
                                 display: 'flex',
@@ -220,7 +229,7 @@ export default function QRCardPromo() {
                                 }
                             }}>
                                 <Box sx={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Heart size={32} variant="Bold" color="#fff" />
+                                    <Heart size={24} variant="Bold" color="#fff" />
                                 </Box>
                             </Box>
                         </Box>

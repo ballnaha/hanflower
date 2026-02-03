@@ -29,23 +29,23 @@ const theme = createTheme({
     typography: {
         fontFamily: 'var(--font-prompt), sans-serif',
         h1: {
-            fontFamily: 'var(--font-playfair), serif',
-            fontWeight: 500,
+            fontFamily: 'var(--font-prompt), sans-serif',
+            fontWeight: 700,
             letterSpacing: '0.05em',
             color: '#5D4037',
             textTransform: 'uppercase',
             lineHeight: 1.1,
         },
         h2: {
-            fontFamily: 'var(--font-playfair), serif',
-            fontWeight: 400,
+            fontFamily: 'var(--font-prompt), sans-serif',
+            fontWeight: 600,
             letterSpacing: '0.05em',
             color: '#5D4037',
             textTransform: 'uppercase',
         },
         h3: {
-            fontFamily: 'var(--font-playfair), serif',
-            fontWeight: 400,
+            fontFamily: 'var(--font-prompt), sans-serif',
+            fontWeight: 500,
         },
         h4: {
             fontFamily: 'var(--font-prompt), sans-serif',

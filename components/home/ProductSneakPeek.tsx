@@ -66,8 +66,8 @@ export default function ProductSneakPeek() {
                         <Typography variant="overline" sx={{ color: '#B76E79', fontWeight: 600, letterSpacing: '0.2em', mb: 1, display: 'block' }}>
                             RECOMMENDED
                         </Typography>
-                        <Typography variant="h2" sx={{ fontSize: { xs: '1.7rem', sm: '2.2rem', md: '2.5rem' }, color: '#1A1A1A', letterSpacing: '0.05em' }}>
-                            <span style={{ fontStyle: 'normal', fontFamily: 'var(--font-prompt)' }}>สินค้า</span><span style={{ fontStyle: 'italic', fontFamily: 'var(--font-prompt)', color: '#B76E79' }}>ยอดนิยม</span>
+                        <Typography variant="h2" sx={{ fontSize: { xs: '1.7rem', sm: '2.2rem', md: '2.5rem' }, color: '#1A1A1A', letterSpacing: '0.05em', fontWeight: 600 }}>
+                            <span style={{ fontStyle: 'normal' }}>สินค้า</span><span style={{ fontStyle: 'italic', color: '#B76E79' }}>ยอดนิยม</span>
                         </Typography>
                     </Box>
                     <Box sx={{ display: { xs: 'none', md: 'block' } }}>
@@ -363,6 +363,7 @@ function ProductCard({ product }: { product: Product }) {
                         <Box
                             className="qr-card-slide"
                             sx={{
+                                display: { xs: 'none', md: 'block' },
                                 position: 'absolute',
                                 top: '30%',
                                 right: '-18%',
