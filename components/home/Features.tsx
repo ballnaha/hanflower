@@ -1,6 +1,7 @@
 'use client';
 
 import Image from "next/image";
+import Link from "next/link";
 import { Container, Typography, Box } from "@mui/material";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
@@ -139,55 +140,60 @@ export default function Features({ categories = [] }: FeaturesProps) {
 
 function FeatureCard({ item }: { item: any }) {
     return (
-        <Box
-            sx={{
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                cursor: 'pointer',
-                width: '100%'
-            }}
+        <Link
+            href={`/products?category=${encodeURIComponent(item.subtitle)}`}
+            style={{ textDecoration: 'none', color: 'inherit' }}
         >
-            {/* Image Square Frame */}
-            <Box sx={{
-                width: '100%',
-                aspectRatio: '1/1',
-                position: 'relative',
-                border: '1px solid #E5E5E5',
-                mb: 3,
-                overflow: 'hidden',
-                transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                '&:hover': {
-                    outline: '1px solid #B76E79',
-                    outlineOffset: '4px',
-                    borderColor: '#B76E79',
-                    '& img': {
-                        transform: 'scale(1.05)'
+            <Box
+                sx={{
+                    position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    width: '100%'
+                }}
+            >
+                {/* Image Square Frame */}
+                <Box sx={{
+                    width: '100%',
+                    aspectRatio: '1/1',
+                    position: 'relative',
+                    border: '1px solid #E5E5E5',
+                    mb: 3,
+                    overflow: 'hidden',
+                    transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                    '&:hover': {
+                        outline: '1px solid #B76E79',
+                        outlineOffset: '4px',
+                        borderColor: '#B76E79',
+                        '& img': {
+                            transform: 'scale(1.05)'
+                        }
                     }
-                }
-            }}>
-                <Image
-                    src={item.src || '/images/img2.webp'}
-                    alt={item.title}
-                    fill
-                    style={{
-                        objectFit: 'cover',
-                        padding: '20px',
-                        transition: 'transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1)'
-                    }}
-                />
-            </Box>
+                }}>
+                    <Image
+                        src={item.src || '/images/img2.webp'}
+                        alt={item.title}
+                        fill
+                        style={{
+                            objectFit: 'cover',
+                            padding: '20px',
+                            transition: 'transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1)'
+                        }}
+                    />
+                </Box>
 
-            <Typography variant="overline" sx={{ color: '#B76E79', letterSpacing: '0.2em', fontSize: '0.7rem', mb: 1 }}>
-                {item.subtitle}
-            </Typography>
-            <Typography variant="h4" sx={{ color: '#1A1A1A', fontSize: '1.2rem', letterSpacing: '0.15em', textAlign: 'center' }}>
-                {item.title}
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#888', mt: 1, fontSize: '0.9rem', fontStyle: 'italic', textAlign: 'center' }}>
-                {item.desc}
-            </Typography>
-        </Box>
+                <Typography variant="overline" sx={{ color: '#B76E79', letterSpacing: '0.2em', fontSize: '0.7rem', mb: 1 }}>
+                    {item.subtitle}
+                </Typography>
+                <Typography variant="h4" sx={{ color: '#1A1A1A', fontSize: '1.2rem', letterSpacing: '0.15em', textAlign: 'center' }}>
+                    {item.title}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#888', mt: 1, fontSize: '0.9rem', fontStyle: 'italic', textAlign: 'center' }}>
+                    {item.desc}
+                </Typography>
+            </Box>
+        </Link>
     );
 }

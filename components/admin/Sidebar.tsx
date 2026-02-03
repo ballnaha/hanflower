@@ -12,7 +12,9 @@ import {
     Logout,
     Ticket,
     Truck,
-    Card
+    Card,
+    Heart,
+    Eye
 } from 'iconsax-react';
 
 import Link from 'next/link';
@@ -20,6 +22,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useNotification } from '@/context/NotificationContext';
 import { useAdminUI } from '@/context/AdminUIContext';
+import { signOut } from 'next-auth/react';
 
 const SIDEBAR_WIDTH = 280;
 const COLLAPSED_WIDTH = 88;
@@ -46,6 +49,7 @@ const menuGroups = [
             { text: 'โค้ดส่วนลด (Coupons)', icon: Ticket, path: '/admin/coupons' },
             { text: 'ค่าจัดส่ง (Shipping)', icon: Truck, path: '/admin/shipping' },
             { text: 'วิธีการชำระเงิน (Payments)', icon: Card, path: '/admin/payment' },
+            { text: 'วาเลนไทน์ (Valentine)', icon: Heart, path: '/admin/valentine' },
         ]
     },
     {
@@ -68,20 +72,10 @@ export default function Sidebar() {
     const handleLogout = async () => {
         if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
             try {
-                const response = await fetch('/api/admin/logout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                });
-
-                if (response.ok) {
-                    showSuccess('ออกจากระบบสำเร็จ');
-                    router.push('/admin/login');
-                    router.refresh();
-                } else {
-                    showError('เกิดข้อผิดพลาดในการออกจากระบบ');
-                }
+                await signOut({ callbackUrl: '/admin/login' });
+                showSuccess('ออกจากระบบสำเร็จ');
             } catch (error) {
-                showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                showError('เกิดข้อผิดพลาดในการออกจากระบบ');
             }
         }
     };

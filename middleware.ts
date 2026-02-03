@@ -1,37 +1,27 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { jwtVerify } from 'jose';
+import { auth } from "@/auth";
+import { NextResponse } from "next/server";
 
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'hanflower-secret-2026-secure-key'
-);
+export default auth((req) => {
+    const { nextUrl } = req;
+    const isLoggedIn = !!req.auth;
+    const isAdminRoute = nextUrl.pathname.startsWith("/admin");
+    const isAdminApiRoute = nextUrl.pathname.startsWith("/api/admin");
+    const isLoginRoute = nextUrl.pathname === "/admin/login";
+    const isLoginApiRoute = nextUrl.pathname === "/api/admin/login";
 
-export async function middleware(request: NextRequest) {
-    const { pathname } = request.nextUrl;
+    // Protect UI routes
+    if (isAdminRoute && !isLoginRoute && !isLoggedIn) {
+        return NextResponse.redirect(new URL("/admin/login", nextUrl));
+    }
 
-    // Protect all /admin routes except /admin/login
-    const isAdminRoute = pathname.startsWith('/admin');
-    const isLoginRoute = pathname === '/admin/login';
-
-    if (isAdminRoute && !isLoginRoute) {
-        const token = request.cookies.get('admin-token')?.value;
-
-        if (!token) {
-            return NextResponse.redirect(new URL('/admin/login', request.url));
-        }
-
-        try {
-            await jwtVerify(token, JWT_SECRET);
-            return NextResponse.next();
-        } catch (error) {
-            return NextResponse.redirect(new URL('/admin/login', request.url));
-        }
+    // Protect API routes
+    if (isAdminApiRoute && !isLoginApiRoute && !isLoggedIn) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     return NextResponse.next();
-}
+});
 
-// See "Matching Paths" below to learn more
 export const config = {
-    matcher: ['/admin/:path*'],
+    matcher: ["/admin/:path*", "/api/admin/:path*"],
 };

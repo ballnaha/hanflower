@@ -16,6 +16,7 @@ import {
 import { Profile, Lock, Eye, EyeSlash } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { signIn } from 'next-auth/react';
 
 export default function AdminLoginPage() {
     const [username, setUsername] = useState('');
@@ -31,16 +32,14 @@ export default function AdminLoginPage() {
         setError(null);
 
         try {
-            const res = await fetch('/api/admin/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
+            const result = await signIn('credentials', {
+                username,
+                password,
+                redirect: false,
             });
 
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+            if (result?.error) {
+                throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
             }
 
             // Redirect to admin dashboard
@@ -84,7 +83,7 @@ export default function AdminLoginPage() {
                             fontWeight: 700,
                             color: '#5D4037',
                             letterSpacing: '0.05em',
-                            fontFamily: '"Playfair Display", serif'
+                            fontFamily: 'Prompt'
                         }}>
                             Admin Portal
                         </Typography>

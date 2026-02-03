@@ -312,7 +312,7 @@ export default function AdminCategoriesPage() {
                                     <TableCell>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                             <Avatar
-                                                src={cat.image.startsWith('http') || cat.image.startsWith('/') ? cat.image : `/${cat.image}`}
+                                                src={cat.image ? (cat.image.startsWith('http') ? cat.image : (cat.image.startsWith('/') ? cat.image : `/${cat.image}`)) : ''}
                                                 variant="rounded"
                                                 sx={{ width: 48, height: 48, bgcolor: '#F5F5F5', borderRadius: '12px' }}
                                             >

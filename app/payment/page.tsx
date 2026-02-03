@@ -337,7 +337,7 @@ export default function CheckoutPage() {
         <Box sx={{ bgcolor: '#FFF', minHeight: '100vh', backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(183, 110, 121, 0.05) 0%, rgba(255,255,255,0) 70%)' }}>
 
             <Container maxWidth="xl" sx={{ py: { xs: 12, md: 16 } }}>
-                <Typography variant="h3" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, mb: 6, textAlign: 'center', color: '#1A1A1A' }}>
+                <Typography variant="h3" sx={{ fontFamily: 'Prompt', fontWeight: 700, mb: 6, textAlign: 'center', color: '#1A1A1A' }}>
                     สั่งซื้อสินค้า
                 </Typography>
 
@@ -349,7 +349,7 @@ export default function CheckoutPage() {
 
                             {/* 1. Customer Information */}
                             <Box>
-                                <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Typography variant="h6" sx={{ fontFamily: 'Prompt', fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                     <Location size={22} variant="Bold" color="#B76E79" /> ข้อมูลการจัดส่ง
                                 </Typography>
                                 <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, borderRadius: '24px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
@@ -395,7 +395,7 @@ export default function CheckoutPage() {
 
                             {/* 2. Shipping Method */}
                             <Box>
-                                <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Typography variant="h6" sx={{ fontFamily: 'Prompt', fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                     <TruckFast size={22} variant="Bold" color="#B76E79" /> รูปแบบการจัดส่ง
                                 </Typography>
                                 <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, borderRadius: '24px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
@@ -468,7 +468,7 @@ export default function CheckoutPage() {
 
                             {/* 3. Payment Method */}
                             <Box>
-                                <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Typography variant="h6" sx={{ fontFamily: 'Prompt', fontWeight: 600, mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                     <Cards size={22} variant="Bold" color="#B76E79" /> ช่องทางชำระเงิน
                                 </Typography>
                                 <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, borderRadius: '24px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
@@ -594,7 +594,7 @@ export default function CheckoutPage() {
                                 bgcolor: '#FAFAFA', // Slightly distinct background
                                 boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
                             }}>
-                                <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 600, mb: 4, letterSpacing: '-0.02em' }}>
+                                <Typography variant="h6" sx={{ fontFamily: 'Prompt', fontWeight: 600, mb: 4, letterSpacing: '-0.02em' }}>
                                     สรุปรายการสั่งซื้อ
                                 </Typography>
 

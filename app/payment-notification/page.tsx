@@ -257,7 +257,7 @@ export default function PaymentNotificationPage() {
                 </Breadcrumbs>
 
                 <Box sx={{ textAlign: 'center', mb: 6 }}>
-                    <Typography variant="h3" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, mb: 2, color: '#1A1A1A' }}>
+                    <Typography variant="h3" sx={{ fontFamily: 'Prompt', fontWeight: 700, mb: 2, color: '#1A1A1A' }}>
                         ติดตามสถานะ <span style={{ fontStyle: 'italic', color: '#B76E79' }}>& แจ้งโอน</span>
                     </Typography>
                     <Typography color="text.secondary" variant="body1">

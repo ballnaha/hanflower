@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
         try {
             await mkdir(uploadDir, { recursive: true });
         } catch (err) {
-            // Already exists
+            // Already exists or permission issue
+            console.log('Upload directory check:', err);
         }
 
         const uploadedPaths: string[] = [];
@@ -27,27 +28,37 @@ export async function POST(request: NextRequest) {
             const bytes = await file.arrayBuffer();
             const buffer = Buffer.from(bytes);
 
-            // Create unique filename - force .webp for optimization
+            // Create unique filename
             const filename = `${crypto.randomUUID()}.webp`;
-            const path = join(uploadDir, filename);
+            const filePath = join(uploadDir, filename);
 
-            // Use sharp to resize and compress
-            // - Resize to max 1200px width/height while maintaining aspect ratio
-            // - Convert to webp with 80% quality
-            await sharp(buffer)
-                .resize(1200, 1200, {
-                    fit: 'inside',
-                    withoutEnlargement: true
-                })
-                .webp({ quality: 80 })
-                .toFile(path);
+            try {
+                // Try to use sharp for optimization
+                await sharp(buffer)
+                    .resize(1200, 1200, {
+                        fit: 'inside',
+                        withoutEnlargement: true
+                    })
+                    .webp({ quality: 80 })
+                    .toFile(filePath);
 
-            uploadedPaths.push(`/uploads/${filename}`);
+                console.log('Successfully processed image with Sharp:', filename);
+                uploadedPaths.push(`/uploads/${filename}`);
+            } catch (sharpError) {
+                console.error('Sharp processing failed, falling back to original upload:', sharpError);
+
+                // Fallback: Save original file if sharp fails
+                // Change extension to original if it's not webp, but here we'll keep it simple
+                const originalFilename = `${crypto.randomUUID()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+                const originalPath = join(uploadDir, originalFilename);
+                await writeFile(originalPath, buffer);
+                uploadedPaths.push(`/uploads/${originalFilename}`);
+            }
         }
 
         return NextResponse.json({ paths: uploadedPaths });
     } catch (error) {
-        console.error('Upload error:', error);
-        return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+        console.error('Core Upload error:', error);
+        return NextResponse.json({ error: 'Upload failed', details: String(error) }, { status: 500 });
     }
 }

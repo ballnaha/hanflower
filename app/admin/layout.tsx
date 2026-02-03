@@ -1,4 +1,5 @@
 import { AdminUIProvider } from '@/context/AdminUIContext';
+import { SessionProvider } from 'next-auth/react';
 
 export default function AdminRootLayout({
     children,
@@ -6,8 +7,10 @@ export default function AdminRootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <AdminUIProvider>
-            {children}
-        </AdminUIProvider>
+        <SessionProvider>
+            <AdminUIProvider>
+                {children}
+            </AdminUIProvider>
+        </SessionProvider>
     );
 }

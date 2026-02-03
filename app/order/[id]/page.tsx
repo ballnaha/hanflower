@@ -136,7 +136,7 @@ export default function OrderSuccessPage() {
                     }}>
                         <TickCircle size={32} variant="Bold" color="#4CAF50" />
                     </Box>
-                    <Typography variant="h5" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, color: '#1A1A1A' }}>
+                    <Typography variant="h5" sx={{ fontFamily: 'Prompt', fontWeight: 700, color: '#1A1A1A' }}>
                         สั่งซื้อสำเร็จ!
                     </Typography>
                 </Box>

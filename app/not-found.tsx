@@ -64,7 +64,7 @@ export default function NotFound() {
                             transform: 'rotate(-10deg)'
                         }}
                     >
-                        <Typography variant="h3" sx={{ fontFamily: '"Playfair Display", serif', color: '#B76E79', fontWeight: 700 }}>
+                        <Typography variant="h3" sx={{ fontFamily: 'Prompt', color: '#B76E79', fontWeight: 700 }}>
                             404
                         </Typography>
                     </Box>
@@ -73,7 +73,7 @@ export default function NotFound() {
                 <Typography
                     variant="h2"
                     sx={{
-                        fontFamily: '"Playfair Display", serif',
+                        fontFamily: 'Prompt',
                         color: '#2C1A1D',
                         fontSize: { xs: '2rem', md: '3rem' },
                         mb: 2,
@@ -107,7 +107,7 @@ export default function NotFound() {
                             px: 4,
                             py: 1.5,
                             borderRadius: '50px',
-                            fontFamily: '"IBM Plex Sans Thai", sans-serif',
+                            fontFamily: 'Prompt',
                             fontSize: '1rem',
                             boxShadow: '0 10px 20px rgba(183, 110, 121, 0.3)',
                             '&:hover': {

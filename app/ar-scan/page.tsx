@@ -289,7 +289,7 @@ export default function ARScanPage() {
                         <Magicpen size="32" variant="Outline" color="#D4AF37" />
                     </Box>
 
-                    <Typography variant="h4" sx={{ color: '#5D4037', mb: 3, fontWeight: 600, letterSpacing: '0.05em', fontFamily: '"Playfair Display", serif' }}>
+                    <Typography variant="h4" sx={{ color: '#5D4037', mb: 3, fontWeight: 600, letterSpacing: '0.05em', fontFamily: 'Prompt' }}>
                         THE VIRTUAL <br />
                         <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#D4AF37' }}>EXPERIENCE</span>
                     </Typography>
@@ -351,7 +351,7 @@ export default function ARScanPage() {
                     <CircularProgress size={40} sx={{ color: '#D4AF37', mb: 3 }} />
                     <Typography sx={{
                         color: '#5D4037',
-                        fontFamily: '"Playfair Display", serif',
+                        fontFamily: 'Prompt',
                         letterSpacing: '0.2em',
                         fontSize: '0.75rem',
                         fontWeight: 600

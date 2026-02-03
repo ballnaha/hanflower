@@ -51,7 +51,7 @@ function ProductsContent() {
     const [filterOptions, setFilterOptions] = useState<FilterOption[]>([{ value: 'all', label: 'ทั้งหมด' }]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedType, setSelectedType] = useState(initialCategory ? 'SIGNATURE BOUQUETS' : 'all');
+    const [selectedType, setSelectedType] = useState(initialCategory || 'all');
     const [sortBy, setSortBy] = useState('priority');
 
     useEffect(() => {
