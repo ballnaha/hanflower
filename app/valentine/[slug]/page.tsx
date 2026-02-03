@@ -865,9 +865,11 @@ export default function ValentineSlugPage() {
                             <Swiper
                                 effect={"creative"}
                                 grabCursor={true}
-                                modules={[EffectCreative, Pagination, Autoplay]}
+                                modules={[EffectCreative, Pagination]}
                                 className="valentine-swiper w-[300px] h-[65dvh] sm:w-[360px] sm:h-[75dvh]"
                                 pagination={{ clickable: true }}
+                                observer={true}
+                                observeParents={true}
                                 onSwiper={(swiper) => { swiperRef.current = swiper; }}
                                 onSlideChange={handleSlideChange}
                                 creativeEffect={swiperCreativeConfig}
@@ -882,7 +884,7 @@ export default function ValentineSlugPage() {
                                                 {memory.type === 'video' || memory.type === 'youtube' || memory.type === 'tiktok' ? (
                                                     <div className="w-full h-full bg-[#1A0A0C] relative flex items-center justify-center">
                                                         {memory.type === 'youtube' ? (
-                                                            <img src={`https://img.youtube.com/vi/${memory.url}/maxresdefault.jpg`} className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" alt="Video thumbnail" />
+                                                            <img src={`https://img.youtube.com/vi/${memory.url}/maxresdefault.jpg`} className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" alt="Video thumbnail" loading={index === 0 ? "eager" : "lazy"} />
                                                         ) : (
                                                             <div className="w-full h-full bg-gradient-to-br from-[#4A151B] via-[#D41442] to-[#8B1D36] opacity-90" />
                                                         )}
@@ -893,9 +895,9 @@ export default function ValentineSlugPage() {
                                                     </div>
                                                 ) : (
                                                     <div className="w-full h-full relative">
-                                                        <img src={memory.url} alt={memory.caption} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                                        <img src={memory.url} alt={memory.caption} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading={index === 0 ? "eager" : "lazy"} />
                                                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none opacity-50" />
-                                                    </ div>
+                                                    </div>
                                                 )}
 
                                                 {/* Shine Effect */}

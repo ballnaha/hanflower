@@ -678,73 +678,104 @@ export default function AdminValentinePage() {
 
     const renderDesign = () => (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Box sx={{ p: 3, border: '1px solid #eee', borderRadius: '12px', bgcolor: '#fff' }}>
-                <Typography variant="subtitle2" gutterBottom className="text-gray-700 font-bold mb-3 flex items-center gap-2">
-                    <VideoPlay size="20" color="#D4AF37" variant="Bold" />
-                    เพิ่มวิดีโอจาก Link (YouTube / TikTok)
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                    <Select
-                        value={videoTypeInput}
-                        onChange={(e) => setVideoTypeInput(e.target.value as any)}
-                        size="small"
-                        sx={{ minWidth: 120 }}
-                    >
-                        <MenuItem value="youtube">YouTube</MenuItem>
-                        <MenuItem value="tiktok">TikTok</MenuItem>
-                    </Select>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        placeholder={videoTypeInput === 'youtube' ? "วางลิงก์ YouTube ที่นี่..." : "วางลิงก์ TikTok ที่นี่..."}
-                        value={videoUrlInput}
-                        onChange={(e) => setVideoUrlInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddVideoLink())}
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <Button
-                                        onClick={handleAddVideoLink}
-                                        variant="contained"
-                                        size="small"
-                                        disabled={!videoUrlInput}
-                                        sx={{ bgcolor: '#D4AF37', '&:hover': { bgcolor: '#B8860B' } }}
-                                    >
-                                        เพิ่ม
-                                    </Button>
-                                </InputAdornment>
-                            )
+            {!currentCardId ? (
+                <Paper sx={{ p: 4, textAlign: 'center', bgcolor: '#FFF8F0', border: '1px dashed #D4AF37', borderRadius: '16px' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                        <DeviceMessage size="48" variant="Bulk" color="#D4AF37" />
+                    </Box>
+                    <Typography variant="h6" color="#D4AF37" gutterBottom fontWeight="bold">
+                        กรุณาบันทึกข้อมูลก่อนจัดการดีไซน์
+                    </Typography>
+                    <Typography color="textSecondary" sx={{ mb: 3 }}>
+                        ระบบจำเป็นต้องสร้างการ์ดและ URL Slug ก่อน<br />จึงจะสามารถสร้างโฟลเดอร์สำหรับอัปโหลดรูปภาพและวิดีโอได้
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        onClick={handleSubmit(onSubmit)}
+                        startIcon={<Add />}
+                        sx={{
+                            bgcolor: '#D4AF37',
+                            '&:hover': { bgcolor: '#B8860B' },
+                            borderRadius: '50px',
+                            px: 4,
+                            py: 1.5,
+                            boxShadow: '0 8px 16px rgba(212, 175, 55, 0.2)'
                         }}
-                    />
-                </Box>
-                <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
-                    * สามารถวาง Link เต็มจากเบราว์เซอร์ได้เลย ระบบจะดึงรหัสวิดีโอให้โดยอัตโนมัติ
-                </Typography>
-            </Box>
+                    >
+                        บันทึกข้อมูลเบื้องต้น
+                    </Button>
+                </Paper>
+            ) : (
+                <>
+                    <Box sx={{ p: 3, border: '1px solid #eee', borderRadius: '12px', bgcolor: '#fff' }}>
+                        <Typography variant="subtitle2" gutterBottom className="text-gray-700 font-bold mb-3 flex items-center gap-2">
+                            <VideoPlay size="20" color="#D4AF37" variant="Bold" />
+                            เพิ่มวิดีโอจาก Link (YouTube / TikTok)
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                            <Select
+                                value={videoTypeInput}
+                                onChange={(e) => setVideoTypeInput(e.target.value as any)}
+                                size="small"
+                                sx={{ minWidth: 120 }}
+                            >
+                                <MenuItem value="youtube">YouTube</MenuItem>
+                                <MenuItem value="tiktok">TikTok</MenuItem>
+                            </Select>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                placeholder={videoTypeInput === 'youtube' ? "วางลิงก์ YouTube ที่นี่..." : "วางลิงก์ TikTok ที่นี่..."}
+                                value={videoUrlInput}
+                                onChange={(e) => setVideoUrlInput(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddVideoLink())}
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <Button
+                                                onClick={handleAddVideoLink}
+                                                variant="contained"
+                                                size="small"
+                                                disabled={!videoUrlInput}
+                                                sx={{ bgcolor: '#D4AF37', '&:hover': { bgcolor: '#B8860B' } }}
+                                            >
+                                                เพิ่ม
+                                            </Button>
+                                        </InputAdornment>
+                                    )
+                                }}
+                            />
+                        </Box>
+                        <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                            * สามารถวาง Link เต็มจากเบราว์เซอร์ได้เลย ระบบจะดึงรหัสวิดีโอให้โดยอัตโนมัติ
+                        </Typography>
+                    </Box>
 
-            <Box className="p-6 border border-dashed border-gray-300 rounded-xl text-center cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors" {...getRootProps()}>
-                <input {...getInputProps()} />
-                <Typography color="textSecondary" className="flex items-center justify-center gap-2">
-                    <ImageIcon size="24" color="#999" />
-                    Drag & Drop Images/Videos here or Click to Upload
-                </Typography>
-            </Box>
-            <Box>
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event) => {
-                    const { active, over } = event;
-                    if (active.id !== over?.id) {
-                        const oldIndex = watchedMemories.findIndex((m, i) => (m.id || `memory-${i}`) === active.id);
-                        const newIndex = watchedMemories.findIndex((m, i) => (m.id || `memory-${i}`) === over?.id);
-                        moveMemory(oldIndex, newIndex);
-                    }
-                }}>
-                    <SortableContext items={watchedMemories.map((m, i) => m.id || `memory-${i}`)} strategy={verticalListSortingStrategy}>
-                        {watchedMemories.map((memory, index) => (
-                            <SortableMemoryItem key={memory.id || `memory-${index}`} memory={memory} index={index} onRemove={removeMemory} onEdit={handleOpenEditMemory} />
-                        ))}
-                    </SortableContext>
-                </DndContext>
-            </Box>
+                    <Box className="p-6 border border-dashed border-gray-300 rounded-xl text-center cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors" {...getRootProps()}>
+                        <input {...getInputProps()} />
+                        <Typography color="textSecondary" className="flex items-center justify-center gap-2">
+                            <ImageIcon size="24" color="#999" />
+                            Drag & Drop Images/Videos here or Click to Upload
+                        </Typography>
+                    </Box>
+                    <Box>
+                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event) => {
+                            const { active, over } = event;
+                            if (active.id !== over?.id) {
+                                const oldIndex = watchedMemories.findIndex((m, i) => (m.id || `memory-${i}`) === active.id);
+                                const newIndex = watchedMemories.findIndex((m, i) => (m.id || `memory-${i}`) === over?.id);
+                                moveMemory(oldIndex, newIndex);
+                            }
+                        }}>
+                            <SortableContext items={watchedMemories.map((m, i) => m.id || `memory-${i}`)} strategy={verticalListSortingStrategy}>
+                                {watchedMemories.map((memory, index) => (
+                                    <SortableMemoryItem key={memory.id || `memory-${index}`} memory={memory} index={index} onRemove={removeMemory} onEdit={handleOpenEditMemory} />
+                                ))}
+                            </SortableContext>
+                        </DndContext>
+                    </Box>
+                </>
+            )}
         </Box>
     );
 
