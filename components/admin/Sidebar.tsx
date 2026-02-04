@@ -14,7 +14,8 @@ import {
     Truck,
     Card,
     Heart,
-    Eye
+    Eye,
+    Notification as NotificationIcon
 } from 'iconsax-react';
 
 import Link from 'next/link';
@@ -47,6 +48,7 @@ const menuGroups = [
         items: [
             { text: 'ลูกค้า', icon: People, path: '/admin/customers' },
             { text: 'โค้ดส่วนลด (Coupons)', icon: Ticket, path: '/admin/coupons' },
+            { text: 'จัดการโปรโมชั่น', icon: NotificationIcon, path: '/admin/settings' },
             { text: 'ค่าจัดส่ง (Shipping)', icon: Truck, path: '/admin/shipping' },
             { text: 'วิธีการชำระเงิน (Payments)', icon: Card, path: '/admin/payment' },
             { text: 'วาเลนไทน์ (Valentine)', icon: Heart, path: '/admin/valentine' },
@@ -56,7 +58,6 @@ const menuGroups = [
         title: 'ตั้งค่าระบบ',
         items: [
             { text: 'ผู้ดูแลระบบ', icon: ProfileCircle, path: '/admin/users' },
-            { text: 'ตั้งค่าร้านค้า', icon: Setting2, path: '/admin/settings' },
         ]
     }
 ];

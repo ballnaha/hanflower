@@ -51,6 +51,7 @@ export const metadata: Metadata = {
 
 import MainLayout from "@/components/layout/MainLayout";
 import GoogleAnalytics from "@/components/layout/GoogleAnalytics";
+import ValentinePopup from "@/components/layout/ValentinePopup";
 import { Suspense } from "react";
 
 import CartProviderWrapper from "@/components/providers/CartProviderWrapper";
@@ -68,12 +69,13 @@ export default function RootLayout({
       <body
         className={`${prompt.variable} ${mali.variable} ${dancingScript.variable} ${playfair.variable} font-sans antialiased bg-[#FFFFFF] text-[#000000]`}
       >
-        <AppRouterCacheProvider>
+        <AppRouterCacheProvider options={{ key: 'css', enableCssLayer: true }}>
           <Suspense fallback={null}>
             <GoogleAnalytics GA_MEASUREMENT_ID={gaId} />
           </Suspense>
           <ThemeProvider theme={theme}>
             <NotificationProvider>
+              <ValentinePopup />
               <CartProviderWrapper>
                 <MainLayout>
                   {children}

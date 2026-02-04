@@ -243,214 +243,219 @@ export default function PaymentSettingsPage() {
         }
     };
 
-    if (loading) return <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress /></Box>;
-
     return (
         <AdminLayout title="ตั้งค่าการชำระเงิน">
-            <form onSubmit={handleSubmit}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
+            {loading ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 10 }}>
+                    <CircularProgress size={40} sx={{ color: '#B76E79', mb: 2 }} />
+                    <Typography sx={{ color: '#888' }}>กำลังโหลดข้อมูลการตั้งค่า...</Typography>
+                </Box>
+            ) : (
+                <form onSubmit={handleSubmit}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
 
-                    {/* Bank Transfer Section */}
-                    <Paper sx={{ p: 4, borderRadius: '24px' }} elevation={0}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Box sx={{ p: 1.5, bgcolor: '#FFF5F5', borderRadius: '12px', color: '#B76E79' }}>
-                                    <Bank size={24} variant="Bold" color="#B76E79" />
+                        {/* Bank Transfer Section */}
+                        <Paper sx={{ p: 4, borderRadius: '24px' }} elevation={0}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Box sx={{ p: 1.5, bgcolor: '#FFF5F5', borderRadius: '12px', color: '#B76E79' }}>
+                                        <Bank size={24} variant="Bold" color="#B76E79" />
+                                    </Box>
+                                    <Typography variant="h6" fontWeight={700}>โอนเงินผ่านบัญชีธนาคาร</Typography>
                                 </Box>
-                                <Typography variant="h6" fontWeight={700}>โอนเงินผ่านบัญชีธนาคาร</Typography>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={settings.bank.enabled}
+                                            onChange={handleBankChange}
+                                            name="enabled"
+                                            color="success"
+                                        />
+                                    }
+                                    label="เปิดใช้งาน"
+                                />
                             </Box>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={settings.bank.enabled}
-                                        onChange={handleBankChange}
-                                        name="enabled"
-                                        color="success"
-                                    />
-                                }
-                                label="เปิดใช้งาน"
-                            />
-                        </Box>
 
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                {settings.bank.bankLogo ? (
-                                    <Box sx={{ position: 'relative', width: 64, height: 64, borderRadius: '12px', overflow: 'hidden', border: '1px solid #EEE' }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    {settings.bank.bankLogo ? (
+                                        <Box sx={{ position: 'relative', width: 64, height: 64, borderRadius: '12px', overflow: 'hidden', border: '1px solid #EEE' }}>
+                                            <Image
+                                                src={settings.bank.bankLogo}
+                                                alt="Bank Logo"
+                                                fill
+                                                style={{ objectFit: 'contain', padding: '4px' }}
+                                            />
+                                            <IconButton
+                                                size="small"
+                                                onClick={handleDeleteBankLogo}
+                                                sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'rgba(255,255,255,0.8)', padding: '2px', borderRadius: '0 0 0 8px' }}
+                                            >
+                                                <Trash size={12} color="#FF4d4F" />
+                                            </IconButton>
+                                        </Box>
+                                    ) : (
+                                        <Box sx={{ width: 64, height: 64, borderRadius: '12px', bgcolor: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #DDD' }}>
+                                            <Bank size={24} color="#BBB" variant="Bold" />
+                                        </Box>
+                                    )}
+                                    <Box>
+                                        <Button
+                                            component="label"
+                                            size="small"
+                                            variant="outlined"
+                                            disabled={!settings.bank.enabled || uploading}
+                                            startIcon={<ImageIcon size={16} variant="Bold" color="#B76E79" />}
+                                            sx={{ borderRadius: '8px', textTransform: 'none' }}
+                                        >
+                                            {uploading ? '...' : (settings.bank.bankLogo ? 'เปลี่ยนโลโก้' : 'อัปโหลดโลโก้')}
+                                            <input
+                                                type="file"
+                                                hidden
+                                                accept="image/*"
+                                                onChange={handleBankLogoUpload}
+                                                onClick={(e) => (e.target as HTMLInputElement).value = ''}
+                                            />
+                                        </Button>
+                                        <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.5 }}>
+                                            ขนาดแนะนำ 100x100px
+                                        </Typography>
+                                    </Box>
+                                </Box>
+
+                                <TextField
+                                    fullWidth
+                                    label="ชื่อธนาคาร"
+                                    name="bankName"
+                                    value={settings.bank.bankName}
+                                    onChange={handleBankChange}
+                                    placeholder="เช่น ธนาคารกสิกรไทย (KBANK)"
+                                    disabled={!settings.bank.enabled}
+                                />
+                                <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
+                                    <TextField
+                                        fullWidth
+                                        label="เลขที่บัญชี"
+                                        name="accountNo"
+                                        value={settings.bank.accountNo}
+                                        onChange={handleBankChange}
+                                        placeholder="เช่น 012-3-45678-9"
+                                        disabled={!settings.bank.enabled}
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        label="สาขา"
+                                        name="branch"
+                                        value={settings.bank.branch}
+                                        onChange={handleBankChange}
+                                        placeholder="เช่น สยามพารากอน"
+                                        disabled={!settings.bank.enabled}
+                                    />
+                                </Box>
+                                <TextField
+                                    fullWidth
+                                    label="ชื่อบัญชี"
+                                    name="accountName"
+                                    value={settings.bank.accountName}
+                                    onChange={handleBankChange}
+                                    placeholder="เช่น บริษัท ฮานฟลาวเวอร์ จำกัด"
+                                    disabled={!settings.bank.enabled}
+                                />
+                            </Box>
+                        </Paper>
+
+                        {/* QR Code Section */}
+                        <Paper sx={{ p: 4, borderRadius: '24px' }} elevation={0}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Box sx={{ p: 1.5, bgcolor: '#FFF5F5', borderRadius: '12px', color: '#B76E79' }}>
+                                        <ScanBarcode size={24} variant="Bold" color="#B76E79" />
+                                    </Box>
+                                    <Typography variant="h6" fontWeight={700}>ชำระผ่าน QR Code</Typography>
+                                </Box>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            name="enabled"
+                                            checked={settings.qr.enabled}
+                                            onChange={handleQrChange}
+                                            color="success"
+                                        />
+                                    }
+                                    label="เปิดใช้งาน"
+                                />
+                            </Box>
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, p: 3, border: '1px dashed #E0E0E0', borderRadius: '16px', bgcolor: '#FAFAFA' }}>
+                                {settings.qr.image ? (
+                                    <Box sx={{ position: 'relative', width: 200, height: 200, borderRadius: '12px', overflow: 'hidden', border: '1px solid #EEE' }}>
                                         <Image
-                                            src={settings.bank.bankLogo}
-                                            alt="Bank Logo"
+                                            src={settings.qr.image}
+                                            alt="QR Code"
                                             fill
                                             style={{ objectFit: 'contain', padding: '4px' }}
                                         />
                                         <IconButton
                                             size="small"
-                                            onClick={handleDeleteBankLogo}
+                                            onClick={handleDeleteQrCode}
                                             sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'rgba(255,255,255,0.8)', padding: '2px', borderRadius: '0 0 0 8px' }}
                                         >
-                                            <Trash size={12} color="#FF4d4F" />
+                                            <Trash size={16} color="#FF4d4F" />
                                         </IconButton>
                                     </Box>
                                 ) : (
-                                    <Box sx={{ width: 64, height: 64, borderRadius: '12px', bgcolor: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #DDD' }}>
-                                        <Bank size={24} color="#BBB" variant="Bold" />
+                                    <Box sx={{ width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#EEE', borderRadius: '12px' }}>
+                                        <ImageIcon size={40} color="#999" variant="Bold" />
                                     </Box>
                                 )}
-                                <Box>
-                                    <Button
-                                        component="label"
-                                        size="small"
-                                        variant="outlined"
-                                        disabled={!settings.bank.enabled || uploading}
-                                        startIcon={<ImageIcon size={16} variant="Bold" color="#B76E79" />}
-                                        sx={{ borderRadius: '8px', textTransform: 'none' }}
-                                    >
-                                        {uploading ? '...' : (settings.bank.bankLogo ? 'เปลี่ยนโลโก้' : 'อัปโหลดโลโก้')}
-                                        <input
-                                            type="file"
-                                            hidden
-                                            accept="image/*"
-                                            onChange={handleBankLogoUpload}
-                                            onClick={(e) => (e.target as HTMLInputElement).value = ''}
-                                        />
-                                    </Button>
-                                    <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.5 }}>
-                                        ขนาดแนะนำ 100x100px
-                                    </Typography>
-                                </Box>
-                            </Box>
 
-                            <TextField
-                                fullWidth
-                                label="ชื่อธนาคาร"
-                                name="bankName"
-                                value={settings.bank.bankName}
-                                onChange={handleBankChange}
-                                placeholder="เช่น ธนาคารกสิกรไทย (KBANK)"
-                                disabled={!settings.bank.enabled}
-                            />
-                            <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
-                                <TextField
-                                    fullWidth
-                                    label="เลขที่บัญชี"
-                                    name="accountNo"
-                                    value={settings.bank.accountNo}
-                                    onChange={handleBankChange}
-                                    placeholder="เช่น 012-3-45678-9"
-                                    disabled={!settings.bank.enabled}
-                                />
-                                <TextField
-                                    fullWidth
-                                    label="สาขา"
-                                    name="branch"
-                                    value={settings.bank.branch}
-                                    onChange={handleBankChange}
-                                    placeholder="เช่น สยามพารากอน"
-                                    disabled={!settings.bank.enabled}
-                                />
-                            </Box>
-                            <TextField
-                                fullWidth
-                                label="ชื่อบัญชี"
-                                name="accountName"
-                                value={settings.bank.accountName}
-                                onChange={handleBankChange}
-                                placeholder="เช่น บริษัท ฮานฟลาวเวอร์ จำกัด"
-                                disabled={!settings.bank.enabled}
-                            />
-                        </Box>
-                    </Paper>
-
-                    {/* QR Code Section */}
-                    <Paper sx={{ p: 4, borderRadius: '24px' }} elevation={0}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Box sx={{ p: 1.5, bgcolor: '#FFF5F5', borderRadius: '12px', color: '#B76E79' }}>
-                                    <ScanBarcode size={24} variant="Bold" color="#B76E79" />
-                                </Box>
-                                <Typography variant="h6" fontWeight={700}>ชำระผ่าน QR Code</Typography>
-                            </Box>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        name="enabled"
-                                        checked={settings.qr.enabled}
-                                        onChange={handleQrChange}
-                                        color="success"
+                                <Button
+                                    component="label"
+                                    variant="outlined"
+                                    disabled={!settings.qr.enabled || uploading}
+                                    startIcon={uploading ? <CircularProgress size={20} /> : <ImageIcon />}
+                                >
+                                    {uploading ? 'กำลังอัปโหลด...' : (settings.qr.image ? 'เปลี่ยนรูป QR Code' : 'อัปโหลดรูป QR Code')}
+                                    <input
+                                        type="file"
+                                        hidden
+                                        accept="image/*"
+                                        onChange={handleQrUpload}
+                                        onClick={(e) => (e.target as HTMLInputElement).value = ''}
                                     />
-                                }
-                                label="เปิดใช้งาน"
-                            />
-                        </Box>
+                                </Button>
+                                <Typography variant="caption" color="text.secondary">
+                                    รองรับไฟล์ JPG, PNG ขนาดไม่เกิน 5MB
+                                </Typography>
+                            </Box>
+                        </Paper>
 
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, p: 3, border: '1px dashed #E0E0E0', borderRadius: '16px', bgcolor: '#FAFAFA' }}>
-                            {settings.qr.image ? (
-                                <Box sx={{ position: 'relative', width: 200, height: 200, borderRadius: '12px', overflow: 'hidden', border: '1px solid #EEE' }}>
-                                    <Image
-                                        src={settings.qr.image}
-                                        alt="QR Code"
-                                        fill
-                                        style={{ objectFit: 'contain', padding: '4px' }}
-                                    />
-                                    <IconButton
-                                        size="small"
-                                        onClick={handleDeleteQrCode}
-                                        sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'rgba(255,255,255,0.8)', padding: '2px', borderRadius: '0 0 0 8px' }}
-                                    >
-                                        <Trash size={16} color="#FF4d4F" />
-                                    </IconButton>
-                                </Box>
-                            ) : (
-                                <Box sx={{ width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#EEE', borderRadius: '12px' }}>
-                                    <ImageIcon size={40} color="#999" variant="Bold" />
-                                </Box>
-                            )}
-
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                             <Button
-                                component="label"
                                 variant="outlined"
-                                disabled={!settings.qr.enabled || uploading}
-                                startIcon={uploading ? <CircularProgress size={20} /> : <ImageIcon />}
+                                sx={{ borderRadius: '12px', color: '#666', borderColor: '#DDD' }}
+                                onClick={() => fetchSettings()} // Reset
                             >
-                                {uploading ? 'กำลังอัปโหลด...' : (settings.qr.image ? 'เปลี่ยนรูป QR Code' : 'อัปโหลดรูป QR Code')}
-                                <input
-                                    type="file"
-                                    hidden
-                                    accept="image/*"
-                                    onChange={handleQrUpload}
-                                    onClick={(e) => (e.target as HTMLInputElement).value = ''}
-                                />
+                                ยกเลิก
                             </Button>
-                            <Typography variant="caption" color="text.secondary">
-                                รองรับไฟล์ JPG, PNG ขนาดไม่เกิน 5MB
-                            </Typography>
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                disabled={saving}
+                                startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <Save2 size={20} variant="Bold" color="#FFF" />}
+                                sx={{
+                                    bgcolor: '#B76E79',
+                                    borderRadius: '12px',
+                                    px: 4,
+                                    '&:hover': { bgcolor: '#A45D68' }
+                                }}
+                            >
+                                {saving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า'}
+                            </Button>
                         </Box>
-                    </Paper>
-
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                        <Button
-                            variant="outlined"
-                            sx={{ borderRadius: '12px', color: '#666', borderColor: '#DDD' }}
-                            onClick={() => fetchSettings()} // Reset
-                        >
-                            ยกเลิก
-                        </Button>
-                        <Button
-                            type="submit"
-                            variant="contained"
-                            disabled={saving}
-                            startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <Save2 size={20} variant="Bold" color="#FFF" />}
-                            sx={{
-                                bgcolor: '#B76E79',
-                                borderRadius: '12px',
-                                px: 4,
-                                '&:hover': { bgcolor: '#A45D68' }
-                            }}
-                        >
-                            {saving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า'}
-                        </Button>
                     </Box>
-                </Box>
-            </form>
+                </form>
+            )}
         </AdminLayout>
     );
 }

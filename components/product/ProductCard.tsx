@@ -239,7 +239,7 @@ export default function ProductCard({ product, showQrCard = true }: ProductCardP
                                     borderRadius: '2px',
                                     boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3)'
                                 }}>
-                                    Best
+                                    Best Seller
                                 </Box>
                             )}
                         </Box>

@@ -45,6 +45,8 @@ interface Product {
     title: string;
     type: string;
     price: string;
+    originalPrice?: string;
+    discount?: number;
     image: string;
     stock: number;
     priority: number;
@@ -319,8 +321,42 @@ export default function AdminProductsPage() {
                                             }}
                                         />
                                     </TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: '#1A1A1A' }}>
-                                        ฿{product.price}
+                                    <TableCell sx={{ color: '#1A1A1A' }}>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                            {product.originalPrice && (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Typography sx={{
+                                                        fontSize: '0.75rem',
+                                                        color: '#AAA',
+                                                        textDecoration: 'line-through',
+                                                        fontWeight: 400
+                                                    }}>
+                                                        ฿{(() => {
+                                                            const val = String(product.originalPrice).replace(/,/g, '');
+                                                            return isNaN(Number(val)) ? product.originalPrice : Number(val).toLocaleString();
+                                                        })()}
+                                                    </Typography>
+                                                    {product.discount && (
+                                                        <Box component="span" sx={{
+                                                            fontSize: '0.65rem',
+                                                            bgcolor: '#FF4D4F15',
+                                                            color: '#FF4D4F',
+                                                            px: 0.5,
+                                                            borderRadius: '4px',
+                                                            fontWeight: 700
+                                                        }}>
+                                                            -{product.discount}%
+                                                        </Box>
+                                                    )}
+                                                </Box>
+                                            )}
+                                            <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>
+                                                ฿{(() => {
+                                                    const val = String(product.price).replace(/,/g, '');
+                                                    return isNaN(Number(val)) ? product.price : Number(val).toLocaleString();
+                                                })()}
+                                            </Typography>
+                                        </Box>
                                     </TableCell>
                                     <TableCell>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
