@@ -93,7 +93,7 @@ export default function AboutUs() {
                                 }
                             }}>
                                 <Image
-                                    src="/images/about.webp"
+                                    src="/images/about-valentine.webp"
                                     alt="Our Story"
                                     fill
                                     sizes="(max-width: 768px) 320px, 400px"

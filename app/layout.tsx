@@ -50,6 +50,8 @@ export const metadata: Metadata = {
 };
 
 import MainLayout from "@/components/layout/MainLayout";
+import GoogleAnalytics from "@/components/layout/GoogleAnalytics";
+import { Suspense } from "react";
 
 import CartProviderWrapper from "@/components/providers/CartProviderWrapper";
 import { NotificationProvider } from "@/context/NotificationContext";
@@ -59,12 +61,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID || "";
+
   return (
     <html lang="th" translate="no">
       <body
         className={`${prompt.variable} ${mali.variable} ${dancingScript.variable} ${playfair.variable} font-sans antialiased bg-[#FFFFFF] text-[#000000]`}
       >
         <AppRouterCacheProvider>
+          <Suspense fallback={null}>
+            <GoogleAnalytics GA_MEASUREMENT_ID={gaId} />
+          </Suspense>
           <ThemeProvider theme={theme}>
             <NotificationProvider>
               <CartProviderWrapper>
