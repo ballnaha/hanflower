@@ -29,8 +29,27 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { slug, jobName, title, openingText, greeting, subtitle, message, signer, backgroundColor, backgroundMusicYoutubeId, backgroundMusicUrl, swipeHintColor, swipeHintText, showGame, campaignName, customerPhone, customerAddress, note, status, disabledAt, memories, orderedProducts } = body;
 
+        console.log("Creating Valentine Card with orderedProducts:", orderedProducts);
+
         if (!slug || !title) {
             return NextResponse.json({ error: "Slug and title are required" }, { status: 400 });
+        }
+
+        // Validate and filter product IDs
+        let validProductIds: string[] = [];
+        if (orderedProducts && Array.isArray(orderedProducts) && orderedProducts.length > 0) {
+            // Filter invalid IDs (empty strings, etc.)
+            const potentialIds = orderedProducts.filter((id: any) => !!id && typeof id === 'string');
+
+            if (potentialIds.length > 0) {
+                const products = await prisma.product.findMany({
+                    where: {
+                        id: { in: potentialIds }
+                    },
+                    select: { id: true }
+                });
+                validProductIds = products.map((p: any) => p.id);
+            }
         }
 
         const card = await prisma.valentineCard.create({
@@ -65,7 +84,7 @@ export async function POST(req: NextRequest) {
                     })) : []
                 },
                 orderedProducts: {
-                    connect: orderedProducts && Array.isArray(orderedProducts) ? orderedProducts.map((id: string) => ({ id })) : []
+                    connect: validProductIds.map(id => ({ id }))
                 }
             }
         });

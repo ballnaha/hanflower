@@ -101,10 +101,10 @@ export default function AdminCategoriesPage() {
             setSelectedCategory(category);
             setFormData({
                 title: category.title,
-                subtitle: category.subtitle,
+                subtitle: category.subtitle || '',
                 slug: category.slug,
-                description: category.description,
-                image: category.image,
+                description: category.description || '',
+                image: category.image || '',
                 priority: category.priority,
                 isActive: category.isActive
             });

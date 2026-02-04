@@ -180,11 +180,38 @@ export default function ValentineSlugPage() {
         }
     }, [content?.backgroundColor]);
 
+    // Force stop loading after max 2 seconds (Ultimate Fail-safe)
+    useEffect(() => {
+        const t = setTimeout(() => {
+            console.log("Ultimate fallback triggered");
+            setIsLoading(false);
+        }, 2000);
+        return () => clearTimeout(t);
+    }, []);
+
+    // Main Fetch Logic
     useEffect(() => {
         const fetchData = async () => {
-            if (!slug) return;
+            const currentSlug = Array.isArray(slug) ? slug[0] : slug;
+
+            if (!currentSlug) {
+                console.log("No slug found, stopping load");
+                setIsLoading(false);
+                return;
+            }
+
+            // Add fetch timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
             try {
-                const response = await fetch(`/api/valentine/${slug}`);
+                const response = await fetch(`/api/valentine/${currentSlug}`, {
+                    signal: controller.signal,
+                    cache: 'no-store'
+                });
+
+                clearTimeout(timeoutId);
+
                 if (response.ok) {
                     const data = await response.json();
                     setContent({
@@ -215,13 +242,18 @@ export default function ValentineSlugPage() {
                     setIsExpired(true);
                 }
             } catch (error) {
-                console.error("Failed to fetch valentine data:", error);
+                console.error("Failed to fetch valentine data, using defaults:", error);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchData();
+        if (slug) {
+            fetchData();
+        } else {
+            // If slug is explicitly undefined/null right now, just fail fast
+            setIsLoading(false);
+        }
     }, [slug]);
 
     useEffect(() => {
@@ -240,7 +272,7 @@ export default function ValentineSlugPage() {
         loadFonts();
         const fallbackTimer = setTimeout(() => {
             setFontsLoaded(true);
-        }, 1000);
+        }, 500);
         return () => clearTimeout(fallbackTimer);
     }, []);
 
@@ -490,7 +522,7 @@ export default function ValentineSlugPage() {
         });
     }, [hasSwiped]);
 
-    if (isLoading || !fontsLoaded) {
+    if (isLoading) {
         return (
             <Box
                 sx={{
@@ -545,8 +577,8 @@ export default function ValentineSlugPage() {
             width: "100vw",
             background: displayContent.backgroundColor || "#FFF0F3",
             backgroundImage: `
-                radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 240, 243, 0.5) 100%),
-                url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E")
+                radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 1) 0%, rgba(255, 230, 235, 1) 60%, rgba(245, 200, 210, 1) 100%),
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E")
             `,
             backgroundBlendMode: 'normal, overlay',
             display: "flex",
@@ -582,7 +614,28 @@ export default function ValentineSlugPage() {
                 .music-icon-spin { animation: music-spin 4s linear infinite; }
                 .card-shine { position: absolute; top: 0; left: 0; width: 50%; height: 100%; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0) 100%); z-index: 15; pointer-events: none; }
                 .animate-shine { animation: shine-sweep 4s ease-in-out infinite; }
-                .sunburst-bg { position: absolute; top: -100%; left: -100%; width: 300%; height: 300%; background: repeating-conic-gradient(from 0deg, rgba(235, 190, 100, 0.1) 0deg 10deg, rgba(255, 255, 255, 0) 10deg 20deg); mask-image: radial-gradient(circle at center, black 10%, transparent 60%); mix-blend-mode: overlay; opacity: 0.5; }
+                .sunburst-bg { 
+                    position: absolute; 
+                    top: -100%; 
+                    left: -100%; 
+                    width: 300%; 
+                    height: 300%; 
+                    background: repeating-conic-gradient(from 0deg, rgba(235, 190, 100, 0.1) 0deg 10deg, rgba(255, 255, 255, 0) 10deg 20deg); 
+                    mask-image: radial-gradient(circle at center, black 10%, transparent 60%); 
+                    mix-blend-mode: overlay; 
+                    opacity: 0.5; 
+                }
+                @media (max-width: 768px) {
+                    .sunburst-bg {
+                        background: radial-gradient(circle at center, rgba(235, 190, 100, 0.15), transparent 70%);
+                        mask-image: none;
+                        width: 100%;
+                        height: 100%;
+                        top: 0;
+                        left: 0;
+                        animation: none;
+                    }
+                }
                 .shimmer-text { color: #4A151B; }
                 .gold-ribbon { background: linear-gradient(90deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C); }
                 
@@ -641,6 +694,11 @@ export default function ValentineSlugPage() {
                     background: linear-gradient(to bottom, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
                     pointer-events: none;
                     z-index: 10;
+                }
+                .gold-gradient-text {
+                    background: linear-gradient(to bottom, #cfc09f 22%,#634f2c 24%, #cfc09f 26%, #cfc09f 27%,#ffecb3 40%,#3a2c0f 78%); 
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
                 }
             `}</style>
 
@@ -707,7 +765,7 @@ export default function ValentineSlugPage() {
 
             {/* INTRO SCREEN (GIFT BOX) */}
             {!isOpen && !isTransitioning && (
-                <div className="w-full h-full flex flex-col justify-between items-center z-10 relative overflow-hidden py-12" onClick={handleOpen}>
+                <div className="w-full h-full flex flex-col justify-between items-center z-10 relative overflow-hidden pt-20 pb-5" onClick={handleOpen}>
                     <div className="sunburst-bg" />
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent pointer-events-none" />
 
@@ -734,12 +792,12 @@ export default function ValentineSlugPage() {
 
                     {/* Top Section: Lid */}
                     <div className="flex flex-col items-center animate-[float-lid_3s_ease-in-out_infinite] z-20">
-                        <div className="relative w-52 h-14 bg-gradient-to-b from-[#8B1A1A] to-[#C62828] rounded-t-2xl shadow-[0_15px_30px_rgba(0,0,0,0.3)] border-b-2 border-black/10">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-full gold-ribbon shadow-inner" />
-                            {/* Bow loops */}
-                            <div className="absolute -top-7 left-1/2 -translate-x-[90%] w-14 h-10 gold-ribbon rounded-full rotate-[-15deg] shadow-lg border border-yellow-600/20" />
-                            <div className="absolute -top-7 left-1/2 translate-x-[-10%] w-14 h-10 gold-ribbon rounded-full rotate-[15deg] shadow-lg border border-yellow-600/20" />
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-gradient-to-br from-[#FCF6BA] to-[#BF953F] rounded-full z-10 shadow-md border border-yellow-700/30" />
+                        <div className="relative w-64 h-16 bg-gradient-to-b from-[#9C2020] to-[#D32F2F] rounded-t-2xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] border-b-4 border-black/20">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-full gold-ribbon shadow-inner" />
+                            {/* Bow loops - Medium */}
+                            <div className="absolute -top-8 left-1/2 -translate-x-[90%] w-16 h-12 gold-ribbon rounded-full rotate-[-15deg] shadow-lg border border-yellow-600/20" />
+                            <div className="absolute -top-8 left-1/2 translate-x-[-10%] w-16 h-12 gold-ribbon rounded-full rotate-[15deg] shadow-lg border border-yellow-600/20" />
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 bg-gradient-to-br from-[#FCF6BA] to-[#BF953F] rounded-full z-10 shadow-md border border-yellow-700/30" />
                         </div>
                     </div>
 
@@ -761,8 +819,8 @@ export default function ValentineSlugPage() {
                             variant="h1"
                             className="shimmer-text"
                             sx={{
-                                fontFamily: 'var(--font-dancing), cursive',
-                                fontSize: '3.2rem',
+                                fontFamily: 'var(--font-dancing), var(--font-mali), cursive !important',
+                                fontSize: '2.5rem',
                                 fontWeight: 700,
                                 textShadow: '2px 2px 4px rgba(0,0,0,0.05)',
                                 lineHeight: 1.1,
@@ -775,10 +833,10 @@ export default function ValentineSlugPage() {
 
                     {/* Bottom Section: Box + Tap Text */}
                     <div className="flex flex-col items-center gap-12 animate-[float-box_4s_ease-in-out_infinite]">
-                        <div className="relative w-44 h-36 bg-gradient-to-br from-[#B71C1C] via-[#D32F2F] to-[#8E0000] shadow-[0_25px_50px_rgba(0,0,0,0.4)] rounded-b-xl overflow-hidden border-t border-white/10">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-full gold-ribbon opacity-90 shadow-2xl" />
-                            <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-12 gold-ribbon opacity-80" />
-                            <div className="absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/5 pointer-events-none" />
+                        <div className="relative w-52 h-44 bg-gradient-to-br from-[#B71C1C] via-[#D32F2F] to-[#8E0000] shadow-[0_30px_60px_rgba(0,0,0,0.5)] rounded-b-xl overflow-hidden border-t border-white/10">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-full gold-ribbon opacity-90 shadow-2xl" />
+                            <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-14 gold-ribbon opacity-80" />
+                            <div className="absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/10 pointer-events-none" />
                         </div>
 
                         <div className="flex flex-col items-center gap-6">
@@ -795,7 +853,7 @@ export default function ValentineSlugPage() {
                                 sx={{
                                     color: '#4A151B',
                                     fontWeight: 700,
-                                    fontFamily: 'var(--font-dancing), cursive',
+                                    fontFamily: 'var(--font-dancing), var(--font-mali), cursive',
                                     fontSize: '1.5rem',
                                     opacity: 0.9,
                                     mt: -2
@@ -807,16 +865,20 @@ export default function ValentineSlugPage() {
                     </div>
 
                     {/* Luxury Footer Card */}
-                    <div className="w-[85%] max-w-sm h-32 bg-white/40 backdrop-blur-xl rounded-[40px] flex flex-col items-center justify-center p-4 shadow-[0_20px_40px_rgba(0,0,0,0.1)] border border-white/60 relative mb-4">
+                    <div className="w-[85%] max-w-sm h-32 bg-white/40 backdrop-blur-sm md:backdrop-blur-xl rounded-[40px] flex flex-col items-center justify-center p-4 shadow-[0_20px_40px_rgba(0,0,0,0.1)] border border-white/60 relative mb-4">
                         <div className="w-10 h-1 bg-gray-300/50 rounded-full mb-3 mt-2" />
                         <div className="flex flex-col items-center">
-                            <Typography sx={{ color: '#8B1A1A', letterSpacing: '0.4em', fontWeight: 800, fontSize: '0.8rem', opacity: 0.8 }}>PREMIUM</Typography>
+                            <div className="px-5 py-1 rounded-full bg-gradient-to-r from-[#DBA627] via-[#FFF6AA] to-[#DBA627] shadow-[0_4px_10px_rgba(219,166,39,0.3)] mb-1">
+                                <Typography sx={{ color: '#5A3A0B', letterSpacing: '0.3em', fontWeight: 800, fontSize: '0.7rem', textShadow: '0 1px 0 rgba(255,255,255,0.4)', lineHeight: 1 }}>
+                                    PREMIUM
+                                </Typography>
+                            </div>
                             <div className="flex items-center gap-3 my-1">
                                 <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#BF953F]" />
                                 <Typography sx={{ fontFamily: 'var(--font-dancing)', fontSize: '1.4rem', color: '#4A151B', fontWeight: 600 }}>{displayContent.campaignName}</Typography>
                                 <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#BF953F]" />
                             </div>
-                            <Typography sx={{ color: '#8B1A1A', letterSpacing: '0.4em', fontWeight: 800, fontSize: '0.8rem', opacity: 0.8 }}>EXPERIENCE</Typography>
+                            <Typography sx={{ color: '#8B1A1A', letterSpacing: '0.4em', fontWeight: 800, fontSize: '0.7rem', opacity: 0.6 }}>EXPERIENCE</Typography>
                         </div>
                     </div>
                 </div>

@@ -5,14 +5,18 @@ import {
     Box, Typography, Paper, TextField, Switch,
     FormControlLabel, Button, Divider, Stack, CircularProgress
 } from '@mui/material';
-import { Notification as NotificationIcon, Save2 } from 'iconsax-react';
+import { Notification as NotificationIcon, Save2, Image as ImageIcon, Trash } from 'iconsax-react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import Image from 'next/image';
 import { useNotification } from '@/context/NotificationContext';
 
 export default function SettingsPage() {
     const { showSuccess, showError } = useNotification();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [popupFile, setPopupFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [urlsToDelete, setUrlsToDelete] = useState<string[]>([]);
     const [settings, setSettings] = useState({
         promo_bar_enabled: 'true',
         promo_bar_title: "Valentine's Special",
@@ -45,14 +49,44 @@ export default function SettingsPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
+            let updatedSettings = { ...settings };
+            let finalUrlsToDelete = [...urlsToDelete];
+
+            // 1. Upload popup image if a new file is selected
+            if (popupFile) {
+                // If there's an existing image, mark it for deletion
+                if (settings.valentine_popup_image) {
+                    finalUrlsToDelete.push(settings.valentine_popup_image);
+                }
+
+                const formData = new FormData();
+                formData.append('file', popupFile);
+                const uploadRes = await fetch('/api/admin/upload/settings', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (uploadRes.ok) {
+                    const uploadData = await uploadRes.json();
+                    updatedSettings.valentine_popup_image = uploadData.url;
+                } else {
+                    showError('อัปโหลดรูปภาพล้มเหลว');
+                    setSaving(false);
+                    return;
+                }
+            }
+
             const res = await fetch('/api/settings', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ settings }),
+                body: JSON.stringify({ settings: updatedSettings, urlsToDelete: finalUrlsToDelete }),
             });
 
             if (res.ok) {
                 showSuccess('บันทึกการตั้งค่าเรียบร้อยแล้ว');
+                setSettings(updatedSettings);
+                setPopupFile(null);
+                setPreviewUrl(null);
+                setUrlsToDelete([]); // Clear deletion list after success
             } else {
                 showError('เกิดข้อผิดพลาดในการบันทึก');
             }
@@ -143,13 +177,74 @@ export default function SettingsPage() {
                                 value={settings.valentine_popup_text}
                                 onChange={(e) => handleChange('valentine_popup_text', e.target.value)}
                             />
-                            <TextField
-                                fullWidth
-                                label="URL รูปภาพ (Image URL)"
-                                value={settings.valentine_popup_image}
-                                onChange={(e) => handleChange('valentine_popup_image', e.target.value)}
-                                placeholder="/images/about-valentine.webp"
-                            />
+                            <Box sx={{ mt: 1 }}>
+                                <Typography variant="subtitle2" sx={{ mb: 1, color: '#666' }}>รูปภาพป๊อปอัพ</Typography>
+                                <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start' }}>
+                                    {(settings.valentine_popup_image || previewUrl) && (
+                                        <Box sx={{
+                                            position: 'relative',
+                                            width: 120,
+                                            height: 120,
+                                            borderRadius: '12px',
+                                            overflow: 'hidden',
+                                            border: '1px solid #eee',
+                                            '&:hover .delete-overlay': { display: 'flex' }
+                                        }}>
+                                            <Image
+                                                src={previewUrl || settings.valentine_popup_image}
+                                                alt="Popup Preview"
+                                                fill
+                                                style={{ objectFit: 'cover' }}
+                                            />
+                                            <Box
+                                                className="delete-overlay"
+                                                onClick={() => {
+                                                    if (previewUrl) {
+                                                        // If it's a newly selected file, just clear it locally
+                                                        setPreviewUrl(null);
+                                                        setPopupFile(null);
+                                                    } else if (settings.valentine_popup_image) {
+                                                        // If it's an existing image from server, track it for deletion
+                                                        setUrlsToDelete(prev => [...prev, settings.valentine_popup_image]);
+                                                        handleChange('valentine_popup_image', '');
+                                                    }
+                                                }}
+                                                sx={{
+                                                    position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.4)',
+                                                    display: 'none', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'pointer', zIndex: 2
+                                                }}
+                                            >
+                                                <Trash size="24" color="#FFF" />
+                                            </Box>
+                                        </Box>
+                                    )}
+                                    <Box sx={{ flex: 1 }}>
+                                        <Button
+                                            variant="outlined"
+                                            component="label"
+                                            startIcon={<ImageIcon size="20" />}
+                                            sx={{ borderRadius: '12px', textTransform: 'none', mb: 1 }}
+                                        >
+                                            อัปโหลดรูปภาพใหม่
+                                            <input
+                                                type="file"
+                                                hidden
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (!file) return;
+                                                    setPopupFile(file);
+                                                    setPreviewUrl(URL.createObjectURL(file));
+                                                }}
+                                            />
+                                        </Button>
+                                        <Typography variant="caption" display="block" color="textSecondary">
+                                            แนะนำรูปทรงจัตุรัส ระบบจะทำการ Resize และแปลงเป็น WebP ให้อัตโนมัติ
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </Box>
                         </Stack>
                     </Paper>
 

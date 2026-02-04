@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import fs from 'fs/promises';
+import path from 'path';
 
 // GET - Get single valentine card with memories
 export async function GET(
@@ -47,6 +49,22 @@ export async function PUT(
             signer, backgroundColor, backgroundMusicYoutubeId, backgroundMusicUrl, swipeHintColor, swipeHintText, showGame, campaignName, customerPhone, customerAddress, note, status, disabledAt, memories, orderedProducts
         } = body;
 
+        if (!slug || !title) {
+            return NextResponse.json({ error: "Slug and title are required" }, { status: 400 });
+        }
+
+        // Validate and filter product IDs
+        let validProductIds: string[] = [];
+        if (orderedProducts && Array.isArray(orderedProducts) && orderedProducts.length > 0) {
+            const products = await prisma.product.findMany({
+                where: {
+                    id: { in: orderedProducts }
+                },
+                select: { id: true }
+            });
+            validProductIds = products.map((p: any) => p.id);
+        }
+
         // Update main card data
         const card = await prisma.valentineCard.update({
             where: { id },
@@ -72,7 +90,7 @@ export async function PUT(
                 status,
                 disabledAt: disabledAt ? new Date(disabledAt) : null,
                 orderedProducts: {
-                    set: orderedProducts && Array.isArray(orderedProducts) ? orderedProducts.map((id: string) => ({ id })) : []
+                    set: validProductIds.map(id => ({ id }))
                 }
             }
         });
@@ -80,8 +98,6 @@ export async function PUT(
         // Delete specified files if urlsToDelete is provided (handle both memories and music)
         const { urlsToDelete } = body;
         if (urlsToDelete && Array.isArray(urlsToDelete)) {
-            const fs = require('fs/promises');
-            const path = require('path');
             for (const url of urlsToDelete) {
                 if (url && url.startsWith('/uploads')) {
                     try {
@@ -149,35 +165,25 @@ export async function DELETE(
             return NextResponse.json({ error: "Valentine card not found" }, { status: 404 });
         }
 
-        // Delete associated image files
-        // Note: In Next.js App Router (node), we can use fs/promises
-        // We'll skip file deletion logic for now to avoid complexity with OS paths in this prompt environment unless critical, 
-        // but the original code had it, so I'll include it.
-        const fs = require('fs/promises');
-        const path = require('path');
-
-        for (const memory of card.memories) {
-            if ((memory.type === 'image' || memory.type === 'video') && memory.url.startsWith('/uploads')) {
-                try {
-                    const filepath = path.join(process.cwd(), 'public', memory.url.substring(1));
-                    await fs.unlink(filepath).catch((err: any) => {
-                        // Ignore ENOENT (file not found)
-                    });
-                } catch (err) {
-                    console.error("File deletion error:", err);
-                }
-            }
-        }
-
         // Delete background music file
         if (card.backgroundMusicUrl && card.backgroundMusicUrl.startsWith('/uploads')) {
             try {
                 const filepath = path.join(process.cwd(), 'public', card.backgroundMusicUrl.substring(1));
-                await fs.unlink(filepath).catch((err: any) => {
-                    // Ignore ENOENT
-                });
+                await fs.unlink(filepath).catch(() => { });
             } catch (err) {
                 console.error("Music file deletion error:", err);
+            }
+        }
+
+        // Delete the entire folder for this slug if it exists
+        if (card.slug) {
+            try {
+                const folderPath = path.join(process.cwd(), 'public', 'uploads', 'valentine', card.slug);
+                await fs.rm(folderPath, { recursive: true, force: true }).catch((err: any) => {
+                    console.error("Folder deletion error:", err);
+                });
+            } catch (err) {
+                console.error("Slug folder deletion error:", err);
             }
         }
 

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { unlink } from 'fs/promises';
+import path from 'path';
 
 // Public: GET all settings
 export async function GET() {
@@ -28,21 +30,36 @@ export async function PATCH(request: Request) {
 
     try {
         const body = await request.json();
-        const { settings } = body; // Expected: { "promo_bar_enabled": "true", ... }
+        const { settings, urlsToDelete } = body;
 
-        if (!settings || typeof settings !== 'object') {
-            return NextResponse.json({ error: 'Invalid settings format' }, { status: 400 });
+        if (settings && typeof settings === 'object') {
+            const updates = Object.entries(settings).map(([key, value]) => {
+                return prisma.setting.upsert({
+                    where: { key },
+                    update: { value: String(value) },
+                    create: { key, value: String(value) },
+                });
+            });
+
+            await prisma.$transaction(updates);
         }
 
-        const updates = Object.entries(settings).map(([key, value]) => {
-            return prisma.setting.upsert({
-                where: { key },
-                update: { value: String(value) },
-                create: { key, value: String(value) },
-            });
-        });
-
-        await prisma.$transaction(updates);
+        // Handle file deletions
+        if (urlsToDelete && Array.isArray(urlsToDelete)) {
+            for (const url of urlsToDelete) {
+                if (url && url.startsWith('/uploads/')) {
+                    try {
+                        const filePath = path.join(process.cwd(), 'public', url);
+                        await unlink(filePath);
+                        console.log(`Deleted file: ${filePath}`);
+                    } catch (err: any) {
+                        if (err.code !== 'ENOENT') {
+                            console.error(`Error deleting file ${url}:`, err);
+                        }
+                    }
+                }
+            }
+        }
 
         return NextResponse.json({ message: 'Settings updated successfully' });
     } catch (error) {

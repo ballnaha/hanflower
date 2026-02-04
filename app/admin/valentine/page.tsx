@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     Box,
     Button,
@@ -33,6 +33,7 @@ import {
 import Link from "next/link";
 import AdminLayout from "@/components/admin/AdminLayout";
 import QRCode from "qrcode";
+import html2canvas from "html2canvas";
 
 export default function AdminValentinePage() {
     const [cards, setCards] = useState<any[]>([]);
@@ -45,6 +46,8 @@ export default function AdminValentinePage() {
     const [qrTitle, setQrTitle] = useState("Happy Valentine's Day");
     const [cardPreviewUrl, setCardPreviewUrl] = useState<string | null>(null);
     const [qrOrientation, setQrOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
+    const cardRef = useRef<HTMLDivElement>(null);
+    const [downloading, setDownloading] = useState(false);
 
     const fetchCards = async () => {
         setLoading(true);
@@ -83,10 +86,36 @@ export default function AdminValentinePage() {
 
     const handleShowQR = async (card: any) => {
         const url = `${window.location.origin}/valentine/${card.slug}`;
-        const qr = await QRCode.toDataURL(url, { width: 400, margin: 2, color: { dark: '#000000', light: '#ffffff' } });
+        const qr = await QRCode.toDataURL(url, { width: 400, margin: 2, color: { dark: '#000000', light: '#00000000' } });
         setQrPreviewUrl(qr);
         setQrTitle(card.title);
         setQrDialogOpen(true);
+    };
+
+    const handleDownloadCard = async () => {
+        if (!cardRef.current) return;
+        setDownloading(true);
+        try {
+            // Wait a bit for images to be fully ready
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const canvas = await html2canvas(cardRef.current, {
+                useCORS: true,
+                scale: 3, // Higher resolution
+                backgroundColor: null,
+                logging: false,
+            });
+
+            const image = canvas.toDataURL("image/png", 1.0);
+            const link = document.createElement("a");
+            link.download = `hanflower-card-${qrTitle.replace(/\s+/g, '-').toLowerCase()}.png`;
+            link.href = image;
+            link.click();
+        } catch (error) {
+            console.error("Failed to download card", error);
+        } finally {
+            setDownloading(false);
+        }
     };
 
     const filteredCards = cards.filter(c =>
@@ -148,10 +177,15 @@ export default function AdminValentinePage() {
                         <Paper key={card.id} className="p-5 rounded-2xl shadow-sm hover:shadow-md transition-all border border-gray-100 flex flex-col gap-4">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <Typography variant="h6" className="font-bold text-gray-800 line-clamp-1">{card.title}</Typography>
+                                    <Typography variant="h6" className="font-bold text-gray-800 line-clamp-1">
+                                        {card.jobName || card.title}
+                                    </Typography>
                                     <div className="flex items-center gap-2 mt-1">
                                         <Chip label={`@${card.slug}`} size="small" variant="outlined" sx={{ fontSize: '0.7rem', height: 20 }} />
-                                        <Typography variant="caption" color="textSecondary">By {card.signer}</Typography>
+                                        <Typography variant="caption" color="textSecondary">By {card.signer || 'Admin'}</Typography>
+                                        {card.title !== card.jobName && card.jobName && (
+                                            <Typography variant="caption" color="textSecondary" sx={{ fontStyle: 'italic' }}>({card.title})</Typography>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex gap-1">
@@ -166,16 +200,16 @@ export default function AdminValentinePage() {
 
                             <div className="flex items-center gap-4 py-2 border-y border-gray-50 text-gray-500">
                                 <div className="text-center flex-1">
-                                    <Typography variant="h6" className="font-bold text-gray-800">{card.memories?.length || 0}</Typography>
+                                    <Typography variant="h6" className="font-bold text-gray-800">{card._count?.memories || 0}</Typography>
                                     <Typography variant="caption" className="uppercase font-bold text-[0.6rem] tracking-wider">Memories</Typography>
                                 </div>
                                 <div className="text-center flex-1 border-x border-gray-100">
-                                    <Typography variant="h6" className="font-bold text-gray-800">{card.productIds?.length || 0}</Typography>
+                                    <Typography variant="h6" className="font-bold text-gray-800">{card.orderedProducts?.length || 0}</Typography>
                                     <Typography variant="caption" className="uppercase font-bold text-[0.6rem] tracking-wider">Products</Typography>
                                 </div>
                                 <div className="text-center flex-1">
-                                    <Typography variant="h6" className="font-bold text-gray-800">{card.isActive ? 'ON' : 'OFF'}</Typography>
-                                    <Typography variant="caption" className={`uppercase font-bold text-[0.6rem] tracking-wider ${card.isActive ? 'text-green-500' : 'text-red-500'}`}>Status</Typography>
+                                    <Typography variant="h6" className="font-bold text-gray-800">{card.status === 'active' ? 'ON' : 'OFF'}</Typography>
+                                    <Typography variant="caption" className={`uppercase font-bold text-[0.6rem] tracking-wider ${card.status === 'active' ? 'text-green-500' : 'text-red-500'}`}>Status</Typography>
                                 </div>
                             </div>
 
@@ -184,7 +218,7 @@ export default function AdminValentinePage() {
                                     Edit Settings
                                 </Button>
                                 <IconButton onClick={() => handleDeleteClick(card.id)} sx={{ bgcolor: '#FFF1F0', color: '#FF4D4F', borderRadius: '10px', '&:hover': { bgcolor: '#FFCCC7' } }}>
-                                    <Trash size="18" variant="Bold" />
+                                    <Trash size="18" variant="Bold" color="#FF4D4F" />
                                 </IconButton>
                             </div>
                         </Paper>
@@ -222,24 +256,33 @@ export default function AdminValentinePage() {
 
                     <Box sx={{ textAlign: 'center', py: 2 }}>
                         {/* Card Mockup */}
-                        <Box sx={{
-                            width: '100%',
-                            maxWidth: qrOrientation === 'horizontal' ? '500px' : '350px',
-                            mx: 'auto',
-                            aspectRatio: qrOrientation === 'horizontal' ? '1.6 / 1' : '1 / 1.6',
-                            backgroundImage: `url(/images/card_blank${qrOrientation === 'vertical' ? '_vertical' : ''}.jpg)`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            borderRadius: '12px',
-                            boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
-                            display: 'flex',
-                            flexDirection: qrOrientation === 'horizontal' ? 'row' : 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            p: 3,
-                            position: 'relative',
-                            overflow: 'hidden'
-                        }}>
+                        <Box
+                            ref={cardRef}
+                            sx={{
+                                width: '100%',
+                                maxWidth: qrOrientation === 'horizontal' ? '500px' : '350px',
+                                mx: 'auto',
+                                aspectRatio: qrOrientation === 'horizontal' ? '1.6 / 1' : '1 / 1.6',
+                                background: '#fff', // Ensure solid background for capture
+                                backgroundImage: `url(/images/card_blank${qrOrientation === 'vertical' ? '_vertical' : ''}.jpg)`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                borderRadius: '12px',
+                                boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+                                display: 'flex',
+                                flexDirection: qrOrientation === 'horizontal' ? 'row' : 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                p: 3,
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}>
+                            {/* Crop Marks for cutting */}
+                            <Box sx={{ position: 'absolute', top: 0, left: 0, width: '15px', height: '15px', borderTop: '1px solid rgba(0,0,0,0.1)', borderLeft: '1px solid rgba(0,0,0,0.1)' }} />
+                            <Box sx={{ position: 'absolute', top: 0, right: 0, width: '15px', height: '15px', borderTop: '1px solid rgba(0,0,0,0.1)', borderRight: '1px solid rgba(0,0,0,0.1)' }} />
+                            <Box sx={{ position: 'absolute', bottom: 0, left: 0, width: '15px', height: '15px', borderBottom: '1px solid rgba(0,0,0,0.1)', borderLeft: '1px solid rgba(0,0,0,0.1)' }} />
+                            <Box sx={{ position: 'absolute', bottom: 0, right: 0, width: '15px', height: '15px', borderBottom: '1px solid rgba(0,0,0,0.1)', borderRight: '1px solid rgba(0,0,0,0.1)' }} />
+
                             {/* QR Section */}
                             <Box sx={{
                                 flex: 1,
@@ -249,12 +292,12 @@ export default function AdminValentinePage() {
                                 justifyContent: 'center',
                                 zIndex: 1
                             }}>
-                                <Typography sx={{ fontSize: qrOrientation === 'horizontal' ? '12px' : '14px', fontWeight: 800, mb: 1, color: '#2C1A1D', letterSpacing: '0.1em' }}>
-                                    FOR MY LOVE
+                                <Typography sx={{ fontSize: qrOrientation === 'horizontal' ? '12px' : '14px', fontWeight: 800, mb: 0, color: '#2C1A1D', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                                    {cards.find(c => c.title === qrTitle)?.jobName || "FOR MY LOVE"}
                                 </Typography>
                                 {qrPreviewUrl && (
-                                    <Box sx={{ p: 1, bgcolor: '#fff', borderRadius: '4px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-                                        <img src={qrPreviewUrl} style={{ width: qrOrientation === 'horizontal' ? '120px' : '160px', height: 'auto', display: 'block' }} alt="QR" />
+                                    <Box sx={{ p: 0, borderRadius: '4px' }}>
+                                        <img src={qrPreviewUrl} style={{ width: qrOrientation === 'horizontal' ? '350px' : '250px', height: 'auto', display: 'block' }} alt="QR" />
                                     </Box>
                                 )}
                                 <Typography sx={{ fontSize: '10px', mt: 1, color: '#666', fontWeight: 500 }}>
@@ -274,8 +317,9 @@ export default function AdminValentinePage() {
                                 <img
                                     src="/images/heart.png"
                                     style={{
-                                        width: qrOrientation === 'horizontal' ? '85%' : '75%',
+                                        width: qrOrientation === 'horizontal' ? '60%' : '50%',
                                         height: 'auto',
+                                        opacity: 0.9,
                                         filter: 'drop-shadow(0 5px 15px rgba(183,110,121,0.2))'
                                     }}
                                     alt="Heart"
@@ -286,8 +330,15 @@ export default function AdminValentinePage() {
                         <Typography variant="subtitle2" fontWeight="bold" sx={{ mt: 3, color: '#5D4037' }}>{qrTitle}</Typography>
                         <Typography variant="caption" sx={{ display: 'block', mb: 2, color: '#999' }}>Preview for display only</Typography>
 
-                        <Button variant="contained" fullWidth startIcon={<Printer color="#fff" />} sx={{ mt: 1, bgcolor: '#D4AF37', py: 1.5, borderRadius: '50px', '&:hover': { bgcolor: '#B8962D' } }}>
-                            Download Full Card Image
+                        <Button
+                            variant="contained"
+                            fullWidth
+                            startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <Printer color="#fff" />}
+                            onClick={handleDownloadCard}
+                            disabled={downloading}
+                            sx={{ mt: 1, bgcolor: '#D4AF37', py: 1.5, borderRadius: '50px', '&:hover': { bgcolor: '#B8962D' } }}
+                        >
+                            {downloading ? "กำลังประมวลผล..." : "Download Full Card Image"}
                         </Button>
                     </Box>
                 </DialogContent>

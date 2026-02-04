@@ -49,9 +49,10 @@ export default function Hero() {
             }} />
 
             {/* Minimalist Left-Aligned Content */}
-            <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 10, textAlign: 'left', px: { xs: 3, md: 10 } }}>
+            <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 10, textAlign: { xs: 'center', md: 'left' }, px: { xs: 3, md: 10 } }}>
                 <Box sx={{
                     maxWidth: '800px',
+                    mt: { md: 10 },
                     opacity: 0,
                     animation: 'fadeInUp 2s ease forwards',
                     '@keyframes fadeInUp': {
@@ -59,12 +60,12 @@ export default function Hero() {
                         'to': { opacity: 1, transform: 'translateY(0)' }
                     }
                 }}>
-                    <Typography variant="overline" sx={{ color: '#D4AF37', letterSpacing: { xs: '0.3em', md: '0.6em' }, fontWeight: 600, display: 'block', mb: { xs: 2, md: 4 } }}>
+                    <Typography variant="overline" sx={{ color: '#D4AF37', letterSpacing: { xs: '0.3em', md: '0.6em' }, fontWeight: 600, display: 'block', mb: { xs: 2, md: 1 } }}>
                         ฮันฟลาวเวอร์
                     </Typography>
 
                     <Typography variant="h1" sx={{
-                        fontSize: { xs: '2.2rem', sm: '4rem', md: '5.5rem' },
+                        fontSize: { xs: '2.2rem', sm: '4rem', md: '5rem' },
                         color: '#FFFFFF',
                         lineHeight: 1.1,
                         mb: { xs: 2, md: 4 },
@@ -84,7 +85,7 @@ export default function Hero() {
                         ช่อดอกไม้แห่งความทรงจำ
                     </Typography>
 
-                    <Box sx={{ width: '60px', height: '1px', bgcolor: '#D4AF37', mb: { xs: 3, md: 5 } }} />
+                    <Box sx={{ width: '60px', height: '1px', bgcolor: '#D4AF37', mb: { xs: 3, md: 5 }, mx: { xs: 'auto', md: 0 } }} />
 
                     <Typography variant="body1" sx={{
                         color: 'rgba(255,255,255,0.9)',
@@ -97,7 +98,7 @@ export default function Hero() {
                         "ช่อ QR CODE เจ้าแรก และเจ้าเดียวในไทย"
                     </Typography>
 
-                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 3, md: 5 }, justifyContent: 'flex-start', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 3, md: 5 }, justifyContent: { xs: 'center', md: 'flex-start' }, alignItems: 'center' }}>
                         <Button
                             variant="outlined"
                             component={Link}

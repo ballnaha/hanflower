@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { Box, Typography, Button, IconButton, Fade, Modal, Backdrop } from '@mui/material';
 import { Add, CloseCircle, Heart } from 'iconsax-react';
 import Image from 'next/image';
@@ -9,6 +10,7 @@ export default function ValentinePopup() {
     const [open, setOpen] = useState(false);
     const [settings, setSettings] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true);
+    const pathname = usePathname();
 
     useEffect(() => {
         fetch('/api/settings')
@@ -35,11 +37,11 @@ export default function ValentinePopup() {
         sessionStorage.setItem('valentine_promo_dismissed', 'true');
     };
 
-    if (loading || settings.valentine_popup_enabled === 'false') return null;
+    if (loading || settings.valentine_popup_enabled === 'false' || pathname !== '/') return null;
 
     const popupTitle = settings.valentine_popup_title || "10% OFF";
     const popupText = settings.valentine_popup_text || "เติมเต็มความหวานในเทศกาลแห่งความรัก\nรับส่วนลดพิเศษทันที เมื่อสั่งซื้อวันนี้ - 10 ก.พ. 69";
-    const popupImage = settings.valentine_popup_image || "/images/about-valentine.webp";
+    const popupImage = settings.valentine_popup_image; // ดึงโดยตรงจาก settings เท่านั้น
 
     return (
         <Modal
@@ -75,33 +77,35 @@ export default function ValentinePopup() {
                     </IconButton>
 
                     {/* Content Image */}
-                    <Box sx={{ position: 'relative', width: '100%', aspectRatio: '1/1' }}>
-                        <Image
-                            src={popupImage}
-                            alt="Valentine Promotion"
-                            fill
-                            style={{ objectFit: 'cover' }}
-                        />
-                        {/* Overlay Gradient */}
-                        <Box sx={{
-                            position: 'absolute', inset: 0,
-                            background: 'linear-gradient(to top, rgba(183, 110, 121, 0.9), transparent 60%)'
-                        }} />
+                    {popupImage && (
+                        <Box sx={{ position: 'relative', width: '100%', aspectRatio: '1/1' }}>
+                            <Image
+                                src={popupImage}
+                                alt="Valentine Promotion"
+                                fill
+                                style={{ objectFit: 'cover' }}
+                            />
+                            {/* Overlay Gradient */}
+                            <Box sx={{
+                                position: 'absolute', inset: 0,
+                                background: 'linear-gradient(to top, rgba(183, 110, 121, 0.9), transparent 60%)'
+                            }} />
 
-                        <Box sx={{ position: 'absolute', bottom: 24, left: 0, right: 0, textAlign: 'center', px: 3, color: '#FFF' }}>
-                            <Typography variant="overline" sx={{ letterSpacing: '0.3em', fontWeight: 700 }}>
-                                VALENTINE'S SPECIAL
-                            </Typography>
-                            <Typography variant="h3" sx={{
-                                fontFamily: 'var(--font-playfair), serif',
-                                fontSize: '2.5rem',
-                                fontWeight: 700,
-                                mb: 1
-                            }}>
-                                {popupTitle}
-                            </Typography>
+                            <Box sx={{ position: 'absolute', bottom: 24, left: 0, right: 0, textAlign: 'center', px: 3, color: '#FFF' }}>
+                                <Typography variant="overline" sx={{ letterSpacing: '0.3em', fontWeight: 700 }}>
+                                    VALENTINE'S SPECIAL
+                                </Typography>
+                                <Typography variant="h3" sx={{
+                                    fontFamily: 'var(--font-playfair), serif',
+                                    fontSize: '2.5rem',
+                                    fontWeight: 700,
+                                    mb: 1
+                                }}>
+                                    {popupTitle}
+                                </Typography>
+                            </Box>
                         </Box>
-                    </Box>
+                    )}
 
                     {/* Bottom Info */}
                     <Box sx={{ p: 4, textAlign: 'center', bgcolor: '#FFF' }}>

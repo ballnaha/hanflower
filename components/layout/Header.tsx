@@ -163,7 +163,7 @@ export default function Header() {
                 ) : (
                     <Container maxWidth="xl">
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: isScrolled ? '70px' : '100px', transition: 'height 0.5s ease' }}>
-                            <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 2 }}>
+                            <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                                 <IconButton
                                     onClick={handleDrawerToggle}
                                     sx={{
@@ -174,70 +174,94 @@ export default function Header() {
                                     <HambergerMenu size={24} variant="Outline" color={(pathname === '/' && !isScrolled) ? '#FFF' : '#5D4037'} />
                                 </IconButton>
 
-                                <Link href="/" style={{ textDecoration: 'none' }}>
-                                    <Box sx={{ position: 'relative', width: { xs: '120px', md: '220px' }, height: isScrolled ? '50px' : '80px', transition: 'all 0.5s ease' }}>
-                                        <Image
-                                            src="/images/logo5.png"
-                                            alt="HanFlower Logo"
-                                            fill
-                                            style={{
-                                                objectFit: 'contain',
-                                                filter: isScrolled ? 'none' : (pathname === '/' && !isScrolled ? 'brightness(0) invert(1)' : 'none'),
-                                                transition: 'filter 0.5s ease'
-                                            }}
-                                            priority
-                                        />
-                                    </Box>
-                                </Link>
+                                <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                                    <Link href="/" style={{ textDecoration: 'none' }}>
+                                        <Box sx={{ position: 'relative', width: { xs: '120px', md: '220px' }, height: isScrolled ? '50px' : '80px', transition: 'all 0.5s ease' }}>
+                                            <Image
+                                                src="/images/logo5.png"
+                                                alt="HanFlower Logo"
+                                                fill
+                                                style={{
+                                                    objectFit: 'contain',
+                                                    filter: isScrolled ? 'none' : (pathname === '/' && !isScrolled ? 'brightness(0) invert(1)' : 'none'),
+                                                    transition: 'filter 0.5s ease'
+                                                }}
+                                                priority
+                                            />
+                                        </Box>
+                                    </Link>
+                                </Box>
                             </Box>
 
-                            <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 8 }}>
-                                {[
-                                    { label: 'FLOWERS', href: '/products?category=bouquet' },
-                                    { label: 'EVENTS', href: '/events' },
-                                    { label: 'ABOUT US', href: '/about' },
-                                    { label: 'OUR CUSTOMERS', href: '/customers' },
-
-                                ].map((link) => {
-                                    const isExternal = false;
-                                    const Component = Link;
-
-                                    return (
-                                        <Box key={link.label} sx={{ position: 'relative' }}>
-                                            <Component
-                                                href={link.href}
+                            <Box sx={{ flex: { xs: 2, md: 'auto' }, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                {/* Mobile Logo */}
+                                <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+                                    <Link href="/" style={{ textDecoration: 'none' }}>
+                                        <Box sx={{ position: 'relative', width: '120px', height: isScrolled ? '40px' : '50px', transition: 'all 0.5s ease' }}>
+                                            <Image
+                                                src="/images/logo5.png"
+                                                alt="HanFlower Logo"
+                                                fill
                                                 style={{
-                                                    fontSize: '0.85rem',
-                                                    textTransform: 'uppercase',
-                                                    letterSpacing: '0.25em',
-                                                    color: isScrolled ? '#5D4037' : (pathname === '/' && !isScrolled ? '#FFFFFF' : '#5D4037'),
-                                                    textDecoration: 'none',
-                                                    fontWeight: 600,
-                                                    display: 'block',
-                                                    padding: '10px 0',
-                                                    transition: 'all 0.4s ease',
-                                                    opacity: isScrolled ? 1 : 0.9
+                                                    objectFit: 'contain',
+                                                    filter: isScrolled ? 'none' : (pathname === '/' && !isScrolled ? 'brightness(0) invert(1)' : 'none'),
+                                                    transition: 'filter 0.5s ease'
                                                 }}
-                                                className="nav-link"
-                                            >
-                                                {link.label}
-                                            </Component>
-                                            <Box component="span" sx={{
-                                                position: 'absolute',
-                                                bottom: 0,
-                                                left: '50%',
-                                                width: '0%',
-                                                height: '1px',
-                                                bgcolor: '#D4AF37',
-                                                transition: 'all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                                                transform: 'translateX(-50%)',
-                                                '.nav-link:hover ~ &': {
-                                                    width: '100%',
-                                                }
-                                            }} />
+                                                priority
+                                            />
                                         </Box>
-                                    );
-                                })}
+                                    </Link>
+                                </Box>
+
+                                {/* Desktop Menu */}
+                                <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: { md: 4, lg: 8 } }}>
+                                    {[
+                                        { label: 'FLOWERS', href: '/products?category=bouquet' },
+                                        { label: 'EVENTS', href: '/events' },
+                                        { label: 'ABOUT US', href: '/about' },
+                                        { label: 'OUR CUSTOMERS', href: '/customers' },
+
+                                    ].map((link) => {
+                                        const isExternal = false;
+                                        const Component = Link;
+
+                                        return (
+                                            <Box key={link.label} sx={{ position: 'relative' }}>
+                                                <Component
+                                                    href={link.href}
+                                                    style={{
+                                                        fontSize: '0.85rem',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.25em',
+                                                        color: isScrolled ? '#5D4037' : (pathname === '/' && !isScrolled ? '#FFFFFF' : '#5D4037'),
+                                                        textDecoration: 'none',
+                                                        fontWeight: 600,
+                                                        display: 'block',
+                                                        padding: '10px 0',
+                                                        transition: 'all 0.4s ease',
+                                                        opacity: isScrolled ? 1 : 0.9
+                                                    }}
+                                                    className="nav-link"
+                                                >
+                                                    {link.label}
+                                                </Component>
+                                                <Box component="span" sx={{
+                                                    position: 'absolute',
+                                                    bottom: 0,
+                                                    left: '50%',
+                                                    width: '0%',
+                                                    height: '1px',
+                                                    bgcolor: '#D4AF37',
+                                                    transition: 'all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                                                    transform: 'translateX(-50%)',
+                                                    '.nav-link:hover ~ &': {
+                                                        width: '100%',
+                                                    }
+                                                }} />
+                                            </Box>
+                                        );
+                                    })}
+                                </Box>
                             </Box>
 
                             <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: { xs: 1, md: 2 } }}>

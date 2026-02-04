@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
                 productimage: true,
                 productdetail: true,
                 productfeature: true,
-                productshipping: true
+                productshipping: true,
+                category: true
             },
             orderBy: [
                 { priority: 'asc' }, // Lower priority value first (asc)
@@ -54,7 +55,8 @@ export async function GET(request: NextRequest) {
                     hasQrCode: product.hasQrCode,
                     qrCodePrice: product.qrCodePrice?.toString() || "0",
                     isNew: product.isNew,
-                    isBestSeller: product.isBestSeller
+                    isBestSeller: product.isBestSeller,
+                    category: product.category?.title || "General"
                 };
             } catch (err) {
                 console.error(`Error transforming product ${product.id}:`, err);

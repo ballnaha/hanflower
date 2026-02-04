@@ -9,53 +9,17 @@ datasource db {
 
 model category {
   id          String    @id
-  slug        String    @unique(map: "Category_slug_key")
+  name        String?   // Added optional if needed by some routes
   title       String
-  subtitle    String
-  description String
-  image       String
-  priority    Int       @default(0)
+  subtitle    String?
+  slug        String    @unique
+  description String?   @db.Text
+  image       String?
   isActive    Boolean   @default(true)
+  priority    Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   product     product[]
-}
-
-model order {
-  id             String      @id
-  customerName   String
-  tel            String
-  address        String      @db.Text
-  note           String?     @db.Text
-  subtotal       Decimal     @db.Decimal(10, 2)
-  shippingCost   Decimal     @db.Decimal(10, 2)
-  shippingMethod String
-  discount       Decimal     @default(0.00) @db.Decimal(10, 2)
-  grandTotal     Decimal     @db.Decimal(10, 2)
-  paymentMethod  String      @default("bank_transfer")
-  status         String      @default("PENDING")
-  slipUrl        String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  email          String?
-  adminNote      String?     @db.Text
-  trackingNumber String?
-  orderitem      orderitem[]
-}
-
-model orderitem {
-  id        String  @id
-  orderId   String
-  productId String
-  title     String
-  price     Decimal @db.Decimal(10, 2)
-  quantity  Int
-  image     String?
-  order     order   @relation(fields: [orderId], references: [id], onDelete: Cascade, map: "OrderItem_orderId_fkey")
-  product   product @relation(fields: [productId], references: [id], map: "OrderItem_productId_fkey")
-
-  @@index([orderId], map: "OrderItem_orderId_fkey")
-  @@index([productId], map: "OrderItem_productId_fkey")
 }
 
 model product {
@@ -82,6 +46,7 @@ model product {
   qrCodePrice         Decimal?         @db.Decimal(10, 2) @default(150.00)
   isNew               Boolean          @default(false)
   isBestSeller        Boolean          @default(false)
+  valentineCards      ValentineCard[]
   orderitem           orderitem[]
   category            category?        @relation(fields: [categoryId], references: [id], map: "Product_categoryId_fkey")
   productdetail       productdetail[]
@@ -110,15 +75,6 @@ model productfeature {
   @@index([productId], map: "ProductFeature_productId_fkey")
 }
 
-model productshipping {
-  id        String  @id @default(uuid())
-  text      String
-  productId String
-  product   product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductShipping_productId_fkey")
-
-  @@index([productId], map: "ProductShipping_productId_fkey")
-}
-
 model productimage {
   id        String  @id @default(uuid())
   url       String
@@ -128,20 +84,83 @@ model productimage {
   @@index([productId], map: "ProductImage_productId_fkey")
 }
 
+model productshipping {
+  id        String  @id @default(uuid())
+  text      String
+  productId String
+  product   product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductShipping_productId_fkey")
+
+  @@index([productId], map: "ProductShipping_productId_fkey")
+}
+
+model order {
+  id              String      @id
+  orderNumber     String      @unique(map: "Order_orderNumber_key")
+  customerName    String
+  customerEmail   String
+  customerPhone   String
+  customerAddress String      @db.Text
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  status          String      @default("pending")
+  paymentStatus   String      @default("unpaid")
+  paymentMethod   String?
+  shippingMethod  String?
+  shippingFee     Decimal     @default(0.00) @db.Decimal(10, 2)
+  notes           String?     @db.Text
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  items           orderitem[]
+}
+
+model orderitem {
+  id        String  @id
+  orderId   String
+  productId String
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
+  order     order   @relation(fields: [orderId], references: [id], onDelete: Cascade, map: "OrderItem_orderId_fkey")
+  product   product @relation(fields: [productId], references: [id], map: "OrderItem_productId_fkey")
+
+  @@index([orderId], map: "OrderItem_orderId_fkey")
+  @@index([productId], map: "OrderItem_productId_fkey")
+}
+
 model user {
-  id        String   @id @default(uuid())
-  username  String   @unique(map: "User_username_key")
+  id        String   @id
+  email     String   @unique(map: "User_email_key")
   password  String
-  role      String   @default("ADMIN")
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  name      String?
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model setting {
+  key         String   @id
+  value       String   @db.Text
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model coupon {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  discount    Float
+  type        String    @default("fixed") // fixed, percent
+  minSpend    Float     @default(0)
+  maxDiscount Float?
+  limit       Int?
+  expireAt    DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model shippingmethod {
-  id            String   @id @default(uuid())
+  id            String   @id @default(cuid())
   code          String   @unique
   name          String
-  description   String?
+  description   String?  @db.Text
   price         Decimal  @db.Decimal(10, 2)
   estimatedDays String?
   enabled       Boolean  @default(true)
@@ -150,30 +169,6 @@ model shippingmethod {
   updatedAt     DateTime @updatedAt
 }
 
-model setting {
-  id        String   @id @default(uuid())
-  key       String   @unique
-  value     String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model coupon {
-  id          String    @id @default(uuid())
-  code        String    @unique
-  discount    Decimal   @db.Decimal(10, 2)
-  type        String    @default("percent") // percent, fixed
-  minSpend    Decimal?  @default(0.00) @db.Decimal(10, 2)
-  maxDiscount Decimal?  @db.Decimal(10, 2)
-  limit       Int?
-  used        Int       @default(0)
-  expireAt    DateTime?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-}
-
-// Valentine Models
 model ValentineCard {
   id              String   @id @default(cuid())
   slug            String   @unique
@@ -194,7 +189,7 @@ model ValentineCard {
   
   // UI Customization
   swipeHintColor           String?  @default("white") // white, red
-  swipeHintText            String?  @default("Swipe to see more")
+  swipeHintText            String?  @default("Swipe up")
   showGame                 Boolean  @default(true)
   campaignName             String?  @default("Valentine's") // For the footer card
 
@@ -207,30 +202,14 @@ model ValentineCard {
   updatedAt       DateTime @updatedAt
 
   memories        ValentineMemory[]
-  orderedProducts ValentineProduct[]
+  orderedProducts product[]
   scores          ValentineScore[]
-}
-
-model ValentineScore {
-  id        String   @id @default(cuid())
-  cardId    String
-  playerId  String   // persistent ID from localStorage
-  name      String
-  score     Int
-  createdAt DateTime @default(now())
-
-  card ValentineCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
-
-  @@unique([cardId, playerId])
-  @@index([cardId])
-  @@index([playerId])
-  @@index([score(sort: Desc)])
 }
 
 model ValentineMemory {
   id        String   @id @default(cuid())
   cardId    String
-  type      String   @default("image") // image, youtube, tiktok, video
+  type      String   @default("image") // image, video, youtube, tiktok
   url       String   @db.Text
   caption   String?
   thumbnail String?  @db.Text
@@ -241,7 +220,16 @@ model ValentineMemory {
   card ValentineCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
 }
 
-// Valentine Catalog Models
+model ValentineScore {
+  id        String   @id @default(cuid())
+  cardId    String
+  score     Int
+  userName  String?
+  createdAt DateTime @default(now())
+
+  card ValentineCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+}
+
 model ValentineProduct {
   id            String   @id @default(cuid())
   name          String
@@ -258,7 +246,6 @@ model ValentineProduct {
   updatedAt     DateTime @updatedAt
   
   images        ValentineProductImage[]
-  cards         ValentineCard[]
 }
 
 model ValentineProductImage {
