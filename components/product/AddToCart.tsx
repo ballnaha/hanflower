@@ -38,7 +38,7 @@ export default function AddToCart({ price, onAdd }: AddToCartProps) {
                 textTransform: 'none',
                 px: 3,
                 display: 'flex',
-                justifyContent: 'space-between',
+                justifyContent: 'center',
                 borderRadius: '0px',
                 transition: 'all 0.4s ease',
                 border: 'none',
@@ -58,15 +58,25 @@ export default function AddToCart({ price, onAdd }: AddToCartProps) {
                 {loading ? (
                     <CircularProgress size={20} color="inherit" />
                 ) : (
-                    <ShoppingBag size={20} variant="Bold" />
+                    <ShoppingBag size={20} variant="Bold" color="#FFF" />
                 )}
-                <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                    {loading ? 'กำลังเพิ่ม...' : 'เพิ่มลงตะกร้าสินค้า'}
+                <Typography sx={{
+                    fontWeight: 600,
+                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                    whiteSpace: 'nowrap'
+                }}>
+                    {loading ? (
+                        <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>กำลังเพิ่ม...</Box>
+                    ) : (
+                        <>
+                            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>เพิ่มลงตะกร้าสินค้า</Box>
+                            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>เพิ่มลงตะกร้า</Box>
+                        </>
+                    )}
+                    {loading && <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>กำลังเพิ่ม...</Box>}
                 </Typography>
             </Box>
-            <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                ฿{typeof price === 'number' ? price.toLocaleString() : price}
-            </Typography>
+
         </Button>
     );
 }

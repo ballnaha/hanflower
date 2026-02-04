@@ -167,7 +167,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                                     src={getImageUrl(img)}
                                     alt={`${product.title} - ${idx + 1}`}
                                     fill
-                                    style={{ objectFit: 'contain', padding: '10%' }}
+                                    style={{ objectFit: 'contain', padding: '1%' }}
                                     priority={idx === 0}
                                 />
                                 {idx === 0 && (
@@ -282,7 +282,7 @@ export default function ProductDetail({ productId }: ProductDetailProps) {
                                             src={getImageUrl(img)}
                                             alt={`${product.title} - ${idx + 1}`}
                                             fill
-                                            style={{ objectFit: 'contain', padding: '12%' }}
+                                            style={{ objectFit: 'contain', padding: '2%' }}
                                             priority={idx === 0}
                                         />
                                         {idx === 0 && (

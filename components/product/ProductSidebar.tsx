@@ -102,7 +102,7 @@ export default function ProductSidebar({
             top: 0,
             display: 'flex',
             flexDirection: 'column',
-            px: { xs: 4, md: 8 },
+            px: { xs: 2.5, md: 8 },
             pt: { xs: 4, md: 6 },
             pb: 4,
             zIndex: 10,
@@ -212,7 +212,7 @@ export default function ProductSidebar({
                                     bgcolor: flowerType === 'fresh' ? '#B76E79' : 'transparent',
                                     color: flowerType === 'fresh' ? '#FFF' : '#666',
                                     fontWeight: 600,
-                                    fontSize: '0.9rem',
+                                    fontSize: { xs: '0.8rem', md: '0.9rem' },
                                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                     boxShadow: flowerType === 'fresh' ? '0 4px 12px rgba(183, 110, 121, 0.2)' : 'none',
                                     '&:hover': {
@@ -235,7 +235,7 @@ export default function ProductSidebar({
                                     bgcolor: flowerType === 'velvet' ? '#B76E79' : 'transparent',
                                     color: flowerType === 'velvet' ? '#FFF' : '#666',
                                     fontWeight: 600,
-                                    fontSize: '0.9rem',
+                                    fontSize: { xs: '0.8rem', md: '0.9rem' },
                                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                     boxShadow: flowerType === 'velvet' ? '0 4px 12px rgba(183, 110, 121, 0.2)' : 'none',
                                     '&:hover': {
@@ -257,7 +257,7 @@ export default function ProductSidebar({
                         <Typography variant="caption" sx={{ fontWeight: 700, color: '#1A1A1A', mb: 1.5, display: 'block', letterSpacing: '0.1em' }}>
                             QR FEELING CARD
                         </Typography>
-                        <Stack direction="row" spacing={2}>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                             <Button
                                 onClick={() => setCardType('standard')}
                                 sx={{
@@ -269,7 +269,7 @@ export default function ProductSidebar({
                                     bgcolor: cardType === 'standard' ? '#B76E79' : 'transparent',
                                     color: cardType === 'standard' ? '#FFF' : '#666',
                                     fontWeight: 600,
-                                    fontSize: '0.85rem',
+                                    fontSize: { xs: '0.8rem', md: '0.85rem' },
                                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -281,7 +281,7 @@ export default function ProductSidebar({
                                 }}
                             >
                                 <span>การ์ดมาตรฐาน</span>
-                                <span style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 400 }}>(แถมฟรี)</span>
+                                <Box component="span" sx={{ fontSize: { xs: '0.65rem', md: '0.7rem' }, opacity: 0.8, fontWeight: 400 }}>(แถมฟรี)</Box>
                             </Button>
                             <Button
                                 onClick={() => setCardType('custom')}
@@ -294,7 +294,7 @@ export default function ProductSidebar({
                                     bgcolor: cardType === 'custom' ? '#B76E79' : 'transparent',
                                     color: cardType === 'custom' ? '#FFF' : '#666',
                                     fontWeight: 600,
-                                    fontSize: '0.85rem',
+                                    fontSize: { xs: '0.8rem', md: '0.85rem' },
                                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -306,7 +306,11 @@ export default function ProductSidebar({
                                 }}
                             >
                                 <span>ปรับแต่งพิเศษ</span>
-                                <span style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 400 }}>(รูปภาพ/วิดีโอ +฿{customCardFee})</span>
+                                <Box component="span" sx={{ fontSize: { xs: '0.65rem', md: '0.7rem' }, opacity: 0.8, fontWeight: 400 }}>
+                                    <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>(รูปภาพ/วิดีโอ </Box>
+                                    <Box component="span">+฿{customCardFee}</Box>
+                                    <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>)</Box>
+                                </Box>
                             </Button>
                         </Stack>
                     </Box>
@@ -414,8 +418,8 @@ export default function ProductSidebar({
                                 color: '#1A1A1A',
                                 textTransform: 'uppercase',
                                 borderRadius: '0px',
-                                fontSize: '0.75rem',
-                                fontWeight: 700,
+                                fontSize: { xs: '0.85rem', md: '0.9rem' },
+                                fontWeight: 600,
                                 letterSpacing: '0.1em',
                                 transition: 'all 0.3s ease',
                                 '&:hover': {
