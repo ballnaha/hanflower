@@ -49,6 +49,8 @@ interface Product {
     stock: number;
     priority: number;
     categoryId?: string;
+    isNew?: boolean;
+    isBestSeller?: boolean;
 }
 
 export default function AdminProductsPage() {
@@ -266,9 +268,39 @@ export default function AdminProductsPage() {
                                                 sx={{ width: 48, height: 48, bgcolor: '#F5F5F5' }}
                                             />
                                             <Box>
-                                                <Typography sx={{ fontWeight: 600, color: '#1A1A1A', fontSize: '0.9rem' }}>
-                                                    {product.title}
-                                                </Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                                    <Typography sx={{ fontWeight: 600, color: '#1A1A1A', fontSize: '0.9rem' }}>
+                                                        {product.title}
+                                                    </Typography>
+                                                    {product.isNew && (
+                                                        <Chip
+                                                            label="สินค้าใหม่"
+                                                            size="small"
+                                                            sx={{
+                                                                bgcolor: '#B76E79',
+                                                                color: '#FFFFFF',
+                                                                fontWeight: 700,
+                                                                fontSize: '0.6rem',
+                                                                height: 20,
+                                                                '& .MuiChip-label': { px: 1 }
+                                                            }}
+                                                        />
+                                                    )}
+                                                    {product.isBestSeller && (
+                                                        <Chip
+                                                            label="สินค้าขายดี"
+                                                            size="small"
+                                                            sx={{
+                                                                bgcolor: '#D4AF37',
+                                                                color: '#FFFFFF',
+                                                                fontWeight: 700,
+                                                                fontSize: '0.6rem',
+                                                                height: 20,
+                                                                '& .MuiChip-label': { px: 1 }
+                                                            }}
+                                                        />
+                                                    )}
+                                                </Box>
                                                 <Typography sx={{ fontSize: '0.75rem', color: '#888' }}>
                                                     SKU: {product.sku}
                                                 </Typography>

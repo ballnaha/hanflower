@@ -60,7 +60,7 @@ export default function Hero() {
                     }
                 }}>
                     <Typography variant="overline" sx={{ color: '#D4AF37', letterSpacing: { xs: '0.3em', md: '0.6em' }, fontWeight: 600, display: 'block', mb: { xs: 2, md: 4 } }}>
-                        HANFLOWER
+                        ฮันฟลาวเวอร์
                     </Typography>
 
                     <Typography variant="h1" sx={{

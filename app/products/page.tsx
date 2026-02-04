@@ -1,34 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Image from "next/image";
+import { useState, useEffect, Suspense } from 'react';
 import Link from "next/link";
 import { Container, Typography, Box, Skeleton, Select, MenuItem, FormControl, InputLabel, Chip, Breadcrumbs } from "@mui/material";
-import { ArrowRight2 } from 'iconsax-react';
 import { useSearchParams } from 'next/navigation';
-import { getImageUrl } from '@/lib/utils';
+import ProductCard, { ProductCardData } from '@/components/product/ProductCard';
 
-import { Suspense } from 'react';
-
-// Fallback image for production
-const FALLBACK_IMAGE = "/images/placeholder-product.png";
-
-interface Product {
-    id: string;
-    slug: string;
-    title: string;
-    image: string;
-    type: string;
-    price: string;
-    originalPrice: string;
-    discount: string;
+interface Product extends ProductCardData {
     priority: number;
-    priceVelvet?: string;
-    originalPriceVelvet?: string;
-    discountVelvet?: string;
-    hasQrCode?: boolean;
-    isNew?: boolean;
-    isBestSeller?: boolean;
 }
 
 interface Category {
@@ -84,8 +63,6 @@ function ProductsContent() {
 
                     // 1. Add defined categories first
                     categoriesData.forEach((c: Category) => {
-                        // Use subtitle as value (e.g. 'SIGNATURE BOUQUETS') and title as label (e.g. 'Signature Bouquets')
-                        // Ensure consistent casing for keys if needed, but keeping original for display
                         if (!seenValues.has(c.subtitle)) {
                             options.push({ value: c.subtitle, label: c.title });
                             seenValues.add(c.subtitle);
@@ -94,12 +71,9 @@ function ProductsContent() {
 
                     // 2. Add product types that don't match any category
                     uniqueTypes.forEach((type: string) => {
-                        // Check if this type matches any existing category value (case-insensitive check advisable if data is messy)
                         const isAlreadyAdded = Array.from(seenValues).some(
                             existingVal => existingVal.toLowerCase() === type.toLowerCase()
                         );
-
-                        // Also check if it matches existing labels to avoid confusion
                         const isMatchLabel = options.some(opt => opt.label.toLowerCase() === type.toLowerCase());
 
                         if (!isAlreadyAdded && !isMatchLabel) {
@@ -137,22 +111,18 @@ function ProductsContent() {
             result = result.filter(p => {
                 const selectedLower = selectedType.toLowerCase();
                 const typeLower = p.type.toLowerCase();
-
-                // Allow matches if product type contains the category keyword or vice-versa
-                // Use a comprehensive includes check rather than just split space
                 return typeLower.includes(selectedLower) || selectedLower.includes(typeLower);
             });
         }
 
         // Sort
         if (sortBy === 'priority') {
-            result.sort((a, b) => a.priority - b.priority); // Ascending: น้อยไปมาก
+            result.sort((a, b) => a.priority - b.priority);
         } else if (sortBy === 'price-low') {
             result.sort((a, b) => parseFloat(a.price.replace(',', '')) - parseFloat(b.price.replace(',', '')));
         } else if (sortBy === 'price-high') {
             result.sort((a, b) => parseFloat(b.price.replace(',', '')) - parseFloat(a.price.replace(',', '')));
         }
-        // Default is priority (already sorted from API)
 
         setFilteredProducts(result);
     }, [selectedType, sortBy, products]);
@@ -313,278 +283,5 @@ export default function ProductsPage() {
         }>
             <ProductsContent />
         </Suspense>
-    );
-}
-
-function ProductCard({ product }: { product: Product }) {
-    const [imgSrc, setImgSrc] = useState(getImageUrl(product.image));
-    const [imgError, setImgError] = useState(false);
-    const [selectedVariant, setSelectedVariant] = useState<'fresh' | 'velvet'>('fresh');
-
-    const hasVelvet = product.priceVelvet && product.priceVelvet !== '';
-    const currentPrice = selectedVariant === 'velvet' && hasVelvet ? product.priceVelvet : product.price;
-    const currentOriginalPrice = selectedVariant === 'velvet' && hasVelvet ? product.originalPriceVelvet : product.originalPrice;
-    const currentDiscount = selectedVariant === 'velvet' && hasVelvet ? product.discountVelvet : product.discount;
-
-    const handleImageError = () => {
-        if (!imgError) {
-            setImgError(true);
-            setImgSrc(FALLBACK_IMAGE);
-        }
-    };
-
-    const getImageSrc = (src: string) => {
-        return getImageUrl(src);
-    };
-
-    const handleVariantClick = (e: React.MouseEvent, variant: 'fresh' | 'velvet') => {
-        e.preventDefault();
-        e.stopPropagation();
-        setSelectedVariant(variant);
-    };
-
-    return (
-        <Link href={`/product/${product.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-            <Box sx={{ cursor: 'pointer', group: 'true', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                {/* Outer wrapper for QR card visibility */}
-                <Box sx={{
-                    position: 'relative',
-                    mb: 3,
-                    overflow: 'hidden',
-                    '&:hover .qr-card-slide': {
-                        right: '5%',
-                        opacity: 1,
-                    },
-                    '&:hover .qr-hint': {
-                        opacity: 1,
-                    }
-                }}>
-                    {/* Main product image container */}
-                    <Box sx={{
-                        position: 'relative',
-                        aspectRatio: '3/4',
-                        overflow: 'hidden',
-                        bgcolor: '#F2F2F2',
-                        border: '1px solid rgba(0,0,0,0.03)',
-                        transition: 'all 0.5s ease',
-                        '&:hover': {
-                            borderColor: '#B76E79',
-                            boxShadow: '0 10px 40px rgba(183, 110, 121, 0.15)',
-                            '& img': { transform: 'scale(1.05)' }
-                        }
-                    }}>
-                        <Image
-                            src={getImageSrc(imgSrc)}
-                            alt={product.title}
-                            fill
-                            style={{
-                                objectFit: 'cover',
-                                padding: '10%',
-                                transition: 'transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1)'
-                            }}
-                            onError={handleImageError}
-                        />
-
-                        {/* Badges Overlay */}
-                        <Box sx={{
-                            position: 'absolute',
-                            top: 15,
-                            left: 15,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 1,
-                            zIndex: 3
-                        }}>
-                            {product.isNew && (
-                                <Box sx={{
-                                    bgcolor: '#B76E79',
-                                    color: '#FFFFFF',
-                                    px: 1.5,
-                                    py: 0.5,
-                                    fontSize: '0.6rem',
-                                    fontWeight: 800,
-                                    letterSpacing: '0.15em',
-                                    textTransform: 'uppercase',
-                                    borderRadius: '2px',
-                                    boxShadow: '0 4px 12px rgba(183, 110, 121, 0.3)',
-                                    animation: 'pulse 2s infinite'
-                                }}>
-                                    New
-                                </Box>
-                            )}
-                            {product.isBestSeller && (
-                                <Box sx={{
-                                    bgcolor: '#D4AF37',
-                                    color: '#FFFFFF',
-                                    px: 1.5,
-                                    py: 0.5,
-                                    fontSize: '0.6rem',
-                                    fontWeight: 800,
-                                    letterSpacing: '0.15em',
-                                    textTransform: 'uppercase',
-                                    borderRadius: '2px',
-                                    boxShadow: '0 4px 12px rgba(212, 175, 55, 0.3)'
-                                }}>
-                                    Best Seller
-                                </Box>
-                            )}
-                        </Box>
-
-                        {/* Discount Badge Overlay */}
-                        {currentDiscount && parseInt(currentDiscount) > 0 && (
-                            <Box sx={{
-                                position: 'absolute',
-                                top: 15,
-                                right: 15,
-                                bgcolor: '#B76E79',
-                                color: '#FFFFFF',
-                                px: 1.5,
-                                py: 0.5,
-                                fontSize: '0.65rem',
-                                fontWeight: 700,
-                                letterSpacing: '0.1em',
-                                zIndex: 2
-                            }}>
-                                -{currentDiscount}%
-                            </Box>
-                        )}
-
-                        {/* Variant Selector Overlay - Always Visible */}
-                        {hasVelvet && (
-                            <Box
-                                sx={{
-                                    position: 'absolute',
-                                    bottom: 15,
-                                    left: 0,
-                                    right: 0,
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    zIndex: 2
-                                }}
-                            >
-                                <Box sx={{
-                                    display: 'inline-flex',
-                                    bgcolor: 'rgba(255, 255, 255, 0.85)',
-                                    backdropFilter: 'blur(8px)',
-                                    borderRadius: '30px',
-                                    p: 0.5,
-                                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
-                                }}>
-                                    <Box
-                                        onClick={(e) => handleVariantClick(e, 'fresh')}
-                                        sx={{
-                                            px: 2,
-                                            py: 0.6,
-                                            borderRadius: '20px',
-                                            cursor: 'pointer',
-                                            bgcolor: selectedVariant === 'fresh' ? '#FFFFFF' : 'transparent',
-                                            boxShadow: selectedVariant === 'fresh' ? '0 2px 8px rgba(183, 110, 121, 0.2)' : 'none',
-                                            color: selectedVariant === 'fresh' ? '#B76E79' : '#666',
-                                            transition: 'all 0.2s',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 0.5
-                                        }}
-                                    >
-                                        <Typography sx={{ fontSize: '0.85rem', fontWeight: selectedVariant === 'fresh' ? 700 : 500 }}>
-                                            ดอกไม้สด
-                                        </Typography>
-                                    </Box>
-                                    <Box
-                                        onClick={(e) => handleVariantClick(e, 'velvet')}
-                                        sx={{
-                                            px: 2,
-                                            py: 0.6,
-                                            borderRadius: '20px',
-                                            cursor: 'pointer',
-                                            bgcolor: selectedVariant === 'velvet' ? '#FFFFFF' : 'transparent',
-                                            boxShadow: selectedVariant === 'velvet' ? '0 2px 8px rgba(183, 110, 121, 0.2)' : 'none',
-                                            color: selectedVariant === 'velvet' ? '#B76E79' : '#666',
-                                            transition: 'all 0.2s',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 0.5
-                                        }}
-                                    >
-                                        <Typography sx={{ fontSize: '0.85rem', fontWeight: selectedVariant === 'velvet' ? 700 : 500 }}>
-                                            กำมะหยี่
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        )}
-                    </Box>
-
-                    {/* QR Code Card - Hidden on right side, slides out on hover */}
-                    {product.hasQrCode !== false && (
-                        <Box
-                            className="qr-card-slide"
-                            sx={{
-                                position: 'absolute',
-                                top: '30%',
-                                right: '-18%',
-                                transform: 'translateY(-50%)',
-                                width: '25%',
-                                aspectRatio: '1/1.3',
-                                zIndex: 10,
-                                filter: 'drop-shadow(-3px 5px 10px rgba(0,0,0,0.15))',
-                                transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                                opacity: 0.7,
-                                pointerEvents: 'none',
-                            }}>
-                            <Image
-                                src="/images/qr_code_mockup.webp"
-                                alt="QR Code Feeling Card"
-                                fill
-                                style={{ objectFit: 'contain' }}
-                            />
-                            {/* Small hint text */}
-                            <Box
-                                className="qr-hint"
-                                sx={{
-                                    position: 'absolute',
-                                    bottom: -18,
-                                    left: '50%',
-                                    transform: 'translateX(-50%)',
-                                    bgcolor: '#B76E79',
-                                    color: '#FFF',
-                                    px: 1,
-                                    py: 0.3,
-                                    borderRadius: '10px',
-                                    fontSize: '0.5rem',
-                                    fontWeight: 600,
-                                    whiteSpace: 'nowrap',
-                                    opacity: 0,
-                                    transition: 'opacity 0.3s ease 0.2s',
-                                }}
-                            >
-                                ฟรี!
-                            </Box>
-                        </Box>
-                    )}
-                </Box>
-
-                <Box sx={{ textAlign: 'center', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Typography variant="caption" sx={{ color: '#888', textTransform: 'uppercase', letterSpacing: '0.1em', mb: 0.5, display: 'block' }}>
-                        {product.type}
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 500, color: '#1A1A1A', mb: 1, letterSpacing: '0.05em' }}>
-                        {product.title}
-                    </Typography>
-                    <Box sx={{ mt: 'auto' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5 }}>
-                            <Typography variant="subtitle1" sx={{ color: '#B76E79', fontWeight: 700, fontSize: '1.2rem' }}>
-                                ฿{currentPrice}
-                            </Typography>
-                            {currentOriginalPrice && (
-                                <Typography variant="body2" sx={{ color: '#BBB', textDecoration: 'line-through', fontSize: '0.9rem' }}>
-                                    ฿{currentOriginalPrice}
-                                </Typography>
-                            )}
-                        </Box>
-                    </Box>
-                </Box>
-            </Box>
-        </Link>
     );
 }

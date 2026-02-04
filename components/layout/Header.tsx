@@ -26,7 +26,7 @@ export default function Header() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const { cartCount, toggleCart } = useCart();
     const pathname = usePathname();
-    const isProductPage = pathname?.includes('/product/');
+    const isProductPage = pathname?.includes('/products/');
     const isAdminPage = pathname?.startsWith('/admin');
 
     if (isAdminPage) return null;

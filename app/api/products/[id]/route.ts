@@ -155,6 +155,9 @@ export async function PUT(
                 where: { id: id },
                 data: updateData
             });
+        }, {
+            maxWait: 10000, // Maximum time to wait for transaction to start (10 seconds)
+            timeout: 30000  // Maximum time for transaction to complete (30 seconds)
         });
 
         console.log('Product API PUT: Success');

@@ -89,7 +89,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             images: [imageUrl],
         },
         alternates: {
-            canonical: `/product/${product.slug}`,
+            canonical: `/products/${product.slug}`,
         },
         robots: {
             index: true,
