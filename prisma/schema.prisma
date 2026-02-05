@@ -12,7 +12,7 @@ model category {
   name        String?   // Added optional if needed by some routes
   title       String
   subtitle    String?
-  slug        String    @unique
+  slug        String    @unique(map: "category_slug_unique")
   description String?   @db.Text
   image       String?
   isActive    Boolean   @default(true)
