@@ -7,18 +7,15 @@ export async function GET() {
     try {
         const orders = await prisma.order.findMany({
             include: {
-                orderitem: true
+                items: true
             },
             orderBy: {
                 createdAt: 'desc'
             }
         });
 
-        // Map orderitem to items for consistency
-        const formattedOrders = orders.map(order => ({
-            ...order,
-            items: order.orderitem
-        }));
+        // Orders already have 'items' relation, so just return them
+        const formattedOrders = orders;
 
         return NextResponse.json(formattedOrders);
     } catch (error) {
@@ -109,27 +106,24 @@ export async function POST(request: Request) {
         const order = await prisma.order.create({
             data: {
                 id: orderId,
+                orderNumber: orderId, // Required unique field
                 customerName,
-                tel,
-                email,
-                address,
-                note,
-                subtotal: cleanPrice(subtotal),
-                shippingCost: cleanPrice(shippingCost),
+                customerPhone: tel,
+                customerEmail: email || '',
+                customerAddress: address,
+                notes: note,
+                shippingFee: cleanPrice(shippingCost),
                 shippingMethod,
-                discount: cleanPrice(discount),
-                grandTotal: cleanPrice(grandTotal),
+                totalAmount: cleanPrice(grandTotal),
                 paymentMethod,
-                status: 'PENDING',
-                updatedAt: new Date(),
-                orderitem: {
+                status: 'pending',
+                paymentStatus: 'unpaid',
+                items: {
                     create: validCartItems.map((item: any) => ({
                         id: `ITEM-${Math.random().toString(36).substr(2, 9)}`,
                         productId: extractProductId(item.id), // Use original product ID without suffix
-                        title: item.title,
                         price: cleanPrice(item.price),
-                        quantity: item.quantity,
-                        image: item.image || (item.images && item.images[0]) || null
+                        quantity: item.quantity
                     }))
                 }
             }

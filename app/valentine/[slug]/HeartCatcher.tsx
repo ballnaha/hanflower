@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Heart, Star, Magicpen, Forbidden, Gift, Gallery, CloseCircle, Timer1, Cup } from "iconsax-react";
+import { Heart, Star, Magicpen, Forbidden, Gift, Gallery, CloseCircle, Timer1, Cup, HeartSlash } from "iconsax-react";
 import { Typography, Box, IconButton, Button } from "@mui/material";
 import { useParams } from "next/navigation";
 import Leaderboard from "./Leaderboard";
@@ -55,13 +55,13 @@ const MemoizedHeart = React.memo(({ heart, onCatch }: { heart: FallingHeart, onC
                 )}
                 {heart.type === 'bomb' ? (
                     <div className="relative">
-                        <Forbidden
+                        <HeartSlash
                             size={heart.size}
                             variant="Bold"
                             color={heart.color}
-                            className="opacity-90 drop-shadow-[0_0_10px_rgba(0,0,0,0.3)]"
+                            className="opacity-90 drop-shadow-[0_0_10px_rgba(255,51,102,0.3)]"
                         />
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full animate-ping" />
                     </div>
                 ) : heart.type === 'clock' ? (
                     <div className="relative">
@@ -219,7 +219,7 @@ export default function HeartCatcher({ onComplete, onClose, targetScore = 1000, 
             } else if (rand > 0.82) {
                 type = 'bomb';
                 points = -100;
-                color = "#1A1A1A";
+                color = "#2D1219"; // Deep Dark Rose (Almost Black)
                 size = 50 + Math.random() * 10;
             } else if (rand > 0.65) {
                 type = 'rare';
@@ -413,7 +413,7 @@ export default function HeartCatcher({ onComplete, onClose, targetScore = 1000, 
                         </Typography>
                         <button
                             onClick={startGame}
-                            className="px-12 py-4 bg-gradient-to-r from-[#FF3366] to-[#D41442] text-white font-bold rounded-full shadow-[0_15px_30px_rgba(212,20,66,0.3)] hover:shadow-[0_20px_45px_rgba(212,20,66,0.5)] transition-all active:scale-95 text-xl mb-4"
+                            className="px-10 py-3 bg-gradient-to-r from-[#FF3366] to-[#D41442] text-white font-bold rounded-full shadow-[0_12px_24px_rgba(212,20,66,0.25)] hover:shadow-[0_15px_35px_rgba(212,20,66,0.4)] transition-all active:scale-95 text-lg mb-4"
                             style={{ fontFamily: 'var(--font-mali), sans-serif' }}
                         >
                             เริ่มเล่นเลย!
@@ -462,10 +462,10 @@ export default function HeartCatcher({ onComplete, onClose, targetScore = 1000, 
                                 )}
                             </div>
 
-                            <div className="flex flex-col gap-2.5 w-full">
+                            <div className="flex flex-col gap-2 w-full">
                                 <button
                                     onClick={() => onComplete(score)}
-                                    className="w-full py-3.5 bg-gradient-to-r from-[#D41442] to-[#FF3366] text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all text-base"
+                                    className="w-full py-2.5 bg-gradient-to-r from-[#D41442] to-[#FF3366] text-white font-bold rounded-xl shadow-md active:scale-95 transition-all text-md"
                                     style={{ fontFamily: 'var(--font-mali), sans-serif' }}
                                 >
                                     กลับหน้าแรก ✨
@@ -473,16 +473,16 @@ export default function HeartCatcher({ onComplete, onClose, targetScore = 1000, 
 
                                 <button
                                     onClick={() => setShowLeaderboard(true)}
-                                    className="w-full py-3 border-2 border-pink-200 text-[#FF3366] font-bold rounded-xl hover:bg-pink-50 transition-all flex items-center justify-center gap-2 text-sm"
+                                    className="w-full py-2 border-2 border-pink-200 text-[#FF3366] font-bold rounded-xl hover:bg-pink-50 transition-all flex items-center justify-center gap-2 text-md"
                                     style={{ fontFamily: 'var(--font-mali), sans-serif' }}
                                 >
-                                    <Cup size="18" variant="Bold" color="#FF3366" />
+                                    <Cup size="16" variant="Bold" color="#FF3366" />
                                     ดูตารางอันดับ 🏆
                                 </button>
 
                                 <button
                                     onClick={startGame}
-                                    className="w-full py-3 bg-gray-50 text-gray-400 font-bold rounded-xl active:scale-95 transition-all text-sm"
+                                    className="w-full py-2 bg-gray-50 text-gray-400 font-bold rounded-xl active:scale-95 transition-all text-md"
                                     style={{ fontFamily: 'var(--font-mali), sans-serif' }}
                                 >
                                     เล่นอีกรอบ 🔄

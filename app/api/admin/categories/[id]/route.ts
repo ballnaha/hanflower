@@ -40,7 +40,10 @@ export async function PATCH(
         const { title, subtitle, slug, description, image, priority, isActive } = body;
 
         const data: any = {};
-        if (title !== undefined) data.title = title;
+        if (title !== undefined) {
+            data.title = title;
+            data.name = title; // Sync name with title
+        }
         if (subtitle !== undefined) data.subtitle = subtitle;
         if (slug !== undefined) data.slug = slug;
         if (description !== undefined) data.description = description;

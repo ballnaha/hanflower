@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import NextImage from 'next/image';
 import { useNotification } from '@/context/NotificationContext';
+import { NumberStepper } from '@/components/ui';
 
 // Wrapper component that provides the AdminLayout with SnackbarProvider
 export default function ProductEditorPage({ params }: { params: Promise<{ id: string }> }) {
@@ -677,6 +678,10 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                         <Paper elevation={0} sx={{ p: 4, borderRadius: '24px', border: '1px solid rgba(0,0,0,0.03)', position: 'sticky', top: 100 }}>
                             <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>ราคา & สต็อก</Typography>
                             <Stack spacing={3}>
+                                <Divider sx={{ my: 0 }}>
+                                    <Chip label="🌸 ดอกไม้สด" size="small" sx={{ fontWeight: 600 }} />
+                                </Divider>
+
                                 <TextField
                                     fullWidth
                                     label="ราคาขาย (บาท)"
@@ -684,7 +689,9 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                     type="number"
                                     value={form.price}
                                     onChange={handleChange}
+                                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                     required
+                                    InputProps={{ startAdornment: <Typography sx={{ color: '#999', mr: 0.5 }}>฿</Typography> }}
                                 />
                                 <TextField
                                     fullWidth
@@ -693,14 +700,26 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                     type="number"
                                     value={form.originalPrice}
                                     onChange={handleChange}
+                                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                                    InputProps={{ startAdornment: <Typography sx={{ color: '#999', mr: 0.5 }}>฿</Typography> }}
                                 />
-                                <TextField
-                                    fullWidth
-                                    label="ส่วนลด (%)"
-                                    name="discount"
-                                    type="number"
-                                    value={form.discount}
-                                    onChange={handleChange}
+                                <NumberStepper
+                                    value={parseFloat(form.discount) || 0}
+                                    onChange={(val) => {
+                                        const discount = val;
+                                        const originalPrice = parseFloat(form.originalPrice) || 0;
+                                        let price = form.price;
+                                        if (originalPrice > 0 && discount > 0 && discount < 100) {
+                                            price = Math.round(originalPrice * (1 - discount / 100)).toString();
+                                        }
+                                        setForm(prev => ({ ...prev, discount: val.toString(), price }));
+                                    }}
+                                    min={0}
+                                    max={99}
+                                    step={1}
+                                    label="ส่วนลด"
+                                    suffix="%"
+                                    size="md"
                                 />
 
                                 <Divider sx={{ my: 2 }}>
@@ -714,7 +733,9 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                     type="number"
                                     value={form.priceVelvet}
                                     onChange={handleChange}
+                                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                     helperText="ถ้าไม่ระบุจะไม่แสดงตัวเลือกดอกกำมะหยี่"
+                                    InputProps={{ startAdornment: <Typography sx={{ color: '#999', mr: 0.5 }}>฿</Typography> }}
                                 />
                                 <TextField
                                     fullWidth
@@ -723,44 +744,55 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                     type="number"
                                     value={form.originalPriceVelvet}
                                     onChange={handleChange}
+                                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                                    InputProps={{ startAdornment: <Typography sx={{ color: '#999', mr: 0.5 }}>฿</Typography> }}
                                 />
-                                <TextField
-                                    fullWidth
-                                    label="ส่วนลดดอกไม้กำมะหยี่ (%)"
-                                    name="discountVelvet"
-                                    type="number"
-                                    value={form.discountVelvet}
-                                    onChange={handleChange}
+                                <NumberStepper
+                                    value={parseFloat(form.discountVelvet) || 0}
+                                    onChange={(val) => {
+                                        const discount = val;
+                                        const originalPrice = parseFloat(form.originalPriceVelvet) || 0;
+                                        let price = form.priceVelvet;
+                                        if (originalPrice > 0 && discount > 0 && discount < 100) {
+                                            price = Math.round(originalPrice * (1 - discount / 100)).toString();
+                                        }
+                                        setForm(prev => ({ ...prev, discountVelvet: val.toString(), priceVelvet: price }));
+                                    }}
+                                    min={0}
+                                    max={99}
+                                    step={1}
+                                    label="ส่วนลดดอกไม้กำมะหยี่"
+                                    suffix="%"
+                                    size="md"
                                 />
 
                                 <Divider sx={{ my: 2 }} />
 
-                                <TextField
-                                    fullWidth
+                                <NumberStepper
+                                    value={parseInt(form.stock) || 0}
+                                    onChange={(val) => setForm(prev => ({ ...prev, stock: val.toString() }))}
+                                    min={0}
+                                    max={9999}
                                     label="จำนวนสินค้าในสต็อก"
-                                    name="stock"
-                                    type="number"
-                                    value={form.stock}
-                                    onChange={handleChange}
-                                    required
+                                    suffix=" ชิ้น"
+                                    size="md"
                                 />
-                                <TextField
-                                    fullWidth
+                                <NumberStepper
+                                    value={parseInt(form.stockVelvet) || 0}
+                                    onChange={(val) => setForm(prev => ({ ...prev, stockVelvet: val.toString() }))}
+                                    min={0}
+                                    max={9999}
                                     label="จำนวนสต็อกดอกกำมะหยี่"
-                                    name="stockVelvet"
-                                    type="number"
-                                    value={form.stockVelvet}
-                                    onChange={handleChange}
-                                    helperText="ถ้าเปิดตัวเลือกดอกกำมะหยี่ กรุณาระบุสต็อกแยกที่นี่"
+                                    suffix=" ชิ้น"
+                                    size="md"
                                 />
-                                <TextField
-                                    fullWidth
+                                <NumberStepper
+                                    value={parseInt(form.priority) || 0}
+                                    onChange={(val) => setForm(prev => ({ ...prev, priority: val.toString() }))}
+                                    min={0}
+                                    max={999}
                                     label="ลำดับการแสดงผล (Priority)"
-                                    name="priority"
-                                    type="number"
-                                    value={form.priority}
-                                    onChange={handleChange}
-                                    helperText="ค่ามากจะแสดงก่อน (เช่น 100 แสดงก่อน 1)"
+                                    size="md"
                                 />
 
                                 <Divider sx={{ my: 2 }}>
@@ -785,14 +817,15 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                 </Box>
 
                                 {form.hasQrCode && (
-                                    <TextField
-                                        fullWidth
-                                        label="ราคาการ์ดปรับแต่งพิเศษ (บาท)"
-                                        name="qrCodePrice"
-                                        type="number"
-                                        value={form.qrCodePrice}
-                                        onChange={handleChange}
-                                        helperText="ราคาที่ระบุคือค่าธรรมเนียมปรับแต่งพิเศษ (รูปภาพ/วิดีโอ)"
+                                    <NumberStepper
+                                        value={parseFloat(form.qrCodePrice) || 150}
+                                        onChange={(val) => setForm(prev => ({ ...prev, qrCodePrice: val.toString() }))}
+                                        min={0}
+                                        max={9999}
+                                        step={10}
+                                        label="ราคาการ์ดปรับแต่งพิเศษ"
+                                        prefix="฿"
+                                        size="md"
                                     />
                                 )}
 

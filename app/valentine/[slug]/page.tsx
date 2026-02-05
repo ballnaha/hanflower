@@ -3,10 +3,9 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { EffectCreative, Pagination, Autoplay } from "swiper/modules";
+import { EffectCreative, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/effect-creative";
-import "swiper/css/pagination";
 import { Heart, Music, Play, Star } from "iconsax-react";
 import { Button, Typography, Box, Paper, CircularProgress } from "@mui/material";
 import JigsawPuzzle from "./JigsawPuzzle";
@@ -73,48 +72,47 @@ export default function ValentineSlugPage() {
     const [heartGameScore, setHeartGameScore] = useState(0);
     const [heartBurstSource, setHeartBurstSource] = useState<'interaction' | 'completion'>('interaction');
     const [introHearts, setIntroHearts] = useState<{ id: number; left: string; size: number; duration: number; delay: number }[]>([]);
+    const [ambientHearts, setAmbientHearts] = useState<{ id: number; left: string; size: number; duration: number; delay: number }[]>([]);
+    const [isSwiperReady, setIsSwiperReady] = useState(false);
+    const [isLidOpening, setIsLidOpening] = useState(false);
 
     useEffect(() => {
-        // Intro hearts
-        if (!isOpen) {
-            const hearts = Array.from({ length: 15 }).map((_, i) => ({
-                id: i,
-                left: `${Math.random() * 100}%`,
-                size: 15 + Math.random() * 25,
-                duration: 4 + Math.random() * 6,
-                delay: Math.random() * 5
-            }));
-            setIntroHearts(hearts);
-        } else {
-            // Ambient floating hearts for main view (behind bg)
-            const hearts = Array.from({ length: 12 }).map((_, i) => ({
-                id: i + 100,
-                left: `${Math.random() * 100}%`,
-                size: 10 + Math.random() * 20,
-                duration: 15 + Math.random() * 20, // Much Slower (15-35s)
-                delay: Math.random() * 10
-            }));
-            setIntroHearts(hearts); // Reusing state for ambient hearts as well
-        }
-    }, [isOpen]);
+        // Initial hearts for both layers to prevent empty screen on load
+        const iHearts = Array.from({ length: 12 }).map((_, i) => ({
+            id: i,
+            left: `${Math.random() * 100}%`,
+            size: 15 + Math.random() * 30,
+            duration: 8 + Math.random() * 10,
+            delay: Math.random() * 8
+        }));
+        setIntroHearts(iHearts);
+
+        const aHearts = Array.from({ length: 12 }).map((_, i) => ({
+            id: i + 100,
+            left: `${Math.random() * 100}%`,
+            size: 10 + Math.random() * 20,
+            duration: 20 + Math.random() * 20,
+            delay: Math.random() * 10
+        }));
+        setAmbientHearts(aHearts);
+    }, []);
 
     // Swiper Config
     const swiperCreativeConfig = useMemo(() => ({
         prev: {
-            translate: ['-120%', 0, -300],
-            rotate: [0, 0, -5],
-            scale: 0.8,
+            translate: ['-110%', '3%', -200],
+            rotate: [0, 0, -10],
             opacity: 0,
         },
         next: {
-            translate: ['25px', '10px', -100],
+            translate: ['12%', '2%', -80],
             rotate: [0, 0, 5],
             scale: 0.94,
-            opacity: 0.6,
+            opacity: 0.85,
         },
         perspective: true,
-        limitProgress: 4,
-        progressMultiplier: 1.2,
+        limitProgress: 2,
+        progressMultiplier: 1.1,
         shadowPerProgress: false,
     }), []);
 
@@ -130,11 +128,12 @@ export default function ValentineSlugPage() {
 
     // Refs
     const lastBurstTimeRef = useRef<number>(0);
-    const BURST_THROTTLE_MS = 600;
-    const MAX_HEARTS = 10;
+    const BURST_THROTTLE_MS = 800;
+    const MAX_HEARTS = 6;
     const swiperRef = useRef<any>(null);
     const lastSwipeTimeRef = useRef<number>(0);
     const SWIPE_COOLDOWN_MS = 400;
+    const isInternalUpdateRef = useRef(false);
 
     const triggerHeartBurst = useCallback((source: 'interaction' | 'completion' = 'interaction') => {
         const now = Date.now();
@@ -143,7 +142,7 @@ export default function ValentineSlugPage() {
 
         setHeartBurstSource(source);
 
-        const count = source === 'completion' ? 12 : 8;
+        const count = source === 'completion' ? 8 : 5;
         const newHearts = Array.from({ length: count }).map((_, i) => ({
             id: now + i,
             left: Math.random() * 100,
@@ -191,9 +190,9 @@ export default function ValentineSlugPage() {
 
     // Main Fetch Logic
     useEffect(() => {
-        const fetchData = async () => {
-            const currentSlug = Array.isArray(slug) ? slug[0] : slug;
+        const currentSlug = Array.isArray(slug) ? (slug as string[])[0] : (slug as string);
 
+        const fetchData = async () => {
             if (!currentSlug) {
                 console.log("No slug found, stopping load");
                 setIsLoading(false);
@@ -248,11 +247,8 @@ export default function ValentineSlugPage() {
             }
         };
 
-        if (slug) {
+        if (currentSlug) {
             fetchData();
-        } else {
-            // If slug is explicitly undefined/null right now, just fail fast
-            setIsLoading(false);
         }
     }, [slug]);
 
@@ -349,52 +345,95 @@ export default function ValentineSlugPage() {
     const displayContent = content || DEFAULT_CONTENT;
 
     const handleOpen = () => {
+        if (isOpen || isTransitioning || isLidOpening) return;
+
+        // Phase 0: Immediate Feedback (Lid Pop)
+        setIsLidOpening(true);
+        triggerHeartBurst('interaction');
+
+        // Music will start AFTER transition (see below)
         if (displayContent.backgroundMusicUrl || displayContent.backgroundMusicYoutubeId) {
             setIsMusicStarted(true);
-            setIsMusicPlaying(true);
-            setIsMusicMuted(false);
-
-            if (musicAudioRef.current) {
-                musicAudioRef.current.muted = false;
-                musicAudioRef.current.play().catch(e => console.log("Direct play blocked:", e));
-            }
+            // Don't play yet - wait for transition to finish
         }
 
-        setIsTransitioning(true);
-        setCountdown(3);
+        // Phase 1: Smoothly fade in the mask first
+        setTimeout(() => {
+            setIsTransitioning(true);
 
-        if (typeof document !== 'undefined') {
-            const elem = document.documentElement as any;
-            const requestMethod = elem.requestFullscreen ||
-                elem.webkitRequestFullscreen ||
-                elem.mozRequestFullScreen ||
-                elem.msRequestFullscreen;
+            // Phase 2: Enter fullscreen while mask is already covering the screen (around halfway through fade)
+            setTimeout(() => {
+                if (typeof document !== 'undefined') {
+                    const elem = document.documentElement as any;
+                    const requestMethod = elem.requestFullscreen ||
+                        elem.webkitRequestFullscreen ||
+                        elem.mozRequestFullScreen ||
+                        elem.msRequestFullscreen;
 
-            if (requestMethod && !document.fullscreenElement) {
-                requestMethod.call(elem).catch((err: any) => {
-                    console.log(`Fullscreen request failed or was blocked: ${err.message}`);
-                });
-                setIsFullscreen(true);
-            }
-        }
-
-        const timer = setInterval(() => {
-            setCountdown((prev) => {
-                if (prev === null) return null;
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    setTimeout(() => {
-                        setIsOpen(true);
-                        setCountdown(null);
-                        setTimeout(() => {
-                            setIsTransitioning(false);
-                        }, 300);
-                    }, 800);
-                    return 0;
+                    if (requestMethod && !document.fullscreenElement) {
+                        requestMethod.call(elem).catch((err: any) => {
+                            console.log(`Fullscreen request failed: ${err.message}`);
+                        });
+                        setIsFullscreen(true);
+                    }
                 }
-                return prev - 1;
-            });
-        }, 1000);
+
+                // Phase 3: Start countdown after mask is more established
+                setCountdown(3);
+
+                const timer = setInterval(() => {
+                    setCountdown((prev) => {
+                        if (prev === null) return null;
+                        if (prev <= 1) {
+                            clearInterval(timer);
+
+                            // Step 1: Clear countdown to show loading heart (after brief pause)
+                            setTimeout(() => {
+                                setCountdown(null); // This triggers the loading heart to show
+
+                                // Step 2: Let heart display clearly for a moment
+                                setTimeout(() => {
+                                    // Step 3: Begin opening cards
+                                    setIsOpen(true);
+
+                                    // Step 4: Start music after cards begin appearing
+                                    if (displayContent.backgroundMusicUrl || displayContent.backgroundMusicYoutubeId) {
+                                        setTimeout(() => {
+                                            setIsMusicPlaying(true);
+                                            setIsMusicMuted(false);
+                                            if (musicAudioRef.current) {
+                                                musicAudioRef.current.volume = 0.3;
+                                                musicAudioRef.current.muted = false;
+                                                musicAudioRef.current.play().catch(e => console.log("Play blocked:", e));
+                                                // Fade in volume
+                                                let vol = 0.3;
+                                                const fadeIn = setInterval(() => {
+                                                    if (vol < 1) {
+                                                        vol = Math.min(1, vol + 0.1);
+                                                        if (musicAudioRef.current) musicAudioRef.current.volume = vol;
+                                                    } else {
+                                                        clearInterval(fadeIn);
+                                                    }
+                                                }, 100);
+                                            }
+                                        }, 400);
+                                    }
+
+                                    // Step 5: Remove transition mask smoothly
+                                    setTimeout(() => {
+                                        setIsTransitioning(false);
+                                    }, 300);
+                                }, 450); // Heart shows for 450ms
+                            }, 150); // Brief pause after 1 before showing heart
+
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
+                }, 1000);
+
+            }, 300); // Mask is fast, start countdown earlier (was 500ms)
+        }, 100); // 100ms after lid popup
     };
 
     const toggleMusic = () => {
@@ -452,17 +491,24 @@ export default function ValentineSlugPage() {
         if (isOpen && !isTransitioning) {
             const timeout = setTimeout(() => {
                 setShowMessage(true);
-            }, 800);
+            }, 1200); // Delayed footer for smoother sequence
             return () => clearTimeout(timeout);
         }
     }, [isOpen, isTransitioning]);
 
     const handleSlideChange = useCallback((swiper: any) => {
+        if (isInternalUpdateRef.current) return;
+
         const activeIndex = swiper.activeIndex;
         const previousIndex = swiper.previousIndex;
         const now = Date.now();
+
         if (now - lastSwipeTimeRef.current < SWIPE_COOLDOWN_MS) {
+            isInternalUpdateRef.current = true;
             swiper.slideTo(previousIndex, 0);
+            setTimeout(() => {
+                isInternalUpdateRef.current = false;
+            }, 10);
             return;
         }
         lastSwipeTimeRef.current = now;
@@ -576,11 +622,7 @@ export default function ValentineSlugPage() {
             height: "100dvh",
             width: "100vw",
             background: displayContent.backgroundColor || "#FFF0F3",
-            backgroundImage: `
-                radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 1) 0%, rgba(255, 230, 235, 1) 60%, rgba(245, 200, 210, 1) 100%),
-                url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E")
-            `,
-            backgroundBlendMode: 'normal, overlay',
+            backgroundImage: `radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 1) 0%, rgba(255, 230, 235, 1) 60%, rgba(245, 200, 210, 1) 100%)`,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -589,7 +631,51 @@ export default function ValentineSlugPage() {
             fontFamily: "'Comfortaa', sans-serif"
         }}>
             <style jsx global>{`
-                @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+                html, body {
+                    background-color: #FFF0F3 !important;
+                    margin: 0;
+                    padding: 0;
+                    overflow: hidden;
+                    height: 100%;
+                    width: 100%;
+                }
+                /* Force background color in fullscreen mode and its backdrop to prevent black flicker */
+                :fullscreen, ::-webkit-full-screen, ::-moz-full-screen, :-ms-fullscreen {
+                    background-color: #FFF0F3 !important;
+                }
+                ::backdrop {
+                    background-color: #FFF0F3 !important;
+                }
+                ::-webkit-backdrop {
+                    background-color: #FFF0F3 !important;
+                }
+                @keyframes gentle-bounce {
+                    0%, 100% { transform: translateY(0) scale(1); }
+                    50% { transform: translateY(-10px) scale(1.02); }
+                }
+                @keyframes float-mini {
+                    0%, 100% { transform: translate(0, 0); }
+                    33% { transform: translate(5px, -5px); }
+                    66% { transform: translate(-5px, 5px); }
+                }
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes modal-in {
+                    0% { opacity: 0; transform: scale(0.9) translateY(20px); }
+                    100% { opacity: 1; transform: scale(1) translateY(0); }
+                }
+                @keyframes backdrop-in {
+                    0% { opacity: 0; background-color: rgba(0,0,0,0); }
+                    100% { opacity: 1; background-color: rgba(0,0,0,0.5); }
+                }
+                @keyframes lid-pop {
+                    0% { transform: translateY(0) rotate(0); }
+                    50% { transform: translateY(-30px) rotate(-5deg) scale(1.05); }
+                    100% { transform: translateY(-20px) rotate(-3deg); }
+                }
+                @keyframes mask-bloom {
+                    from { transform: scale(0.95); opacity: 0; }
+                    to { transform: scale(1); opacity: 1; }
+                }
                 @keyframes float-lid { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-15px) rotate(1deg); } }
                 @keyframes float-box { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
                 @keyframes sparkle-float { 
@@ -601,39 +687,107 @@ export default function ValentineSlugPage() {
                     0% { background-position: -200% 0; }
                     100% { background-position: 200% 0; }
                 }
-                .valentine-swiper { overflow: visible !important; padding: 20px 0 40px 0 !important; }
+                .valentine-swiper { 
+                    overflow: visible !important; 
+                    padding: 20px 0 40px 0 !important;
+                    -webkit-transform-style: preserve-3d;
+                    transform-style: preserve-3d;
+                    -webkit-perspective: 1200px;
+                    perspective: 1200px;
+                    -webkit-backface-visibility: hidden;
+                    backface-visibility: hidden;
+                }
                 .valentine-swiper .swiper-slide { 
                     background: transparent !important; 
                     border: none !important; 
                     box-shadow: none !important; 
                     overflow: visible !important; 
                     height: 100% !important;
+                    will-change: transform, opacity;
+                    -webkit-transform: translate3d(0,0,0);
+                    transform: translate3d(0,0,0);
+                    -webkit-backface-visibility: hidden;
+                    backface-visibility: hidden;
+                    -webkit-transform-style: preserve-3d;
+                    transform-style: preserve-3d;
                 }
-                .music-bar { width: 3px; background-color: white; border-radius: 2px; animation: music-bar 0.8s ease-in-out infinite; }
-                .music-playing { animation: music-pulse 2s ease-in-out infinite; }
-                .music-icon-spin { animation: music-spin 4s linear infinite; }
-                .card-shine { position: absolute; top: 0; left: 0; width: 50%; height: 100%; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0) 100%); z-index: 15; pointer-events: none; }
-                .animate-shine { animation: shine-sweep 4s ease-in-out infinite; }
+                .stable-container {
+                    -webkit-transform: translate3d(0,0,0);
+                    transform: translate3d(0,0,0);
+                    -webkit-backface-visibility: hidden;
+                    backface-visibility: hidden;
+                }
+                @keyframes music-bar-dance {
+                    0%, 100% { height: 4px; }
+                    50% { height: 16px; }
+                }
+                .wave-bar {
+                    width: 3px;
+                    background-color: #FF3366;
+                    border-radius: 2px;
+                    margin: 0 1px;
+                }
+                .wave-bar:nth-child(1) { animation: music-bar-dance 0.8s ease-in-out infinite; }
+                .wave-bar:nth-child(2) { animation: music-bar-dance 1.1s ease-in-out infinite 0.2s; }
+                .wave-bar:nth-child(3) { animation: music-bar-dance 0.9s ease-in-out infinite 0.4s; }
+                .wave-bar:nth-child(4) { animation: music-bar-dance 1.2s ease-in-out infinite 0.1s; }
+                
+                .music-heart-pulse { 
+                    animation: heartPulse 2s ease-in-out infinite;
+                }
+                .play-pulse {
+                    animation: play-pulse 1.5s ease-in-out infinite;
+                }
+                @keyframes play-pulse {
+                    0%, 100% { transform: scale(1); opacity: 0.9; }
+                    50% { transform: scale(1.1); opacity: 1; }
+                }
+                .video-pattern {
+                    background-color: #FFF0F3;
+                    background-image:  radial-gradient(#FF99AA 0.5px, transparent 0.5px), radial-gradient(#FF99AA 0.5px, #FFF0F3 0.5px);
+                    background-size: 20px 20px;
+                    background-position: 0 0,10px 10px;
+                }
+                .card-shine { position: absolute; top: 0; left: 0; width: 50%; height: 100%; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%); z-index: 15; pointer-events: none; }
+                @keyframes shine-sweep {
+                    0% { transform: translateX(-200%); }
+                    30% { transform: translateX(200%); }
+                    100% { transform: translateX(200%); }
+                }
+                .animate-shine { animation: shine-sweep 3s ease-in-out infinite; }
                 .sunburst-bg { 
                     position: absolute; 
                     top: -100%; 
                     left: -100%; 
                     width: 300%; 
                     height: 300%; 
-                    background: repeating-conic-gradient(from 0deg, rgba(235, 190, 100, 0.1) 0deg 10deg, rgba(255, 255, 255, 0) 10deg 20deg); 
-                    mask-image: radial-gradient(circle at center, black 10%, transparent 60%); 
+                    background: repeating-conic-gradient(from 0deg, rgba(255, 51, 102, 0.08) 0deg 10deg, rgba(255, 200, 210, 0.05) 10deg 20deg); 
+                    mask-image: radial-gradient(circle at center, black 20%, transparent 70%); 
                     mix-blend-mode: overlay; 
-                    opacity: 0.5; 
+                    opacity: 0.7;
+                    animation: sunburst-rotate 30s linear infinite;
+                }
+                @keyframes sunburst-rotate {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+                @keyframes sparkle-twinkle {
+                    0%, 100% { opacity: 0; transform: scale(0.5); }
+                    50% { opacity: 1; transform: scale(1.2); }
+                }
+                @keyframes glow-pulse {
+                    0%, 100% { opacity: 0.3; transform: scale(1); }
+                    50% { opacity: 0.6; transform: scale(1.1); }
                 }
                 @media (max-width: 768px) {
                     .sunburst-bg {
-                        background: radial-gradient(circle at center, rgba(235, 190, 100, 0.15), transparent 70%);
-                        mask-image: none;
-                        width: 100%;
-                        height: 100%;
-                        top: 0;
-                        left: 0;
-                        animation: none;
+                        background: repeating-conic-gradient(from 0deg, rgba(255, 51, 102, 0.06) 0deg 15deg, rgba(255, 200, 210, 0.03) 15deg 30deg);
+                        mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+                        width: 200%;
+                        height: 200%;
+                        top: -50%;
+                        left: -50%;
+                        animation: sunburst-rotate 40s linear infinite;
                     }
                 }
                 .shimmer-text { color: #4A151B; }
@@ -656,55 +810,94 @@ export default function ValentineSlugPage() {
                 @keyframes swipeHint { 0% { transform: translateX(60px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateX(-60px); opacity: 0; } }
                 @keyframes ring-spread { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(2.5); opacity: 0; } }
                 @keyframes float-heart-up {
-                    0% { transform: translateY(120vh) rotate(0deg); opacity: 0; }
+                    0% { transform: translateY(120vh) rotate(0deg) translateZ(0); opacity: 0; }
                     10% { opacity: 0.6; }
                     90% { opacity: 0.4; }
-                    100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+                    100% { transform: translateY(-20vh) rotate(360deg) translateZ(0); opacity: 0; }
+                }
+                @keyframes reveal-fade {
+                    0% { opacity: 1; }
+                    100% { opacity: 0; }
                 }
 
-                .valentine-swiper .swiper-pagination {
-                    bottom: 12px !important;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    gap: 6px;
-                }
-                .valentine-swiper .swiper-pagination-bullet {
-                    width: 7px;
-                    height: 7px;
-                    background: #FF3366 !important;
-                    opacity: 0.25;
-                    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                    margin: 0 !important;
-                }
-                .valentine-swiper .swiper-pagination-bullet-active {
-                    width: 24px;
-                    border-radius: 12px;
-                    opacity: 1;
-                    background: linear-gradient(90deg, #FF3366, #FF99AA);
-                    box-shadow: 0 4px 12px rgba(255, 51, 102, 0.4);
-                }
-                .photo-gloss::after {
-                    content: '';
+                .valentine-swiper { overflow: visible !important; padding: 20px 0 20px 0 !important; }
+                .photo-gloss-dynamic {
                     position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    height: 50%;
-                    background: linear-gradient(to bottom, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+                    inset: 0;
+                    background: linear-gradient(110deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 60%, rgba(255,255,255,0) 100%);
+                    background-size: 200% 100%;
+                    z-index: 15;
                     pointer-events: none;
-                    z-index: 10;
                 }
-                .gold-gradient-text {
-                    background: linear-gradient(to bottom, #cfc09f 22%,#634f2c 24%, #cfc09f 26%, #cfc09f 27%,#ffecb3 40%,#3a2c0f 78%); 
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
+                .group:hover .photo-gloss-dynamic {
+                    animation: gloss-sweep 1.5s ease-out forwards;
+                }
+                @keyframes gloss-sweep {
+                    from { background-position: 200% 0; }
+                    to { background-position: -200% 0; }
+                }
+                @keyframes photo-sparkle {
+                    0%, 100% { transform: scale(0) rotate(0deg) translateZ(0); opacity: 0; }
+                    20%, 80% { opacity: 1; }
+                    50% { transform: scale(1.3) rotate(45deg) translateZ(0); opacity: 1; }
+                }
+                .sparkle-shape {
+                    position: absolute;
+                    background: white;
+                    clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+                    pointer-events: none;
+                    z-index: 20;
+                    will-change: transform, opacity;
+                }
+                .sparkle-glow {
+                    position: absolute;
+                    inset: -150%;
+                    background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, transparent 70%);
+                    border-radius: 50%;
+                    pointer-events: none;
                 }
             `}</style>
 
             {/* Transition Mask */}
-            <div className={`fullscreen-mask flex flex-col items-center justify-center overflow-hidden ${isTransitioning ? 'active' : ''}`} style={{ position: 'fixed', inset: 0, zIndex: 9999, pointerEvents: isTransitioning ? 'auto' : 'none', opacity: isTransitioning ? 1 : 0, background: 'radial-gradient(circle at center, #FFF5F7 0%, #FFD1DC 100%)', transition: 'opacity 0.4s ease-in-out' }}>
-                <div className="radiant-aura" style={{ position: 'absolute', width: 400, height: 400, background: '#FF3366', borderRadius: '50%', animation: 'radiant-glow 3s ease-in-out infinite', opacity: 0.2, filter: 'blur(60px)' }} />
+            <div
+                className={`fullscreen-mask flex flex-col items-center justify-center overflow-hidden ${isTransitioning ? 'active' : ''}`}
+                style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    zIndex: 2147483647, // Absolute max for fullscreen UI
+                    pointerEvents: isTransitioning ? 'auto' : 'none',
+                    opacity: isTransitioning ? 1 : 0,
+                    backgroundColor: '#FFF0F3',
+                    background: (countdown === 0 || (isOpen && isTransitioning)) ? '#FFFFFF' : '#FFF0F3',
+                    transition: 'opacity 0.6s ease-in-out',
+                    willChange: 'opacity'
+                }}
+            >
+                {/* Loading Pulse during dark period */}
+                {isTransitioning && !countdown && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                        <div className="flex flex-col items-center gap-3">
+                            <Heart size={56} variant="Bold" color="#FF3366" className="animate-pulse" style={{ opacity: 0.8 }} />
+                            <div className="text-[#FF3366] text-sm font-medium opacity-60 animate-pulse" style={{ fontFamily: 'var(--font-mali)' }}>กำลังโหลด...</div>
+                        </div>
+                    </div>
+                )}
+
+                <div
+                    className="radiant-aura"
+                    style={{
+                        position: 'absolute',
+                        width: '120%',
+                        height: '120%',
+                        background: 'radial-gradient(circle at center, #FF3366 0%, transparent 70%)',
+                        opacity: 0.12,
+                        filter: 'blur(80px)',
+                        animation: 'radiant-glow 5s ease-in-out infinite'
+                    }}
+                />
 
                 {countdown !== null && (
                     <div className="relative flex flex-col items-center justify-center z-20">
@@ -752,385 +945,598 @@ export default function ValentineSlugPage() {
                 <iframe ref={musicPlayerRef} src={isMusicStarted ? `https://www.youtube.com/embed/${displayContent.backgroundMusicYoutubeId}?autoplay=1&mute=${isMusicMuted ? 1 : 0}&loop=1&playlist=${displayContent.backgroundMusicYoutubeId}&controls=0` : ''} style={{ position: 'fixed', opacity: 0, pointerEvents: 'none' }} allow="autoplay; encrypted-media" title="bg-music" />
             )}
 
-            {/* Music Control */}
+            {/* Music Control - Ultra Compact Style (Moved to bottom right to avoid header) */}
             {isOpen && (displayContent.backgroundMusicUrl || displayContent.backgroundMusicYoutubeId) && (
-                <div className="fixed right-5 z-[60]" style={{ top: 'calc(1.25rem + env(safe-area-inset-top))' }}>
-                    <button onClick={toggleMusic} className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${!isMusicMuted ? 'music-playing' : ''}`} style={{ background: isMusicMuted ? '#d1d5db' : '#FF3366', border: '3px solid white', boxShadow: '0 8px 15px rgba(0,0,0,0.1)' }}>
-                        <div className={`relative flex items-center justify-center ${!isMusicMuted ? 'music-icon-spin' : ''}`}>
-                            <Music size="20" variant={isMusicMuted ? "Linear" : "Bold"} color={isMusicMuted ? "#9ca3af" : "white"} />
+                <div className="fixed right-4 z-[60]" style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
+                    <div
+                        onClick={toggleMusic}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-full cursor-pointer transition-all duration-500 hover:scale-110 active:scale-95 shadow-lg border border-white/40"
+                        style={{
+                            background: 'rgba(255, 255, 255, 0.65)',
+                            minWidth: '40px'
+                        }}
+                    >
+                        {/* Music Note Icon */}
+                        <div
+                            className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-300 ${!isMusicMuted ? 'bg-[#FF3366] music-icon-spin' : 'bg-gray-200'}`}
+                            style={{ willChange: 'background-color, transform' }}
+                        >
+                            <Music size="14" variant={isMusicMuted ? "Linear" : "Bold"} color={isMusicMuted ? "#9ca3af" : "white"} />
                         </div>
-                    </button>
+
+                        {/* Animated Waveform (Compact) */}
+                        {!isMusicMuted && (
+                            <div className="flex items-center h-3 pr-2">
+                                <div className="wave-bar" style={{ width: '2px', height: '8px' }} />
+                                <div className="wave-bar" style={{ width: '2px', height: '12px' }} />
+                                <div className="wave-bar" style={{ width: '2px', height: '6px' }} />
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 
-            {/* INTRO SCREEN (GIFT BOX) */}
-            {!isOpen && !isTransitioning && (
-                <div className="w-full h-full flex flex-col justify-between items-center z-10 relative overflow-hidden pt-20 pb-5" onClick={handleOpen}>
-                    <div className="sunburst-bg" />
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent pointer-events-none" />
+            {/* INTRO SCREEN (GIFT BOX) - LAYER 1 */}
+            {!isOpen && (
+                <div
+                    className={`absolute inset-0 z-[100] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out stable-container ${isTransitioning ? 'opacity-0 scale-105' : 'opacity-100'}`}
+                    style={{
+                        willChange: 'opacity, transform',
+                        zIndex: 100
+                    }}
+                >
+                    {/* Intro Screen Content */}
+                    <div className="w-full h-full flex flex-col justify-between items-center relative overflow-hidden pt-20 pb-5" onClick={handleOpen}>
+                        {/* Animated Background Layers */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#FFF0F3] via-[#FFE4EC] to-[#FFD6E0] animate-[glow-pulse_5s_ease-in-out_infinite]" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#FF336620] via-transparent to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-white/20 pointer-events-none" />
 
-                    {/* Floating Hearts Layer */}
-                    <div className="absolute inset-0 pointer-events-none z-0">
-                        {introHearts.map((h) => (
-                            <Heart
-                                key={h.id}
-                                variant="Bold"
-                                color="#FF3366"
+                        {/* Sparkle Effects */}
+                        {[...Array(4)].map((_, i) => (
+                            <div
+                                key={`sparkle-${i}`}
+                                className="absolute w-2 h-2 bg-white rounded-full"
                                 style={{
-                                    position: 'absolute',
-                                    left: h.left,
-                                    width: h.size,
-                                    height: h.size,
-                                    opacity: 0,
-                                    animation: `float-heart-up ${h.duration}s linear infinite`,
-                                    animationDelay: `${h.delay}s`,
-                                    filter: 'blur(1px)'
+                                    left: `${15 + Math.random() * 70}%`,
+                                    top: `${20 + Math.random() * 60}%`,
+                                    animation: `sparkle-twinkle ${3 + Math.random() * 2}s ease-in-out infinite`,
+                                    animationDelay: `${Math.random() * 2}s`,
+                                    boxShadow: '0 0 8px 2px rgba(255, 255, 255, 0.8)'
                                 }}
                             />
                         ))}
-                    </div>
 
-                    {/* Top Section: Lid */}
-                    <div className="flex flex-col items-center animate-[float-lid_3s_ease-in-out_infinite] z-20">
-                        <div className="relative w-64 h-16 bg-gradient-to-b from-[#9C2020] to-[#D32F2F] rounded-t-2xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] border-b-4 border-black/20">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-full gold-ribbon shadow-inner" />
-                            {/* Bow loops - Medium */}
-                            <div className="absolute -top-8 left-1/2 -translate-x-[90%] w-16 h-12 gold-ribbon rounded-full rotate-[-15deg] shadow-lg border border-yellow-600/20" />
-                            <div className="absolute -top-8 left-1/2 translate-x-[-10%] w-16 h-12 gold-ribbon rounded-full rotate-[15deg] shadow-lg border border-yellow-600/20" />
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 bg-gradient-to-br from-[#FCF6BA] to-[#BF953F] rounded-full z-10 shadow-md border border-yellow-700/30" />
-                        </div>
-                    </div>
-
-                    {/* Middle Section: Text */}
-                    <div className="text-center z-40 relative px-4 flex flex-col gap-2">
-                        <Typography
-                            variant="overline"
-                            sx={{
-                                color: '#D41442',
-                                letterSpacing: '0.6em',
-                                fontWeight: 600,
-                                fontSize: '0.75rem',
-                                opacity: 0.6
-                            }}
-                        >
-                            SPECIAL DELIVERY
-                        </Typography>
-                        <Typography
-                            variant="h1"
-                            className="shimmer-text"
-                            sx={{
-                                fontFamily: 'var(--font-dancing), var(--font-mali), cursive !important',
-                                fontSize: '2.5rem',
-                                fontWeight: 700,
-                                textShadow: '2px 2px 4px rgba(0,0,0,0.05)',
-                                lineHeight: 1.1,
-                                textTransform: 'none'
-                            }}
-                        >
-                            {displayContent.title}
-                        </Typography>
-                    </div>
-
-                    {/* Bottom Section: Box + Tap Text */}
-                    <div className="flex flex-col items-center gap-12 animate-[float-box_4s_ease-in-out_infinite]">
-                        <div className="relative w-52 h-44 bg-gradient-to-br from-[#B71C1C] via-[#D32F2F] to-[#8E0000] shadow-[0_30px_60px_rgba(0,0,0,0.5)] rounded-b-xl overflow-hidden border-t border-white/10">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-full gold-ribbon opacity-90 shadow-2xl" />
-                            <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-14 gold-ribbon opacity-80" />
-                            <div className="absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/10 pointer-events-none" />
+                        {/* Floating Hearts Layer */}
+                        <div className="absolute inset-0 pointer-events-none z-0">
+                            {introHearts.map((h) => (
+                                <Heart
+                                    key={h.id}
+                                    variant="Bold"
+                                    color="#FF3366"
+                                    style={{
+                                        position: 'absolute',
+                                        left: h.left,
+                                        width: h.size,
+                                        height: h.size,
+                                        opacity: 0,
+                                        animation: `float-heart-up ${h.duration}s linear infinite`,
+                                        animationDelay: `${h.delay}s`,
+                                        transform: 'translate3d(0,0,0)',
+                                        willChange: 'transform'
+                                    }}
+                                />
+                            ))}
                         </div>
 
-                        <div className="flex flex-col items-center gap-6">
-                            {/* Floating Heart Icon with Ripples */}
-                            <div className="relative flex items-center justify-center">
-                                <div className="absolute w-12 h-12 bg-[#FF3366] rounded-full opacity-20 animate-[ring-spread_2s_infinite]" />
-                                <div className="absolute w-12 h-12 bg-[#FF3366] rounded-full opacity-10 animate-[ring-spread_2s_infinite_0.5s]" />
-                                <div className="relative z-10 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
-                                    <Heart size={20} variant="Bold" color="#FF3366" />
-                                </div>
+                        {/* Top Section: Lid */}
+                        <div className={`flex flex-col items-center z-20 ${isLidOpening ? 'animate-[lid-pop_0.6s_ease-out_forwards]' : 'animate-[float-lid_3s_ease-in-out_infinite]'}`}>
+                            <div className="relative w-64 h-16 bg-gradient-to-b from-[#9C2020] to-[#D32F2F] rounded-t-2xl shadow-[0_20px_40px_rgba(255,51,102,0.25)] border-b-4 border-black/10">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-full gold-ribbon shadow-inner" />
+                                <div className="absolute -top-8 left-1/2 -translate-x-[90%] w-16 h-12 gold-ribbon rounded-full rotate-[-15deg] shadow-lg border border-yellow-600/20" />
+                                <div className="absolute -top-8 left-1/2 translate-x-[-10%] w-16 h-12 gold-ribbon rounded-full rotate-[15deg] shadow-lg border border-yellow-600/20" />
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-8 bg-gradient-to-br from-[#FCF6BA] to-[#BF953F] rounded-full z-10 shadow-md border border-yellow-700/30" />
                             </div>
+                        </div>
 
+                        {/* Middle Section: Text */}
+                        <div className="text-center z-40 relative px-4 flex flex-col gap-2">
                             <Typography
+                                variant="overline"
                                 sx={{
-                                    color: '#4A151B',
-                                    fontWeight: 700,
-                                    fontFamily: 'var(--font-dancing), var(--font-mali), cursive',
-                                    fontSize: '1.5rem',
-                                    opacity: 0.9,
-                                    mt: -2
+                                    color: '#D41442',
+                                    letterSpacing: '0.6em',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem',
+                                    opacity: 0.6
                                 }}
                             >
-                                {displayContent.openingText || "Tap to open your surprise"}
+                                SPECIAL DELIVERY
+                            </Typography>
+                            <Typography
+                                variant="h1"
+                                className="shimmer-text"
+                                sx={{
+                                    fontFamily: 'var(--font-dancing), var(--font-mali), cursive !important',
+                                    fontSize: '2.5rem',
+                                    fontWeight: 700,
+                                    textShadow: '2px 2px 4px rgba(0,0,0,0.05)',
+                                    lineHeight: 1.1,
+                                    textTransform: 'none'
+                                }}
+                            >
+                                {displayContent.title}
                             </Typography>
                         </div>
-                    </div>
 
-                    {/* Luxury Footer Card */}
-                    <div className="w-[85%] max-w-sm h-32 bg-white/40 backdrop-blur-sm md:backdrop-blur-xl rounded-[40px] flex flex-col items-center justify-center p-4 shadow-[0_20px_40px_rgba(0,0,0,0.1)] border border-white/60 relative mb-4">
-                        <div className="w-10 h-1 bg-gray-300/50 rounded-full mb-3 mt-2" />
-                        <div className="flex flex-col items-center">
-                            <div className="px-5 py-1 rounded-full bg-gradient-to-r from-[#DBA627] via-[#FFF6AA] to-[#DBA627] shadow-[0_4px_10px_rgba(219,166,39,0.3)] mb-1">
-                                <Typography sx={{ color: '#5A3A0B', letterSpacing: '0.3em', fontWeight: 800, fontSize: '0.7rem', textShadow: '0 1px 0 rgba(255,255,255,0.4)', lineHeight: 1 }}>
-                                    PREMIUM
+                        {/* Bottom Section: Box + Tap Text */}
+                        <div className="flex flex-col items-center gap-12 animate-[float-box_4s_ease-in-out_infinite]">
+                            <div className="relative w-52 h-44 bg-gradient-to-br from-[#B71C1C] via-[#D32F2F] to-[#8E0000] shadow-[0_25px_50px_rgba(255,51,102,0.3),0_10px_20px_rgba(180,30,30,0.2)] rounded-b-xl overflow-hidden border-t border-white/10">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-full gold-ribbon opacity-90" />
+                                <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-14 gold-ribbon opacity-80" />
+                                <div className="absolute inset-0 bg-gradient-to-tr from-black/10 via-transparent to-white/15 pointer-events-none" />
+                            </div>
+
+                            <div className="flex flex-col items-center gap-6">
+                                <div className="relative flex items-center justify-center">
+                                    <div className="absolute w-14 h-14 bg-[#FF3366] rounded-full opacity-25 animate-[ring-spread_3s_ease-out_infinite]" />
+                                    <div className="absolute w-14 h-14 bg-[#FF3366] rounded-full opacity-15 animate-[ring-spread_3s_ease-out_infinite_0.8s]" />
+                                    <div className="absolute w-14 h-14 bg-[#FF99AA] rounded-full opacity-10 animate-[ring-spread_3s_ease-out_infinite_1.5s]" />
+                                    <div className="relative z-10 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
+                                        <Heart size={20} variant="Bold" color="#FF1493" />
+                                    </div>
+                                </div>
+
+                                <Typography
+                                    sx={{
+                                        color: '#4A151B',
+                                        fontWeight: 700,
+                                        fontFamily: 'var(--font-dancing), var(--font-mali), cursive',
+                                        fontSize: '1.5rem',
+                                        opacity: 0.9,
+                                        mt: -2
+                                    }}
+                                >
+                                    {displayContent.openingText || "Tap to open your surprise"}
                                 </Typography>
                             </div>
-                            <div className="flex items-center gap-3 my-1">
-                                <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#BF953F]" />
-                                <Typography sx={{ fontFamily: 'var(--font-dancing)', fontSize: '1.4rem', color: '#4A151B', fontWeight: 600 }}>{displayContent.campaignName}</Typography>
-                                <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#BF953F]" />
+                        </div>
+
+                        {/* Luxury Footer Card */}
+                        <div className="w-[85%] max-w-sm h-32 bg-white/70 rounded-[40px] flex flex-col items-center justify-center p-4 shadow-[0_15px_30px_rgba(0,0,0,0.08)] border border-white/60 relative mb-4">
+                            <div className="w-10 h-1 bg-gray-300/40 rounded-full mb-3 mt-2" />
+                            <div className="flex flex-col items-center">
+                                <div className="px-5 py-1 rounded-full bg-gradient-to-r from-[#DBA627] via-[#FFF6AA] to-[#DBA627] shadow-[0_4px_10px_rgba(219,166,39,0.3)] mb-1">
+                                    <Typography sx={{ color: '#5A3A0B', letterSpacing: '0.3em', fontWeight: 800, fontSize: '0.7rem', textShadow: '0 1px 0 rgba(255,255,255,0.4)', lineHeight: 1 }}>
+                                        PREMIUM
+                                    </Typography>
+                                </div>
+                                <div className="flex items-center gap-3 my-1">
+                                    <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#BF953F]" />
+                                    <Typography sx={{ fontFamily: 'var(--font-dancing)', fontSize: '1.4rem', color: '#4A151B', fontWeight: 600 }}>{displayContent.campaignName}</Typography>
+                                    <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#BF953F]" />
+                                </div>
+                                <Typography sx={{ color: '#8B1A1A', letterSpacing: '0.4em', fontWeight: 800, fontSize: '0.7rem', opacity: 0.6 }}>EXPERIENCE</Typography>
                             </div>
-                            <Typography sx={{ color: '#8B1A1A', letterSpacing: '0.4em', fontWeight: 800, fontSize: '0.7rem', opacity: 0.6 }}>EXPERIENCE</Typography>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* MAIN CONTENT */}
-            {isOpen && (
-                <>
-                    {/* Decorative Hearts */}
-                    <div className="fixed inset-0 pointer-events-none z-0">
-                        {introHearts.map((h) => (
-                            <Heart
-                                key={h.id}
-                                variant="Bold"
-                                color="#FF99AA"
-                                style={{
-                                    position: 'absolute',
-                                    left: h.left,
-                                    width: h.size,
-                                    height: h.size,
-                                    opacity: 0.25,
-                                    animation: `float-heart-up ${h.duration}s linear infinite`,
-                                    animationDelay: `${h.delay}s`,
-                                    filter: 'blur(1px)'
-                                }}
-                            />
-                        ))}
+            {/* MAIN CONTENT LAYER - LAYER 2 */}
+            <div
+                className={`absolute inset-0 z-10 transition-opacity duration-400 ease-out stable-container ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+                style={{ visibility: isTransitioning || isOpen ? 'visible' : 'hidden', willChange: 'opacity' }}
+            >
+                {/* Decorative Hearts Flowing in background */}
+                <div className="fixed inset-0 pointer-events-none z-0 stable-container">
+                    {ambientHearts.map((h) => (
+                        <Heart
+                            key={h.id}
+                            variant="Bold"
+                            color="#FF99AA"
+                            style={{
+                                position: 'absolute',
+                                left: h.left,
+                                width: h.size,
+                                height: h.size,
+                                opacity: 0.2, // Subtle
+                                animation: `float-heart-up ${h.duration}s linear infinite`,
+                                animationDelay: `${h.delay}s`,
+                                transform: 'translate3d(0,0,0)',
+                                willChange: 'transform'
+                            }}
+                        />
+                    ))}
+                </div>
+
+                <div className="fixed inset-0 pointer-events-none stable-container">
+                    {borderHearts.map((h) => (
+                        <Heart key={h.id} variant="Bold" color={h.color} style={{ position: 'absolute', top: `${h.top}%`, left: `${h.left}%`, width: h.size, height: h.size, transform: `rotate(${h.rotation}deg) translate3d(0,0,0)`, zIndex: 1, opacity: 0.9 }} />
+                    ))}
+                </div>
+
+                {/* Main Layout - Balanced */}
+                <div className="w-full h-full flex flex-col items-center justify-between py-4 relative z-10 uppercase-none">
+
+                    {/* Header - Raised Z-index to avoid card overlap */}
+                    <div className="text-center px-4 pt-6 pb-2 relative z-50">
+                        <Typography className="text-[#FF3366] font-bold tracking-wider" sx={{ fontFamily: 'var(--font-dancing)', fontSize: '1.4rem', textShadow: '0 2px 10px rgba(255,255,255,0.5)' }}>{displayContent.greeting}</Typography>
                     </div>
 
-                    <div className="fixed inset-0 pointer-events-none">
-                        {borderHearts.map((h) => (
-                            <Heart key={h.id} variant="Bold" color={h.color} style={{ position: 'absolute', top: `${h.top}%`, left: `${h.left}%`, width: h.size, height: h.size, transform: `rotate(${h.rotation}deg)`, zIndex: 1, opacity: 0.9 }} />
-                        ))}
-                    </div>
+                    {/* Card Area - Reduced height for non-fullscreen compatibility */}
+                    <div
+                        className="flex-1 w-full flex items-center justify-center py-2 relative"
+                        style={{ maxHeight: '65dvh', width: '100%', willChange: 'opacity' }}
+                    >
+                        <Swiper
+                            effect={"creative"}
+                            grabCursor={true}
+                            modules={[EffectCreative]}
+                            className="valentine-swiper w-[88vw] max-w-[340px] aspect-[9/16] sm:max-w-[360px]"
+                            initialSlide={0}
+                            onSwiper={(swiper) => {
+                                swiperRef.current = swiper;
+                                // Balanced stabilization time
+                                setTimeout(() => setIsSwiperReady(true), 600);
+                            }}
+                            onSlideChange={handleSlideChange}
+                            creativeEffect={swiperCreativeConfig}
+                            watchSlidesProgress={true}
+                        >
+                            {memories.map((memory, index) => (
+                                <SwiperSlide key={index} className="!overflow-visible">
+                                    <div className="w-full h-full relative bg-white rounded-[4px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] flex flex-col overflow-hidden border-[10px] border-white ring-1 ring-black/5">
 
-                    <div className="absolute top-6 left-0 right-0 text-center z-[70] pointer-events-none px-4">
-                        <Typography className="text-[#FF3366] font-bold tracking-wider" sx={{ fontFamily: 'var(--font-dancing)', fontSize: '1.5rem' }}>{displayContent.greeting}</Typography>
-                    </div>
+                                        {/* Photo/Video Container - 82% of height */}
+                                        <div className="relative w-full h-[82%] overflow-hidden bg-slate-100 group shadow-inner">
+                                            {/* Premium Overlays */}
+                                            <div className="absolute inset-0 bg-gradient-to-tr from-[#FF336610] via-transparent to-[#FFD1DC15] z-10 pointer-events-none" />
+                                            <div className="photo-gloss-dynamic" />
 
-                    <div className="w-full h-full flex flex-col items-center justify-center relative z-10 animate-[fadeIn_0.8s_ease-out]">
-                        <div className="h-16" /> {/* Spacer */}
+                                            {/* Advanced Micro-Sparkles Area - Stable Deterministic Positions */}
+                                            <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+                                                {[...Array(5)].map((_, i) => {
+                                                    // Stable positions based on index to prevent jump on re-render
+                                                    const left = ((i * 19) + (index * 23)) % 85 + 7;
+                                                    const top = ((i * 29) + (index * 17)) % 85 + 7;
+                                                    const delay = (i * 0.9) % 4;
+                                                    const duration = 2.8 + ((i * 0.6) % 2.2);
+                                                    const size = 9 + ((i * 3) % 5);
 
-                        <div className="flex-1 w-full flex items-center justify-center max-h-[750px] relative">
+                                                    return (
+                                                        <div
+                                                            key={`ps-${index}-${i}`}
+                                                            className="sparkle-shape"
+                                                            style={{
+                                                                left: `${left}%`,
+                                                                top: `${top}%`,
+                                                                width: `${size}px`,
+                                                                height: `${size}px`,
+                                                                animation: `photo-sparkle ${duration}s ease-in-out infinite`,
+                                                                animationDelay: `${delay}s`,
+                                                            }}
+                                                        >
+                                                            <div className="sparkle-glow" />
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            {memory.type === 'video' || memory.type === 'youtube' || memory.type === 'tiktok' ? (
+                                                <div className="w-full h-full relative flex items-center justify-center overflow-hidden cursor-pointer" onClick={() => handleOpenVideoModal(memory)}>
+                                                    {memory.type === 'youtube' ? (
+                                                        <div className="w-full h-full relative">
+                                                            <img src={`https://img.youtube.com/vi/${memory.url}/maxresdefault.jpg`} className="w-full h-full object-cover" alt="Video thumbnail" loading={index === 0 ? "eager" : "lazy"} />
+                                                            <div className="absolute inset-0 bg-black/10" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="w-full h-full video-pattern relative flex flex-col items-center justify-center p-6 text-center">
+                                                            <Heart size={32} variant="Bold" color="#FF3366" className="opacity-20 mb-4" />
+                                                            <Typography sx={{ fontFamily: 'var(--font-mali)', fontSize: '0.8rem', color: '#FF3366', opacity: 0.6, fontWeight: 700 }}>OUR SPECIAL MOMENT</Typography>
+                                                        </div>
+                                                    )}
 
+                                                    {/* Cute Central Play Button */}
+                                                    <div className="absolute inset-0 flex flex-col items-center justify-center z-30 group-hover:scale-110 transition-transform duration-500">
+                                                        <div className="relative w-20 h-20 flex items-center justify-center">
+                                                            {/* Animated Rings */}
+                                                            <div className="absolute inset-0 bg-white/30 rounded-full animate-ping" />
+                                                            <div className="absolute inset-2 bg-white/40 rounded-full animate-pulse" />
 
-                            <Swiper
-                                effect={"creative"}
-                                grabCursor={true}
-                                modules={[EffectCreative, Pagination]}
-                                className="valentine-swiper w-[300px] h-[65dvh] sm:w-[360px] sm:h-[75dvh]"
-                                pagination={{ clickable: true }}
-                                observer={true}
-                                observeParents={true}
-                                onSwiper={(swiper) => { swiperRef.current = swiper; }}
-                                onSlideChange={handleSlideChange}
-                                creativeEffect={swiperCreativeConfig}
-                            >
-                                {memories.map((memory, index) => (
-                                    <SwiperSlide key={index}>
-                                        <div className="w-full h-full relative bg-gradient-to-b from-white via-white to-[#FFF5F7] rounded-[24px] p-3 pb-5 shadow-[0_20px_50px_rgba(0,0,0,0.1)] flex flex-col border border-[#E5E5E5] ring-1 ring-white/60 backdrop-blur-md">
-                                            {/* Gold Accent Border */}
-                                            <div className="absolute inset-0 rounded-[24px] border border-[#D4AF37]/20 pointer-events-none" />
-                                            {/* Photo/Video Container */}
-                                            <div className="relative flex-grow w-full overflow-hidden rounded-[20px] bg-slate-50 shadow-inner group photo-gloss">
-                                                {memory.type === 'video' || memory.type === 'youtube' || memory.type === 'tiktok' ? (
-                                                    <div className="w-full h-full bg-[#1A0A0C] relative flex items-center justify-center">
-                                                        {memory.type === 'youtube' ? (
-                                                            <img src={`https://img.youtube.com/vi/${memory.url}/maxresdefault.jpg`} className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" alt="Video thumbnail" loading={index === 0 ? "eager" : "lazy"} />
-                                                        ) : (
-                                                            <div className="w-full h-full bg-gradient-to-br from-[#4A151B] via-[#D41442] to-[#8B1D36] opacity-90" />
-                                                        )}
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10 pointer-events-none" />
-
-                                                        {/* Play Button Overlay */}
-
+                                                            {/* Heart-Shaped Play Container */}
+                                                            <div className="relative z-10 w-14 h-14 bg-gradient-to-br from-[#FF3366] to-[#FF99AA] rounded-full flex items-center justify-center shadow-[0_10px_25px_rgba(255,51,102,0.4)] play-pulse">
+                                                                <Play size={24} variant="Bold" color="white" style={{ marginLeft: '4px' }} />
+                                                            </div>
+                                                        </div>
+                                                        <Typography sx={{
+                                                            fontFamily: 'var(--font-mali)',
+                                                            fontSize: '0.75rem',
+                                                            color: 'white',
+                                                            fontWeight: 800,
+                                                            mt: 2,
+                                                            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                                                            letterSpacing: '0.1em'
+                                                        }}>TAP TO PLAY ❤️</Typography>
                                                     </div>
-                                                ) : (
-                                                    <div className="w-full h-full relative">
-                                                        <img src={memory.url} alt={memory.caption} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading={index === 0 ? "eager" : "lazy"} />
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none opacity-50" />
-                                                    </div>
-                                                )}
+                                                </div>
+                                            ) : (
+                                                <div className="w-full h-full relative">
+                                                    <img src={memory.url} alt={memory.caption} className="w-full h-full object-cover" loading={index === 0 ? "eager" : "lazy"} />
+                                                </div>
+                                            )}
 
-                                                {/* Shine Effect */}
-                                                <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                            {/* Reveal Overlay - White cover that fades out to hide mounting jump */}
+                                            <div
+                                                className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center transition-opacity duration-700 ease-out"
+                                                style={{
+                                                    backgroundColor: '#FFF5F7',
+                                                    opacity: (index === 0 ? (isSwiperReady ? 0 : 1) : (revealedSlides.has(index) ? 0 : 1)),
+                                                }}
+                                            >
+                                                <Heart size={48} variant="Bold" color="#FF3366" className="animate-pulse" />
                                             </div>
 
-                                            {/* Caption Area */}
-                                            <div className="mt-2 px-1 text-center min-h-[2.5rem] flex items-center justify-center relative">
-                                                {memory.caption ? (
+
+                                        </div>
+
+                                        {/* Polaroid Bottom Margin - Caption Area */}
+                                        <div className="flex-1 bg-white flex flex-col items-center justify-center px-4 py-2 relative">
+                                            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-black/[0.03] to-transparent pointer-events-none" />
+
+                                            {memory.caption ? (
+                                                <Typography
+                                                    sx={{
+                                                        color: '#4A151B',
+                                                        fontFamily: 'var(--font-mali)',
+                                                        fontSize: '1rem',
+                                                        fontWeight: 600,
+                                                        textAlign: 'center',
+                                                        lineHeight: 1.3,
+                                                        opacity: 0.85
+                                                    }}
+                                                >
+                                                    {memory.caption}
+                                                </Typography>
+                                            ) : (
+                                                <div className="flex gap-1">
+                                                    <Heart size={12} variant="Bold" color="#FFD1DC" />
+                                                    <Heart size={12} variant="Bold" color="#FFD1DC" />
+                                                    <Heart size={12} variant="Bold" color="#FFD1DC" />
+                                                </div>
+                                            )}
+
+                                            {/* Card Numbering */}
+                                            <div className="absolute bottom-2 right-3 opacity-20">
+                                                <Typography sx={{ fontSize: '0.6rem', color: '#4A151B', fontWeight: 800 }}>
+                                                    {String(index + 1).padStart(2, '0')} / {String(memories.length).padStart(2, '0')}
+                                                </Typography>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </SwiperSlide>
+                            ))}
+
+                            {/* Last Slide: Puzzle/Game */}
+                            {memories.length > 0 && (
+                                <SwiperSlide key="game-slide">
+                                    <div className="w-full h-full relative bg-white rounded-[32px] p-4 pb-5 shadow-[0_20px_40px_rgba(255,51,102,0.1)] flex flex-col ring-1 ring-pink-100/50 border border-white">
+                                        <div className="w-full h-full relative overflow-hidden rounded-[24px] bg-gradient-to-b from-[#FFF5F7] to-white flex flex-col items-center justify-center p-6 border border-pink-50">
+
+                                            {!isPuzzleComplete ? (
+                                                <div className="text-center z-10 flex flex-col items-center">
+                                                    {/* Cute Character/Icon Area */}
+                                                    <div className="relative mb-8">
+                                                        <div className="absolute inset-0 bg-pink-200/30 blur-2xl rounded-full animate-pulse" />
+                                                        <div className="relative bg-white p-8 rounded-[40px] shadow-[0_15px_30px_rgba(255,51,102,0.15)] border border-pink-50 animate-[gentle-bounce_3s_ease-in-out_infinite]">
+                                                            <Heart size={64} variant="Bold" color="#FF3366" className="drop-shadow-md" />
+                                                            <div className="absolute -top-2 -right-2 bg-[#FFD700] p-2 rounded-full shadow-md animate-bounce">
+                                                                <Star size={20} variant="Bold" color="white" />
+                                                            </div>
+                                                        </div>
+                                                        {/* Mini Decorative Hearts */}
+                                                        <Heart size={16} variant="Bold" color="#FF99AA" className="absolute top-0 -left-6 animate-[float-mini_4s_infinite]" />
+                                                        <Heart size={20} variant="Bold" color="#FFBBDD" className="absolute bottom-4 -right-8 animate-[float-mini_5s_infinite_1s]" />
+                                                    </div>
+
                                                     <Typography
+                                                        className="text-[#D41442] font-black mb-3"
                                                         sx={{
-                                                            color: '#4A151B',
-                                                            fontWeight: 600,
                                                             fontFamily: 'var(--font-mali)',
-                                                            fontSize: '1rem',
-                                                            lineHeight: 1.4,
+                                                            fontSize: '2rem',
+                                                            fontWeight: 600,
+                                                            lineHeight: 1.2,
+                                                            textShadow: '0 2px 0 rgba(255,255,255,1)'
                                                         }}
                                                     >
-                                                        {memory.caption}
+                                                        สะสมใจแทนคำรัก
                                                     </Typography>
-                                                ) : (
-                                                    <div className="opacity-20 flex justify-center w-full">
-                                                        <Heart size={24} variant="Bold" color="#FF3366" />
+                                                    <Typography
+                                                        className="text-pink-400 font-bold mb-8 px-4"
+                                                        sx={{
+                                                            fontFamily: 'var(--font-prompt)',
+                                                            fontSize: '1rem',
+                                                            opacity: 0.9,
+                                                            lineHeight: 1.5
+                                                        }}
+                                                    >
+                                                        มาช่วยกันเก็บสะสมหัวใจ<br />เพื่อรับของขวัญพิเศษจากใจนะ
+                                                    </Typography>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center animate-[scaleIn_0.8s_ease-out] z-10 flex flex-col items-center">
+                                                    <div className="bg-white p-8 rounded-full shadow-xl mb-6 relative border border-pink-50">
+                                                        <Heart size={80} variant="Bold" color="#FF3366" className="animate-bounce" />
+                                                        <div className="absolute inset-0 bg-pink-300/20 blur-xl rounded-full" />
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </SwiperSlide>
-                                ))}
+                                                    <Typography className="text-[#FF3366] font-bold mb-4" sx={{ fontFamily: 'var(--font-dancing)', fontSize: '2.8rem' }}>Forever Yours 💕</Typography>
 
-                                {/* Last Slide: Puzzle/Game */}
-                                {memories.length > 0 && (
-                                    <SwiperSlide key="game-slide">
-                                        <div className="w-full h-full relative bg-white rounded-[24px] p-3 pb-5 shadow-[0_15px_35px_rgba(0,0,0,0.15)] flex flex-col ring-1 ring-white/50 border border-gray-100/50 backdrop-blur-sm">
-                                            <div className="w-full h-full relative overflow-hidden rounded-[20px] bg-gradient-to-br from-pink-50 to-white flex flex-col items-center justify-center p-4 border border-pink-100">
-                                                {!isPuzzleComplete ? (
-                                                    <div className="text-center z-10">
-                                                        <div className="bg-white p-6 rounded-full inline-block mb-6 shadow-lg shadow-pink-100/50 relative border border-pink-50">
-                                                            <Heart size={48} variant="Bold" color="#FF3366" className="animate-pulse drop-shadow-md" />
+                                                    {heartGameScore >= 1000 ? (
+                                                        <div className="bg-gradient-to-br from-orange-50 to-pink-50 p-6 rounded-[24px] border border-orange-100 shadow-inner max-w-[280px]">
+                                                            <Typography className="text-[#D41442] font-black text-lg mb-1" sx={{ fontFamily: 'var(--font-mali)' }}>ยินดีด้วยนะคนเก่ง! 🎁</Typography>
+                                                            <Typography className="text-sm text-[#8B1D36] font-medium" sx={{ fontFamily: 'var(--font-prompt)' }}>ทำคะแนนได้ {heartGameScore} แต้ม!<br />รับรางวัลพิเศษจากเบบี๋ได้เลย!</Typography>
                                                         </div>
-                                                        <Typography className="text-[#8B1D36] font-black mb-2" sx={{ fontFamily: 'var(--font-mali)', fontSize: '2rem' }}>สะสมใจแทนคำรัก</Typography>
-                                                        <Typography className="text-pink-500 font-bold mb-8 opacity-80" sx={{ fontFamily: 'var(--font-prompt)' }}>สะสมหัวใจให้ครบ เพื่อรับรางวัลพิเศษ 🎁</Typography>
-                                                    </div>
-                                                ) : (
-                                                    <div className="text-center animate-[scaleIn_0.8s_ease-out] z-10">
-                                                        <Heart size={80} variant="Bold" color="#FF3366" className="inline-block mb-6 drop-shadow-xl animate-bounce" />
-                                                        <Typography className="text-[#FF3366] font-bold mb-4" sx={{ fontFamily: 'var(--font-dancing)', fontSize: '2.5rem' }}>Forever Yours 💕</Typography>
-                                                        {heartGameScore >= 1000 ? (
-                                                            <div className="bg-orange-50 p-4 rounded-xl border border-orange-200 shadow-sm">
-                                                                <Typography className="text-[#8B1D36] font-bold" sx={{ fontFamily: 'var(--font-prompt)' }}>Exclusive Reward! 🎁</Typography>
-                                                                <Typography className="text-sm text-gray-600 mt-1" sx={{ fontFamily: 'var(--font-prompt)' }}>You scored {heartGameScore} points. รับรางวัลพิเศษจากคนรักของคุณได้เลย!</Typography>
-                                                            </div>
-                                                        ) : (
-                                                            <Typography className="text-[#8B1D36] opacity-80" sx={{ fontFamily: 'var(--font-mali)' }}>Thank you for being my everything.</Typography>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                    ) : (
+                                                        <Typography
+                                                            className="text-[#8B1D36] opacity-70 italic px-6"
+                                                            sx={{ fontFamily: 'var(--font-mali)', fontSize: '1.2rem' }}
+                                                        >
+                                                            "ทุกวินาทีที่มีเธอ คือของขวัญที่พิเศษที่สุด"
+                                                        </Typography>
+                                                    )}
+                                                </div>
+                                            )}
 
-                                                {/* Decorative Background Elements */}
-                                                <div className="absolute top-0 left-0 w-32 h-32 bg-pink-200/20 rounded-full blur-3xl" />
-                                                <div className="absolute bottom-0 right-0 w-40 h-40 bg-red-200/20 rounded-full blur-3xl" />
+                                            {/* Extra Decorative Background Elements */}
+                                            <div className="absolute -top-10 -left-10 w-48 h-48 bg-pink-100/30 rounded-full blur-3xl" />
+                                            <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-red-100/20 rounded-full blur-3xl" />
+                                            <div className="absolute top-1/4 right-0 w-2 h-2 bg-pink-300 rounded-full animate-ping" />
+                                            <div className="absolute bottom-1/3 left-4 w-3 h-3 bg-pink-200 rounded-full animate-pulse" />
+
+                                            {/* Reveal Overlay */}
+                                            <div
+                                                className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center transition-opacity duration-1000"
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #FFF5F7 0%, #FFFFFF 50%, #FFE4EC 100%)',
+                                                    opacity: revealedSlides.has(memories.length) ? 0 : 1,
+                                                    transition: 'opacity 0.8s ease-out',
+                                                }}
+                                            >
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <Heart size={56} variant="Bold" color="#FF3366" className="animate-pulse opacity-30" />
+                                                    <div className="w-12 h-1 bg-pink-100 rounded-full overflow-hidden">
+                                                        <div className="w-full h-full bg-pink-400 origin-left animate-[loading-bar_2s_infinite]" />
+                                                    </div>
+                                                </div>
                                             </div>
+
+                                            {/* Unified Button Area Inside Slide for Balance */}
+                                            {currentSlideIndex === memories.length && !isPuzzleComplete && (
+                                                <div
+                                                    className="absolute bottom-5 left-0 w-full px-6 z-50 transition-all duration-500"
+                                                    style={{
+                                                        opacity: (revealedSlides.has(memories.length) && !showHeartGame) ? 1 : 0,
+                                                        transform: revealedSlides.has(memories.length) ? 'translateY(0)' : 'translateY(10px)',
+                                                        pointerEvents: (revealedSlides.has(memories.length) && !showHeartGame) ? 'auto' : 'none'
+                                                    }}
+                                                >
+                                                    <button
+                                                        onClick={() => setShowHeartGame(true)}
+                                                        className="w-full bg-gradient-to-r from-[#FF3366] via-[#FF5C8A] to-[#D41442] text-white py-3 px-5 rounded-[20px] font-bold shadow-[0_12px_24px_rgba(255,51,102,0.2)] flex items-center justify-between gap-2 group overflow-hidden relative active:scale-95 transition-transform"
+                                                    >
+                                                        {/* Stable Shine Effect */}
+                                                        <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-25deg] pointer-events-none animate-shine" />
+
+                                                        <div className="flex items-center gap-2 relative z-10">
+                                                            <div className="bg-white/20 p-1.5 rounded-lg backdrop-blur-md">
+                                                                <Play size={18} variant="Bold" color="white" />
+                                                            </div>
+                                                            <span style={{ fontSize: '0.95rem', fontFamily: 'var(--font-mali)' }}>เริ่มเก็บหัวใจกันเถอะ!</span>
+                                                        </div>
+                                                        <Heart size={18} variant="Bold" className="text-white relative z-10" />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
-                                    </SwiperSlide>
-                                )}
-                            </Swiper>
-
-                            {/* Action Button for Video */}
-                            {(memories[currentSlideIndex]?.type === 'video' || memories[currentSlideIndex]?.type === 'youtube' || memories[currentSlideIndex]?.type === 'tiktok') && (
-                                <div className="absolute bottom-12 z-50">
-                                    <button
-                                        onClick={() => handleOpenVideoModal(memories[currentSlideIndex])}
-                                        className="bg-[#FF3366] text-white px-8 py-3 rounded-full font-bold shadow-[0_8px_20px_rgba(255,51,102,0.4)] flex items-center gap-3 hover:scale-105 active:scale-95 transition-all text-sm uppercase tracking-wider"
-                                    >
-                                        <Play size={20} variant="Bold" color="#FFD700" />
-                                        Watch Video
-                                    </button>
-                                </div>
+                                    </div>
+                                </SwiperSlide>
                             )}
+                        </Swiper>
 
-                            {/* Game Start Button */}
-                            {currentSlideIndex === memories.length && !isPuzzleComplete && (
-                                <div className="absolute bottom-20 z-50 w-full px-10">
-                                    <button onClick={() => setShowHeartGame(true)} className="w-full bg-gradient-to-r from-[#FF3366] to-[#D41442] text-white py-4 rounded-full font-bold shadow-xl flex items-center justify-center gap-3 hover:scale-105 transition-transform">
-                                        <Star size={24} variant="Bold" color="#FFD700" />
-                                        <span style={{ fontFamily: 'var(--font-mali)', fontSize: '1.2rem' }}>เล่นเกมเก็บหัวใจ</span>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
 
-                        {/* Footer Message */}
-                        <div className="w-full max-w-sm px-6 pb-8 text-center" style={{ zIndex: 50 }}>
-                            <Typography className="text-[#8B1D36] font-bold tracking-widest uppercase mb-2 text-[10px] opacity-90" sx={{ fontFamily: 'var(--font-dancing)' }}>{displayContent.subtitle}</Typography>
-                            <Paper
-                                elevation={0}
+
+                        {/* Old Button Container Removed for Balance */}
+                    </div>
+
+                    {/* Footer Message - Stable & Smooth Entrance */}
+                    <div className="w-full max-w-xs px-4 pt-2 pb-2 text-center" style={{ minHeight: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                bgcolor: (showMessage && isSwiperReady) ? 'rgba(255,255,255,0.7)' : 'transparent',
+                                opacity: (showMessage && isSwiperReady) ? 1 : 0,
+                                py: 1.5,
+                                px: 2,
+                                borderRadius: '16px',
+                                border: (showMessage && isSwiperReady) ? '1px solid rgba(255,255,255,0.6)' : '1px solid transparent',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                transition: 'opacity 0.9s cubic-bezier(0.4, 0.0, 0.2, 1), transform 0.9s cubic-bezier(0.4, 0.0, 0.2, 1), background-color 0.9s ease-out, border-color 0.9s ease-out',
+                                transform: (showMessage && isSwiperReady) ? 'translateY(0)' : 'translateY(10px)',
+                            }}
+                        >
+                            <Typography
                                 sx={{
-                                    bgcolor: 'rgba(255,255,255,0.65)',
-                                    p: 2,
-                                    borderRadius: '20px',
-                                    backdropFilter: 'blur(16px)',
-                                    border: '1px solid rgba(212, 175, 55, 0.3)', // Gold border
-                                    boxShadow: '0 8px 32px rgba(212, 175, 55, 0.1)',
-                                    minHeight: '80px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    justifyContent: 'center',
-                                    transition: 'all 0.5s ease-in-out',
-                                    position: 'relative',
-                                    overflow: 'hidden'
+                                    fontFamily: 'var(--font-prompt)',
+                                    fontSize: '0.85rem',
+                                    lineHeight: 1.4,
+                                    color: '#4A151B',
+                                    textAlign: 'center',
+                                    fontWeight: 500
                                 }}
                             >
-                                <Typography
-                                    className="text-gray-800 italic"
-                                    sx={{
-                                        fontFamily: 'var(--font-prompt)',
-                                        fontSize: '1rem',
-                                        lineHeight: 1.6,
-                                        opacity: showMessage ? 1 : 0,
-                                        transform: showMessage ? 'translateY(0)' : 'translateY(10px)',
-                                        transition: 'all 0.8s ease-out'
-                                    }}
-                                >
-                                    {displayContent.message ? `"${displayContent.message}"` : ''}
-                                </Typography>
-                                <Typography
-                                    className="text-[#FF3366] font-bold mt-4 text-xl block"
-                                    sx={{
-                                        fontFamily: 'var(--font-dancing), cursive',
-                                        opacity: showMessage ? 1 : 0,
-                                        transition: 'opacity 0.8s ease-out 0.3s'
-                                    }}
-                                >
-                                    - {displayContent.signer} -
-                                </Typography>
-                            </Paper>
-                        </div>
+                                {displayContent.message ? `"${displayContent.message}"` : ''}
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    fontFamily: 'var(--font-dancing), cursive',
+                                    fontSize: '1rem',
+                                    color: '#FF3366',
+                                    fontWeight: 600,
+                                }}
+                            >
+                                - {displayContent.signer} -
+                            </Typography>
+                        </Paper>
                     </div>
-                </>
-            )}
+                </div>
+            </div>
 
             {/* MODALS */}
             {activeVideo && (
-                <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4">
-                    <button onClick={handleCloseVideoModal} className="absolute top-4 right-4 text-white p-2 bg-white/10 rounded-full"><div className="rotate-45">+</div></button>
-                    <div className="w-full max-w-lg aspect-video bg-black rounded-xl overflow-hidden shadow-2xl relative">
+                <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 stable-container">
+                    <button onClick={handleCloseVideoModal} className="absolute top-4 right-4 text-white p-2 bg-white/10 rounded-full z-[110]"><div className="rotate-45" style={{ fontSize: '2rem' }}>+</div></button>
+                    <div className="w-full max-w-[400px] aspect-[9/16] max-h-[85vh] bg-black rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative border border-white/10">
                         {activeVideo.type === 'youtube' ? (
-                            <iframe src={`https://www.youtube.com/embed/${activeVideo.url}?autoplay=1`} className="w-full h-full" allowFullScreen allow="autoplay" title="video-modal" />
+                            <iframe src={`https://www.youtube.com/embed/${activeVideo.url}?autoplay=1`} className="w-full h-full object-cover" allowFullScreen allow="autoplay" title="video-modal" />
                         ) : activeVideo.type === 'tiktok' ? (
-                            <iframe src={`https://www.tiktok.com/player/v1/${activeVideo.url}?autoplay=1`} className="w-full h-full" allowFullScreen title="tiktok-modal" />
+                            <iframe src={`https://www.tiktok.com/player/v1/${activeVideo.url}?autoplay=1`} className="w-full h-full object-cover" allowFullScreen title="tiktok-modal" />
                         ) : (
-                            <video src={activeVideo.url} controls autoPlay className="w-full h-full" />
+                            <video src={activeVideo.url} controls autoPlay className="w-full h-full object-contain" />
                         )}
                     </div>
                 </div>
             )}
 
             {showHeartGame && (
-                <div className="fixed inset-0 z-[120] bg-black/30 backdrop-blur-md flex items-center justify-center">
-                    <HeartCatcher
-                        images={memories.filter(m => m.type === 'image').map(m => m.url)}
-                        onClose={() => setShowHeartGame(false)}
-                        onComplete={(score) => {
-                            setHeartGameScore(score);
-                            setShowHeartGame(false);
-                            if (score >= 1000) {
-                                setIsPuzzleComplete(true);
-                                setShowFinalReveal(true);
-                            }
+                <div
+                    className="fixed inset-0 z-[120] bg-black/40 flex items-center justify-center stable-container"
+                    style={{
+                        opacity: 0,
+                        animation: 'backdrop-in 0.5s ease-out forwards'
+                    }}
+                >
+                    <div
+                        className="w-full h-full flex items-center justify-center"
+                        style={{
+                            opacity: 0,
+                            animation: 'modal-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
                         }}
-                    />
+                    >
+                        <HeartCatcher
+                            images={memories.filter(m => m.type === 'image').map(m => m.url)}
+                            onClose={() => setShowHeartGame(false)}
+                            onComplete={(score) => {
+                                setHeartGameScore(score);
+                                setShowHeartGame(false);
+                                if (score >= 1000) {
+                                    setIsPuzzleComplete(true);
+                                    setShowFinalReveal(true);
+                                }
+                            }}
+                        />
+                    </div>
                 </div>
             )}
         </Box>

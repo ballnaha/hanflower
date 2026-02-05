@@ -96,12 +96,7 @@ export default function Header() {
                         </Box>
 
                         <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: { xs: 1, md: 2 } }}>
-                            <IconButton sx={{ color: '#1A1A1A', display: { xs: 'none', md: 'flex' } }}>
-                                <SearchNormal1 size={20} variant="Outline" color="#1A1A1A" />
-                            </IconButton>
-                            <IconButton sx={{ color: '#1A1A1A', display: { xs: 'none', md: 'flex' } }}>
-                                <Heart size={20} variant="Outline" color="#1A1A1A" />
-                            </IconButton>
+
                             <IconButton sx={{ color: '#1A1A1A', display: { xs: 'none', md: 'flex' } }}>
                                 <Profile size={20} variant="Outline" color="#1A1A1A" />
                             </IconButton>
@@ -217,9 +212,9 @@ export default function Header() {
                                 <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: { md: 4, lg: 8 } }}>
                                     {[
                                         { label: 'FLOWERS', href: '/products?category=bouquet' },
-                                        { label: 'EVENTS', href: '/events' },
+                                        { label: 'EVENTS', href: '/coming-soon' },
                                         { label: 'ABOUT US', href: '/about' },
-                                        { label: 'OUR CUSTOMERS', href: '/customers' },
+                                        { label: 'OUR CUSTOMERS', href: '/coming-soon' },
 
                                     ].map((link) => {
                                         const isExternal = false;

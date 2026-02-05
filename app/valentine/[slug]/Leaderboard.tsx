@@ -258,13 +258,22 @@ export default function Leaderboard({ slug, currentScore, gameDuration, onClose 
                                                     บันทึกสถิติใหม่ในนาม: <b>{savedName}</b>
                                                 </Typography>
                                                 <Button
-                                                    fullWidth variant="contained" onClick={() => handleSubmit()} disabled={isSubmitting}
+                                                    variant="contained"
+                                                    onClick={() => handleSubmit()}
+                                                    disabled={isSubmitting}
                                                     sx={{
-                                                        borderRadius: '50px', bgcolor: '#FF3366', fontFamily: 'var(--font-mali)',
-                                                        boxShadow: '0 4px 12px rgba(255, 51, 102, 0.3)', '&:hover': { bgcolor: '#D41442' }
+                                                        borderRadius: '50px',
+                                                        bgcolor: '#FF3366',
+                                                        fontFamily: 'var(--font-mali)',
+                                                        fontSize: '0.8rem',
+                                                        px: 3,
+                                                        py: 0.7,
+                                                        boxShadow: '0 4px 10px rgba(255, 51, 102, 0.15)',
+                                                        '&:hover': { bgcolor: '#D41442' },
+                                                        textTransform: 'none'
                                                     }}
                                                 >
-                                                    {isSubmitting ? <CircularProgress size={20} color="inherit" /> : "อัปเดตสถิติใหม่ 🚀"}
+                                                    {isSubmitting ? <CircularProgress size={18} color="inherit" /> : "อัปเดตสถิติใหม่ 🚀"}
                                                 </Button>
                                             </Box>
                                         ) : (
@@ -284,9 +293,16 @@ export default function Leaderboard({ slug, currentScore, gameDuration, onClose 
                                                 />
                                                 <Button
                                                     type="submit" variant="contained" disabled={isSubmitting || !name.trim()}
-                                                    sx={{ borderRadius: '50px', bgcolor: '#FF3366', minWidth: '54px', '&:hover': { bgcolor: '#D41442' } }}
+                                                    sx={{
+                                                        borderRadius: '50px',
+                                                        bgcolor: '#FF3366',
+                                                        minWidth: '40px',
+                                                        color: 'white',
+                                                        height: '38px',
+                                                        '&:hover': { bgcolor: '#D41442' }
+                                                    }}
                                                 >
-                                                    {isSubmitting ? <CircularProgress size={20} color="inherit" /> : <Send2 size="22" variant="Bold" color="#FFFFFF" />}
+                                                    {isSubmitting ? <CircularProgress size={18} color="inherit" /> : "save"}
                                                 </Button>
                                             </form>
                                         )}

@@ -38,6 +38,7 @@ import {
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useNotification } from '@/context/NotificationContext';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
+import { NumberStepper } from '@/components/ui';
 
 interface Category {
     id: string;
@@ -501,17 +502,14 @@ export default function AdminCategoriesPage() {
                         />
 
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#F9F9F9', p: 2.5, borderRadius: '16px' }}>
-                            <Stack direction="row" spacing={2} alignItems="center">
-                                <Typography variant="body2" sx={{ fontWeight: 600 }}>ลำดับความสำคัญ:</Typography>
-                                <TextField
-                                    name="priority"
-                                    type="number"
-                                    size="small"
-                                    value={formData.priority}
-                                    onChange={handleInputChange}
-                                    sx={{ width: '80px', '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#FFF' } }}
-                                />
-                            </Stack>
+                            <NumberStepper
+                                value={formData.priority}
+                                onChange={(val) => setFormData(prev => ({ ...prev, priority: val }))}
+                                min={0}
+                                max={999}
+                                label="ลำดับความสำคัญ"
+                                size="sm"
+                            />
                             <FormControlLabel
                                 control={
                                     <Switch

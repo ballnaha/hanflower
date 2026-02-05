@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
                 id: randomUUID(),
                 title,
                 name: title,
-                // subtitle: subtitle || '',
+                subtitle: subtitle || null,
                 slug,
                 description: description || '',
                 image: image || '',
