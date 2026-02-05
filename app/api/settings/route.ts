@@ -47,9 +47,18 @@ export async function PATCH(request: Request) {
         // Handle file deletions
         if (urlsToDelete && Array.isArray(urlsToDelete)) {
             for (const url of urlsToDelete) {
-                if (url && url.startsWith('/uploads/')) {
+                if (!url) continue;
+
+                let filePath = '';
+                if (url.startsWith('/uploads/')) {
+                    filePath = path.join(process.cwd(), 'public', url);
+                } else if (url.startsWith('/api/images/')) {
+                    const filename = url.replace('/api/images/', '');
+                    filePath = path.join(process.cwd(), 'public', 'uploads', filename);
+                }
+
+                if (filePath) {
                     try {
-                        const filePath = path.join(process.cwd(), 'public', url);
                         await unlink(filePath);
                         console.log(`Deleted file: ${filePath}`);
                     } catch (err: any) {

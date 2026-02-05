@@ -15,26 +15,41 @@ export async function POST(request: Request) {
 
         const buffer = Buffer.from(await file.arrayBuffer());
 
-        // Resize image using sharp
-        const resizedBuffer = await sharp(buffer)
-            .resize(800, 800, {
-                fit: 'inside',
-                withoutEnlargement: true
-            })
-            .webp({ quality: 80 })
-            .toBuffer();
-
-        const filename = `popup_${Date.now()}.webp`;
-
-        // Ensure upload directory exists: public/uploads/settings
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'settings');
+        // Ensure upload directory exists: public/uploads
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads');
         await mkdir(uploadDir, { recursive: true });
 
-        await writeFile(path.join(uploadDir, filename), resizedBuffer);
+        // Create unique filename
+        const filename = `settings_popup_${crypto.randomUUID()}.webp`;
+        const filePath = path.join(uploadDir, filename);
+
+        try {
+            // Process image using sharp
+            await sharp(buffer)
+                .resize(1000, 1000, {
+                    fit: 'inside',
+                    withoutEnlargement: true
+                })
+                .webp({ quality: 80 })
+                .toFile(filePath);
+
+            console.log('Processed settings image with Sharp:', filename);
+        } catch (sharpError) {
+            console.error('Sharp processing failed for settings image, falling back to original:', sharpError);
+            // Fallback: save original with its original extension if possible, or just keep it simple
+            const originalFilename = `settings_fallback_${crypto.randomUUID()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+            const originalPath = path.join(uploadDir, originalFilename);
+            await writeFile(originalPath, buffer);
+
+            return NextResponse.json({
+                success: true,
+                url: `/api/images/${originalFilename}`
+            });
+        }
 
         return NextResponse.json({
             success: true,
-            url: `/uploads/settings/${filename}`
+            url: `/api/images/${filename}`
         });
     } catch (error) {
         console.error('Settings Image Upload failed:', error);
