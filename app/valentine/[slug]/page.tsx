@@ -740,19 +740,30 @@ export default function ValentineSlugPage() {
                     backface-visibility: hidden;
                 }
                 @keyframes music-bar-dance {
-                    0%, 100% { height: 4px; }
-                    50% { height: 16px; }
+                    0%, 100% { transform: scaleY(0.2); opacity: 0.5; }
+                    50% { transform: scaleY(1); opacity: 1; }
                 }
                 .wave-bar {
-                    width: 3px;
+                    width: 2px;
+                    height: 12px;
                     background-color: #FF3366;
-                    border-radius: 2px;
+                    border-radius: 1px;
                     margin: 0 1px;
+                    transform-origin: center;
+                    will-change: transform;
                 }
                 .wave-bar:nth-child(1) { animation: music-bar-dance 0.8s ease-in-out infinite; }
                 .wave-bar:nth-child(2) { animation: music-bar-dance 1.1s ease-in-out infinite 0.2s; }
                 .wave-bar:nth-child(3) { animation: music-bar-dance 0.9s ease-in-out infinite 0.4s; }
-                .wave-bar:nth-child(4) { animation: music-bar-dance 1.2s ease-in-out infinite 0.1s; }
+                
+                @keyframes music-icon-spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+                .music-icon-spin {
+                    animation: music-icon-spin 3s linear infinite;
+                    will-change: transform;
+                }
                 
                 .music-heart-pulse { 
                     animation: heartPulse 2s ease-in-out infinite;
@@ -1056,23 +1067,30 @@ export default function ValentineSlugPage() {
                         className="flex items-center gap-2 px-2 py-1.5 rounded-full cursor-pointer transition-all duration-500 hover:scale-110 active:scale-95 shadow-lg border border-white/40"
                         style={{
                             background: 'rgba(255, 255, 255, 0.65)',
-                            minWidth: '40px'
+                            backdropFilter: 'blur(10px)',
+                            WebkitBackdropFilter: 'blur(10px)',
+                            minWidth: '40px',
+                            transform: 'translate3d(0,0,0)',
+                            WebkitTransform: 'translate3d(0,0,0)'
                         }}
                     >
                         {/* Music Note Icon */}
                         <div
                             className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-300 ${!isMusicMuted ? 'bg-[#FF3366] music-icon-spin' : 'bg-gray-200'}`}
-                            style={{ willChange: 'background-color, transform' }}
+                            style={{
+                                transform: 'translate3d(0,0,0)',
+                                WebkitTransform: 'translate3d(0,0,0)'
+                            }}
                         >
                             <Music size="14" variant={isMusicMuted ? "Linear" : "Bold"} color={isMusicMuted ? "#9ca3af" : "white"} />
                         </div>
 
                         {/* Animated Waveform (Compact) */}
                         {!isMusicMuted && (
-                            <div className="flex items-center h-3 pr-2">
-                                <div className="wave-bar" style={{ width: '2px', height: '8px' }} />
-                                <div className="wave-bar" style={{ width: '2px', height: '12px' }} />
-                                <div className="wave-bar" style={{ width: '2px', height: '6px' }} />
+                            <div className="flex items-center h-4 pr-2" style={{ transform: 'translate3d(0,0,0)' }}>
+                                <div className="wave-bar" />
+                                <div className="wave-bar" />
+                                <div className="wave-bar" />
                             </div>
                         )}
                     </div>
