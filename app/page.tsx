@@ -11,9 +11,11 @@ export const revalidate = 0; // Ensure fresh data on every visit
 interface Category {
   id: string;
   title: string;
-  subtitle: string;
-  description: string;
-  image: string;
+  subtitle: string | null;
+  description: string | null;
+  image: string | null;
+  name: string | null;
+  slug: string;
   priority: number;
   isActive: boolean;
   createdAt: Date;
@@ -50,8 +52,8 @@ export default async function Home() {
   const categories = categoriesRaw.map((cat: Category) => ({
     id: cat.id,
     title: cat.title,
-    subtitle: cat.subtitle,
-    description: cat.description,
+    subtitle: cat.subtitle || '',
+    description: cat.description || '',
     image: cat.image || '/images/img2.webp', // Fallback for missing images
   }));
 

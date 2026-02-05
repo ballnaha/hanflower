@@ -26,6 +26,7 @@
     "bcryptjs": "^3.0.3",
     "cookie": "^1.1.1",
     "dayjs": "^1.11.19",
+    "framer-motion": "^12.31.1",
     "html2canvas": "^1.4.1",
     "iconsax-react": "^0.0.8",
     "jose": "^6.1.3",

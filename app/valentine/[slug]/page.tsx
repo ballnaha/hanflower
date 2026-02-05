@@ -12,6 +12,55 @@ import JigsawPuzzle from "./JigsawPuzzle";
 import HeartCatcher from "./HeartCatcher";
 
 // ==========================================
+// 🚀 EXTREME PERFORMANCE COMPONENTS (MEMOIZED)
+// ==========================================
+const AmbientHearts = React.memo(({ hearts }: { hearts: any[] }) => (
+    <div className="fixed inset-0 pointer-events-none z-0" style={{ contain: 'strict' }}>
+        {hearts.map((h) => (
+            <Heart
+                key={h.id}
+                variant="Bold"
+                color="#FF99AA"
+                style={{
+                    position: 'absolute',
+                    left: h.left,
+                    width: h.size,
+                    height: h.size,
+                    opacity: 0.15,
+                    animation: `float-heart-up ${h.duration}s linear infinite`,
+                    animationDelay: `${h.delay}s`,
+                    transform: 'translate3d(0,0,0)',
+                    willChange: 'transform'
+                }}
+            />
+        ))}
+    </div>
+));
+AmbientHearts.displayName = 'AmbientHearts';
+
+const BorderHearts = React.memo(({ hearts }: { hearts: any[] }) => (
+    <div className="fixed inset-0 pointer-events-none z-10" style={{ contain: 'layout paint' }}>
+        {hearts.map((h) => (
+            <Heart
+                key={h.id}
+                variant="Bold"
+                color={h.color}
+                style={{
+                    position: 'absolute',
+                    top: `${h.top}%`,
+                    left: `${h.left}%`,
+                    width: h.size,
+                    height: h.size,
+                    transform: `rotate(${h.rotation}deg) translate3d(0,0,0)`,
+                    opacity: 0.9
+                }}
+            />
+        ))}
+    </div>
+));
+BorderHearts.displayName = 'BorderHearts';
+
+// ==========================================
 // 💖 DEFAULT CONFIGURATION (FALLBACK)
 // ==========================================
 const DEFAULT_CONTENT = {
@@ -73,6 +122,8 @@ export default function ValentineSlugPage() {
     const [heartBurstSource, setHeartBurstSource] = useState<'interaction' | 'completion'>('interaction');
     const [introHearts, setIntroHearts] = useState<{ id: number; left: string; size: number; duration: number; delay: number }[]>([]);
     const [ambientHearts, setAmbientHearts] = useState<{ id: number; left: string; size: number; duration: number; delay: number }[]>([]);
+    const [borderHearts, setBorderHearts] = useState<{ id: string; top: number; left: number; size: number; rotation: number; color: string }[]>([]);
+    const [introSparkles, setIntroSparkles] = useState<{ id: number; left: string; top: string; duration: number; delay: number }[]>([]);
     const [isSwiperReady, setIsSwiperReady] = useState(false);
     const [isLidOpening, setIsLidOpening] = useState(false);
 
@@ -95,25 +146,40 @@ export default function ValentineSlugPage() {
             delay: Math.random() * 10
         }));
         setAmbientHearts(aHearts);
+
+        const colors = ["#FF3366", "#FF99AA", "#FF5577", "#D41442"];
+        const bHeartsArr = [];
+        for (let i = 0; i < 4; i++) bHeartsArr.push({ id: `t-${i}`, top: 2, left: 10 + i * 25, size: 22 + Math.random() * 8, rotation: Math.random() * 20 - 10, color: colors[i % 4] });
+        for (let i = 0; i < 4; i++) bHeartsArr.push({ id: `b-${i}`, top: 92, left: 10 + i * 25, size: 22 + Math.random() * 8, rotation: Math.random() * 20 - 10, color: colors[i % 4] });
+        for (let i = 0; i < 4; i++) bHeartsArr.push({ id: `l-${i}`, top: 10 + i * 22, left: 2, size: 18 + Math.random() * 8, rotation: Math.random() * 20 - 10, color: colors[i % 4] });
+        for (let i = 0; i < 4; i++) bHeartsArr.push({ id: `r-${i}`, top: 10 + i * 22, left: 90, size: 18 + Math.random() * 8, rotation: Math.random() * 20 - 10, color: colors[i % 4] });
+        setBorderHearts(bHeartsArr);
+
+        const sparkles = Array.from({ length: 4 }).map((_, i) => ({
+            id: i,
+            left: `${15 + Math.random() * 70}%`,
+            top: `${20 + Math.random() * 60}%`,
+            duration: 3 + Math.random() * 2,
+            delay: Math.random() * 2
+        }));
+        setIntroSparkles(sparkles);
     }, []);
 
     // Swiper Config
     const swiperCreativeConfig = useMemo(() => ({
         prev: {
-            translate: ['-110%', '3%', -200],
-            rotate: [0, 0, -10],
+            translate: ['-120%', 0, 0],
+            rotate: [0, 0, -15],
             opacity: 0,
         },
         next: {
-            translate: ['12%', '2%', -80],
+            translate: ['15%', 0, -100],
             rotate: [0, 0, 5],
-            scale: 0.94,
-            opacity: 0.85,
+            scale: 0.9,
+            opacity: 0.6,
         },
         perspective: true,
         limitProgress: 2,
-        progressMultiplier: 1.1,
-        shadowPerProgress: false,
     }), []);
 
     // Background Music State
@@ -131,12 +197,13 @@ export default function ValentineSlugPage() {
     const BURST_THROTTLE_MS = 800;
     const MAX_HEARTS = 6;
     const swiperRef = useRef<any>(null);
-    const lastSwipeTimeRef = useRef<number>(0);
-    const SWIPE_COOLDOWN_MS = 400;
     const isInternalUpdateRef = useRef(false);
 
     const triggerHeartBurst = useCallback((source: 'interaction' | 'completion' = 'interaction') => {
         const now = Date.now();
+        // Disallow interaction bursts during critical transition to save CPU
+        if (isTransitioning && source === 'interaction') return;
+
         if (now - lastBurstTimeRef.current < BURST_THROTTLE_MS && source === 'interaction') return;
         lastBurstTimeRef.current = now;
 
@@ -154,8 +221,9 @@ export default function ValentineSlugPage() {
         setBurstHearts(newHearts);
         setTimeout(() => {
             setBurstHearts([]);
-        }, 5000);
-    }, []);
+        }, 3000); // Reduced duration to clear memory faster
+    }, [isTransitioning]);
+
 
     useEffect(() => {
         if (typeof document !== 'undefined') {
@@ -272,15 +340,6 @@ export default function ValentineSlugPage() {
         return () => clearTimeout(fallbackTimer);
     }, []);
 
-    const borderHearts = React.useMemo(() => {
-        const colors = ["#FF3366", "#FF99AA", "#FF5577", "#D41442"];
-        const heartsArr = [];
-        for (let i = 0; i < 4; i++) heartsArr.push({ id: `t-${i}`, top: 2, left: 10 + i * 25, size: 22 + Math.random() * 8, rotation: Math.random() * 20 - 10, color: colors[i % 4] });
-        for (let i = 0; i < 4; i++) heartsArr.push({ id: `b-${i}`, top: 92, left: 10 + i * 25, size: 22 + Math.random() * 8, rotation: Math.random() * 20 - 10, color: colors[i % 4] });
-        for (let i = 0; i < 4; i++) heartsArr.push({ id: `l-${i}`, top: 10 + i * 22, left: 2, size: 18 + Math.random() * 8, rotation: Math.random() * 20 - 10, color: colors[i % 4] });
-        for (let i = 0; i < 4; i++) heartsArr.push({ id: `r-${i}`, top: 10 + i * 22, left: 90, size: 18 + Math.random() * 8, rotation: Math.random() * 20 - 10, color: colors[i % 4] });
-        return heartsArr;
-    }, []);
 
     const preloadImagesRef = useRef<HTMLImageElement[]>([]);
 
@@ -344,104 +403,56 @@ export default function ValentineSlugPage() {
 
     const displayContent = content || DEFAULT_CONTENT;
 
-    const handleOpen = () => {
+    const handleOpenBox = () => {
         if (isOpen || isTransitioning || isLidOpening) return;
 
-        // Phase 0: Immediate Feedback (Lid Pop)
+        // 1. TRY FULLSCREEN (Skip for iPhone as it's not supported for generic elements)
+        const isIPhone = typeof window !== 'undefined' && /iPhone/.test(navigator.userAgent);
+        if (typeof document !== 'undefined' && !isIPhone) {
+            const elem = document.documentElement as any;
+            const requestMethod = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
+            if (requestMethod && !document.fullscreenElement) {
+                requestMethod.call(elem).catch(() => { });
+                setIsFullscreen(true);
+            }
+        }
+
         setIsLidOpening(true);
         triggerHeartBurst('interaction');
 
-        // Music will start AFTER transition (see below)
-        if (displayContent.backgroundMusicUrl || displayContent.backgroundMusicYoutubeId) {
-            setIsMusicStarted(true);
-            // Don't play yet - wait for transition to finish
-        }
-
-        // Phase 1: Smoothly fade in the mask first
+        // 2. STAGGERED START: Wait a tiny bit for the OS to handle resize before showing curtains
         setTimeout(() => {
             setIsTransitioning(true);
 
-            // Phase 2: Enter fullscreen while mask is already covering the screen (around halfway through fade)
-            setTimeout(() => {
-                if (typeof document !== 'undefined') {
-                    const elem = document.documentElement as any;
-                    const requestMethod = elem.requestFullscreen ||
-                        elem.webkitRequestFullscreen ||
-                        elem.mozRequestFullScreen ||
-                        elem.msRequestFullscreen;
-
-                    if (requestMethod && !document.fullscreenElement) {
-                        requestMethod.call(elem).catch((err: any) => {
-                            console.log(`Fullscreen request failed: ${err.message}`);
-                        });
-                        setIsFullscreen(true);
-                    }
+            // Music Build-up
+            if (displayContent.backgroundMusicUrl || displayContent.backgroundMusicYoutubeId) {
+                setIsMusicStarted(true);
+                setIsMusicPlaying(true);
+                setIsMusicMuted(false);
+                if (musicAudioRef.current) {
+                    musicAudioRef.current.volume = 0.8;
+                    musicAudioRef.current.play().catch(() => { });
                 }
+            }
 
-                // Phase 3: Start countdown after mask is more established
-                setCountdown(3);
+            const startSequence = () => {
+                // Sequence for 3s countdown (3, 2, 1) then reveal
+                setTimeout(() => {
+                    setCountdown(0);
+                    triggerHeartBurst('completion');
 
-                const timer = setInterval(() => {
-                    setCountdown((prev) => {
-                        if (prev === null) return null;
-                        if (prev <= 1) {
-                            clearInterval(timer);
+                    // Synchronization Point: Start opening sequence exactly when curtains begin to retreat
+                    setTimeout(() => {
+                        setCountdown(null);
+                        setIsOpen(true);
+                        // Total time matches CSS duration
+                        setTimeout(() => setIsTransitioning(false), 800);
+                    }, 400); // Wait just enough for "1" to fade and "Surprise" to pop
+                }, 3000);
+            };
 
-                            // Step 1: Clear countdown to show loading heart (after brief pause)
-                            setTimeout(() => {
-                                setCountdown(null); // This triggers the loading heart to show
-
-                                // Step 2: Let heart display clearly for a moment
-                                setTimeout(() => {
-                                    // Step 3: Begin opening cards
-                                    setIsOpen(true);
-
-                                    // Step 4: Start music after cards begin appearing
-                                    if (displayContent.backgroundMusicUrl || displayContent.backgroundMusicYoutubeId) {
-                                        setTimeout(() => {
-                                            setIsMusicPlaying(true);
-                                            setIsMusicMuted(false);
-                                            if (musicAudioRef.current) {
-                                                musicAudioRef.current.volume = 0.3;
-                                                musicAudioRef.current.muted = false;
-                                                musicAudioRef.current.play().catch(e => console.log("Play blocked:", e));
-                                                // Fade in volume
-                                                let vol = 0.3;
-                                                const fadeIn = setInterval(() => {
-                                                    if (vol < 1) {
-                                                        vol = Math.min(1, vol + 0.1);
-                                                        if (musicAudioRef.current) musicAudioRef.current.volume = vol;
-                                                    } else {
-                                                        clearInterval(fadeIn);
-                                                    }
-                                                }, 100);
-                                            }
-                                        }, 400);
-                                    }
-
-                                    // Step 5: Remove transition mask smoothly
-                                    setTimeout(() => {
-                                        setIsTransitioning(false);
-                                    }, 300);
-                                }, 450); // Heart shows for 450ms
-                            }, 150); // Brief pause after 1 before showing heart
-
-                            return 0;
-                        }
-                        return prev - 1;
-                    });
-                }, 1000);
-
-            }, 300); // Mask is fast, start countdown earlier (was 500ms)
-        }, 100); // 100ms after lid popup
-    };
-
-    const toggleMusic = () => {
-        const newMuted = !isMusicMuted;
-        setIsMusicMuted(newMuted);
-        if (musicAudioRef.current) {
-            musicAudioRef.current.muted = newMuted;
-        }
+            startSequence();
+        }, 150); // 150ms buffer is enough for most mobile browsers to stabilize
     };
 
     useEffect(() => {
@@ -479,6 +490,14 @@ export default function ValentineSlugPage() {
         };
     }, [isOpen, isMusicPlaying, isMusicMuted]);
 
+    const toggleMusic = () => {
+        const newMuted = !isMusicMuted;
+        setIsMusicMuted(newMuted);
+        if (musicAudioRef.current) {
+            musicAudioRef.current.muted = newMuted;
+        }
+    };
+
     const handleOpenVideoModal = (memory: any) => {
         setActiveVideo(memory);
     };
@@ -497,28 +516,9 @@ export default function ValentineSlugPage() {
     }, [isOpen, isTransitioning]);
 
     const handleSlideChange = useCallback((swiper: any) => {
-        if (isInternalUpdateRef.current) return;
-
         const activeIndex = swiper.activeIndex;
         const previousIndex = swiper.previousIndex;
         const now = Date.now();
-
-        if (now - lastSwipeTimeRef.current < SWIPE_COOLDOWN_MS) {
-            isInternalUpdateRef.current = true;
-            swiper.slideTo(previousIndex, 0);
-            setTimeout(() => {
-                isInternalUpdateRef.current = false;
-            }, 10);
-            return;
-        }
-        lastSwipeTimeRef.current = now;
-
-        swiper.allowTouchMove = false;
-        setTimeout(() => {
-            if (swiper && !swiper.destroyed) {
-                swiper.allowTouchMove = true;
-            }
-        }, SWIPE_COOLDOWN_MS);
 
         setCurrentSlideIndex(activeIndex);
 
@@ -687,6 +687,17 @@ export default function ValentineSlugPage() {
                     0% { background-position: -200% 0; }
                     100% { background-position: 200% 0; }
                 }
+                .fullscreen-mask {
+                    will-change: opacity, background-color;
+                    backface-visibility: hidden;
+                    -webkit-backface-visibility: hidden;
+                }
+                .countdown-item {
+                    will-change: transform, opacity;
+                    backface-visibility: hidden;
+                    -webkit-backface-visibility: hidden;
+                }
+
                 .valentine-swiper { 
                     overflow: visible !important; 
                     padding: 20px 0 40px 0 !important;
@@ -793,10 +804,88 @@ export default function ValentineSlugPage() {
                 .shimmer-text { color: #4A151B; }
                 .gold-ribbon { background: linear-gradient(90deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C); }
                 
-                @keyframes countdown-pop { 
-                    0% { transform: scale(0.3) rotate(-15deg); filter: blur(10px); opacity: 0; } 
-                    50% { transform: scale(1.1) rotate(5deg); filter: blur(0px); opacity: 1; } 
-                    100% { transform: scale(1) rotate(0deg); opacity: 1; } 
+                @keyframes curtain-left {
+                    0% { transform: translateX(-100%); }
+                    10%, 85% { transform: translateX(0); }
+                    100% { transform: translateX(-100%); }
+                }
+                @keyframes curtain-right {
+                    0% { transform: translateX(100%); }
+                    10%, 85% { transform: translateX(0); }
+                    100% { transform: translateX(100%); }
+                }
+                .curtain-panel {
+                    position: fixed;
+                    top: 0;
+                    width: 51%;
+                    height: 100dvh;
+                    background: #FFF0F3;
+                    z-index: 9999;
+                    transform: translate3d(0,0,0);
+                    will-change: transform;
+                }
+                @keyframes num-pop-curtain {
+                    0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+                    15% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+                    25% { transform: scale(1) rotate(0deg); opacity: 1; }
+                    30% { transform: scale(1.4); opacity: 0; }
+                    100% { opacity: 0; }
+                }
+                .curtain-num {
+                    position: absolute;
+                    opacity: 0;
+                    will-change: transform, opacity;
+                    animation: num-pop-curtain 3s linear forwards;
+                    font-size: 8rem;
+                    font-weight: 900;
+                    color: #FF3366;
+                    font-family: var(--font-dancing), cursive;
+                }
+                .c-num-3 { animation-delay: 0s; }
+                .c-num-2 { animation-delay: 1s; }
+                .c-num-1 { animation-delay: 2s; }
+
+                @keyframes heart-grow-curtain {
+                    0%, 100% { transform: scale(1); }
+                    10%, 43%, 76% { transform: scale(1.1); }
+                }
+                .curtain-heart {
+                    animation: heart-grow-curtain 3s ease-in-out forwards;
+                    opacity: 0.1;
+                    position: absolute;
+                }
+                @keyframes fade-in-out-curtain {
+                    0%, 100% { opacity: 0; }
+                    10%, 90% { opacity: 1; }
+                }
+                .curtain-content {
+                    position: fixed;
+                    inset: 0;
+                    height: 100dvh;
+                    z-index: 10000;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    animation: fade-in-out-curtain 3.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+                    pointer-events: none;
+                    transform: translate3d(0,0,0);
+                }
+                @keyframes reveal-card-content {
+                    0% { opacity: 0; transform: scale(0.9) translateY(40px); }
+                    100% { opacity: 1; transform: scale(1) translateY(0); }
+                }
+                .reveal-container {
+                    animation: reveal-card-content 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+                    will-change: transform, opacity;
+                }
+                @keyframes countdown-heart-pulse {
+                    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(255, 51, 102, 0)); }
+                    50% { transform: scale(1.1); filter: drop-shadow(0 0 20px rgba(255, 51, 102, 0.4)); }
+                }
+                @keyframes shockwave {
+                    0% { transform: scale(0.5); opacity: 0.8; border-width: 4px; }
+                    100% { transform: scale(2.5); opacity: 0; border-width: 1px; }
                 }
                 @keyframes ring-ping {
                     0% { transform: scale(0.5); opacity: 0.8; }
@@ -815,6 +904,16 @@ export default function ValentineSlugPage() {
                     90% { opacity: 0.4; }
                     100% { transform: translateY(-20vh) rotate(360deg) translateZ(0); opacity: 0; }
                 }
+                @keyframes heartbeat-cute {
+                    0%, 100% { transform: scale(1) translateZ(0); }
+                    50% { transform: scale(1.05) translateZ(0); }
+                }
+                @keyframes float-around {
+                    0%, 100% { transform: translate(0, 0) rotate(0deg) translateZ(0); }
+                    33% { transform: translate(10px, -15px) rotate(5deg) translateZ(0); }
+                    66% { transform: translate(-10px, 10px) rotate(-5deg) translateZ(0); }
+                }
+
                 @keyframes reveal-fade {
                     0% { opacity: 1; }
                     100% { opacity: 0; }
@@ -872,70 +971,63 @@ export default function ValentineSlugPage() {
                     opacity: isTransitioning ? 1 : 0,
                     backgroundColor: '#FFF0F3',
                     background: (countdown === 0 || (isOpen && isTransitioning)) ? '#FFFFFF' : '#FFF0F3',
-                    transition: 'opacity 0.6s ease-in-out',
+                    transition: 'opacity 0.3s ease-out',
                     willChange: 'opacity'
                 }}
             >
-                {/* Loading Pulse during dark period */}
-                {isTransitioning && !countdown && (
-                    <div className="absolute inset-0 flex items-center justify-center z-10">
-                        <div className="flex flex-col items-center gap-3">
-                            <Heart size={56} variant="Bold" color="#FF3366" className="animate-pulse" style={{ opacity: 0.8 }} />
-                            <div className="text-[#FF3366] text-sm font-medium opacity-60 animate-pulse" style={{ fontFamily: 'var(--font-mali)' }}>กำลังโหลด...</div>
-                        </div>
-                    </div>
-                )}
+                {/* Instant feedback mask (No loading pulse to avoid perceived lag) */}
 
+                {/* Simplified background - no blur filter */}
                 <div
-                    className="radiant-aura"
                     style={{
                         position: 'absolute',
-                        width: '120%',
-                        height: '120%',
-                        background: 'radial-gradient(circle at center, #FF3366 0%, transparent 70%)',
-                        opacity: 0.12,
-                        filter: 'blur(80px)',
-                        animation: 'radiant-glow 5s ease-in-out infinite'
+                        inset: '-50%',
+                        background: 'radial-gradient(circle at center, rgba(255, 51, 102, 0.08) 0%, transparent 70%)',
                     }}
                 />
 
-                {countdown !== null && (
-                    <div className="relative flex flex-col items-center justify-center z-20">
-                        {/* Ring Effects */}
-                        <div key={`ring-${countdown}`} className="absolute w-40 h-40 border-2 border-[#FF3366] rounded-full animate-[ring-ping_1s_ease-out_forwards]" />
-                        <div key={`ring-slow-${countdown}`} className="absolute w-40 h-40 border border-[#FF3366] rounded-full animate-[ring-ping_1.5s_ease-out_forwards] opacity-50" />
+                {/* New Curtain Transition UI with Countdown */}
+                {isTransitioning && (
+                    <>
+                        <div className="curtain-panel left-0" style={{ animation: 'curtain-left 3.8s cubic-bezier(0.65, 0, 0.35, 1) forwards' }} />
+                        <div className="curtain-panel right-0" style={{ animation: 'curtain-right 3.8s cubic-bezier(0.65, 0, 0.35, 1) forwards' }} />
 
-                        <Typography
-                            sx={{
-                                color: '#D41442',
-                                mb: 2,
-                                fontWeight: 600,
-                                fontFamily: 'var(--font-mali)',
-                                fontSize: '1rem',
-                                letterSpacing: '0.2em',
-                                opacity: 0.8,
-                                animation: 'fadeIn 0.5s ease-out'
-                            }}
-                        >
-                            PREPARING YOUR HEART
-                        </Typography>
+                        <div className="curtain-content">
+                            <div className="curtain-heart">
+                                <Heart size={250} variant="Bold" color="#FF3366" />
+                            </div>
 
-                        <Typography
-                            key={countdown}
-                            sx={{
-                                color: '#FF3366',
-                                fontWeight: 800,
-                                fontSize: '9rem',
-                                fontFamily: "var(--font-dancing), cursive",
-                                animation: 'countdown-pop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
-                                textShadow: '0 10px 20px rgba(0,0,0,0.05)'
-                            }}
-                        >
-                            {countdown > 0 ? countdown : "❤️"}
-                        </Typography>
-                    </div>
+                            <div className="relative flex items-center justify-center w-full h-40">
+                                {countdown !== 0 ? (
+                                    <>
+                                        <div className="curtain-num c-num-3" style={{ animationName: 'num-pop-curtain' }}>3</div>
+                                        <div className="curtain-num c-num-2" style={{ animationName: 'num-pop-curtain' }}>2</div>
+                                        <div className="curtain-num c-num-1" style={{ animationName: 'num-pop-curtain' }}>1</div>
+                                    </>
+                                ) : (
+                                    <Box className="scale-125 transition-transform duration-500" sx={{ position: 'relative', zIndex: 10 }}>
+                                        <Heart size={150} variant="Bold" color="#FF3366" className="animate-pulse" />
+                                    </Box>
+                                )}
+                            </div>
+
+                            <Typography
+                                sx={{
+                                    mt: 4,
+                                    color: '#D41442',
+                                    fontWeight: 800,
+                                    fontFamily: 'var(--font-mali)',
+                                    fontSize: '1.1rem',
+                                    letterSpacing: '0.2em'
+                                }}
+                            >
+                                {countdown === 0 ? "SURPRISE!" : "GET READY..."}
+                            </Typography>
+                        </div>
+                    </>
                 )}
             </div>
+
 
             {/* Audio */}
             {displayContent.backgroundMusicUrl && (
@@ -979,29 +1071,33 @@ export default function ValentineSlugPage() {
             {/* INTRO SCREEN (GIFT BOX) - LAYER 1 */}
             {!isOpen && (
                 <div
-                    className={`absolute inset-0 z-[100] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out stable-container ${isTransitioning ? 'opacity-0 scale-105' : 'opacity-100'}`}
+                    className={`absolute inset-0 z-[100] flex flex-col items-center justify-center stable-container ${isTransitioning ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100'}`}
                     style={{
                         willChange: 'opacity, transform',
-                        zIndex: 100
+                        zIndex: 100,
+                        visibility: isOpen ? 'hidden' : 'visible',
+                        transition: 'opacity 0.8s ease-in-out, transform 0.8s ease-in-out',
+                        display: isOpen ? 'none' : 'flex',
+                        transform: 'translate3d(0,0,0)'
                     }}
                 >
                     {/* Intro Screen Content */}
-                    <div className="w-full h-full flex flex-col justify-between items-center relative overflow-hidden pt-20 pb-5" onClick={handleOpen}>
+                    <div className="w-full h-full flex flex-col justify-between items-center relative overflow-hidden pt-20 pb-5" onClick={handleOpenBox}>
                         {/* Animated Background Layers */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#FFF0F3] via-[#FFE4EC] to-[#FFD6E0] animate-[glow-pulse_5s_ease-in-out_infinite]" />
+                        <div className={`absolute inset-0 bg-gradient-to-br from-[#FFF0F3] via-[#FFE4EC] to-[#FFD6E0] ${isTransitioning ? '' : 'animate-[glow-pulse_5s_ease-in-out_infinite]'}`} />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#FF336620] via-transparent to-transparent pointer-events-none" />
                         <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-transparent to-white/20 pointer-events-none" />
 
                         {/* Sparkle Effects */}
-                        {[...Array(4)].map((_, i) => (
+                        {introSparkles.map((s) => (
                             <div
-                                key={`sparkle-${i}`}
+                                key={`sparkle-${s.id}`}
                                 className="absolute w-2 h-2 bg-white rounded-full"
                                 style={{
-                                    left: `${15 + Math.random() * 70}%`,
-                                    top: `${20 + Math.random() * 60}%`,
-                                    animation: `sparkle-twinkle ${3 + Math.random() * 2}s ease-in-out infinite`,
-                                    animationDelay: `${Math.random() * 2}s`,
+                                    left: s.left,
+                                    top: s.top,
+                                    animation: `sparkle-twinkle ${s.duration}s ease-in-out infinite`,
+                                    animationDelay: `${s.delay}s`,
                                     boxShadow: '0 0 8px 2px rgba(255, 255, 255, 0.8)'
                                 }}
                             />
@@ -1128,36 +1224,12 @@ export default function ValentineSlugPage() {
                 className={`absolute inset-0 z-10 transition-opacity duration-400 ease-out stable-container ${isOpen ? 'opacity-100' : 'opacity-0'}`}
                 style={{ visibility: isTransitioning || isOpen ? 'visible' : 'hidden', willChange: 'opacity' }}
             >
-                {/* Decorative Hearts Flowing in background */}
-                <div className="fixed inset-0 pointer-events-none z-0 stable-container">
-                    {ambientHearts.map((h) => (
-                        <Heart
-                            key={h.id}
-                            variant="Bold"
-                            color="#FF99AA"
-                            style={{
-                                position: 'absolute',
-                                left: h.left,
-                                width: h.size,
-                                height: h.size,
-                                opacity: 0.2, // Subtle
-                                animation: `float-heart-up ${h.duration}s linear infinite`,
-                                animationDelay: `${h.delay}s`,
-                                transform: 'translate3d(0,0,0)',
-                                willChange: 'transform'
-                            }}
-                        />
-                    ))}
-                </div>
-
-                <div className="fixed inset-0 pointer-events-none stable-container">
-                    {borderHearts.map((h) => (
-                        <Heart key={h.id} variant="Bold" color={h.color} style={{ position: 'absolute', top: `${h.top}%`, left: `${h.left}%`, width: h.size, height: h.size, transform: `rotate(${h.rotation}deg) translate3d(0,0,0)`, zIndex: 1, opacity: 0.9 }} />
-                    ))}
-                </div>
+                {/* Decorative Hearts Flowing in background (Optimized) */}
+                <AmbientHearts hearts={ambientHearts} />
+                <BorderHearts hearts={borderHearts} />
 
                 {/* Main Layout - Balanced */}
-                <div className="w-full h-full flex flex-col items-center justify-between py-4 relative z-10 uppercase-none">
+                <div className={`w-full h-full flex flex-col items-center justify-between py-4 relative z-10 uppercase-none ${isOpen && !isTransitioning ? 'reveal-container' : ''}`}>
 
                     {/* Header - Raised Z-index to avoid card overlap */}
                     <div className="text-center px-4 pt-6 pb-2 relative z-50">
@@ -1173,12 +1245,23 @@ export default function ValentineSlugPage() {
                             effect={"creative"}
                             grabCursor={true}
                             modules={[EffectCreative]}
-                            className="valentine-swiper w-[88vw] max-w-[340px] aspect-[9/16] sm:max-w-[360px]"
+                            className="valentine-swiper w-[88vw] max-w-[340px] aspect-[9/16] sm:max-w-[360px] md:max-w-[420px]"
                             initialSlide={0}
+                            followFinger={true}
+                            touchRatio={0.8}
+                            threshold={20}
+                            resistance={true}
+                            resistanceRatio={0.3}
+                            speed={600}
                             onSwiper={(swiper) => {
                                 swiperRef.current = swiper;
-                                // Balanced stabilization time
-                                setTimeout(() => setIsSwiperReady(true), 600);
+                                setTimeout(() => setIsSwiperReady(true), 400);
+                            }}
+                            onTransitionStart={(swiper: any) => {
+                                swiper.allowTouchMove = false;
+                            }}
+                            onTransitionEnd={(swiper: any) => {
+                                swiper.allowTouchMove = true;
                             }}
                             onSlideChange={handleSlideChange}
                             creativeEffect={swiperCreativeConfig}
@@ -1448,7 +1531,7 @@ export default function ValentineSlugPage() {
                     </div>
 
                     {/* Footer Message - Stable & Smooth Entrance */}
-                    <div className="w-full max-w-xs px-4 pt-2 pb-2 text-center" style={{ minHeight: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="w-full max-w-xs px-4 pt-2 pb-2 text-center" style={{ minHeight: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Paper
                             elevation={0}
                             sx={{
@@ -1462,8 +1545,9 @@ export default function ValentineSlugPage() {
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 gap: 0.5,
-                                transition: 'opacity 0.9s cubic-bezier(0.4, 0.0, 0.2, 1), transform 0.9s cubic-bezier(0.4, 0.0, 0.2, 1), background-color 0.9s ease-out, border-color 0.9s ease-out',
-                                transform: (showMessage && isSwiperReady) ? 'translateY(0)' : 'translateY(10px)',
+                                transition: 'opacity 1.2s ease-out',
+                                willChange: 'opacity',
+                                pointerEvents: (showMessage && isSwiperReady) ? 'auto' : 'none'
                             }}
                         >
                             <Typography
