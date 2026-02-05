@@ -96,6 +96,13 @@ interface ValentineContent {
     campaignName: string;
 }
 
+const proxyUrl = (url: string) => {
+    if (url && url.startsWith('/uploads/')) {
+        return url.replace('/uploads/', '/api/images/');
+    }
+    return url;
+};
+
 export default function ValentineSlugPage() {
     const params = useParams();
     const slug = params.slug as string;
@@ -290,7 +297,7 @@ export default function ValentineSlugPage() {
                         signer: data.signer || DEFAULT_CONTENT.signer,
                         backgroundColor: data.backgroundColor || DEFAULT_CONTENT.backgroundColor,
                         backgroundMusicYoutubeId: data.backgroundMusicYoutubeId || "",
-                        backgroundMusicUrl: data.backgroundMusicUrl || "",
+                        backgroundMusicUrl: data.backgroundMusicUrl ? proxyUrl(data.backgroundMusicUrl) : "",
                         swipeHintColor: data.swipeHintColor || DEFAULT_CONTENT.swipeHintColor,
                         swipeHintText: data.swipeHintText || DEFAULT_CONTENT.swipeHintText,
                         isGameEnabled: data.showGame !== undefined ? data.showGame : true,
@@ -303,7 +310,11 @@ export default function ValentineSlugPage() {
                     }
 
                     if (data.memories && data.memories.length > 0) {
-                        setMemories(data.memories);
+                        const proxiedMemories = data.memories.map((m: any) => ({
+                            ...m,
+                            url: proxyUrl(m.url)
+                        }));
+                        setMemories(proxiedMemories);
                     }
                 } else if (response.status === 404) {
                     setIsExpired(true);

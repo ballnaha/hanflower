@@ -211,6 +211,15 @@ export default function ValentineCardForm({ initialData, isNew = false }: Valent
         if (data.orderedProducts) {
             sanitized.productIds = data.orderedProducts.map((p: any) => p.id) || [];
         }
+        if (data.memories) {
+            sanitized.memories = data.memories.map((m: any) => ({
+                ...m,
+                url: m.url ? (m.url.startsWith('/uploads/') ? m.url.replace('/uploads/', '/api/images/') : m.url) : ""
+            }));
+        }
+        if (data.backgroundMusicUrl && data.backgroundMusicUrl.startsWith('/uploads/')) {
+            sanitized.backgroundMusicUrl = data.backgroundMusicUrl.replace('/uploads/', '/api/images/');
+        }
         return sanitized;
     }, []);
 

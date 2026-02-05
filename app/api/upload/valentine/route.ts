@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import sharp from 'sharp';
 
 export async function POST(request: Request) {
     try {
@@ -13,27 +14,55 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'No file received' }, { status: 400 });
         }
 
-        if (!slug) {
-            return NextResponse.json({ error: 'No slug provided' }, { status: 400 });
-        }
-
         const buffer = Buffer.from(await file.arrayBuffer());
-        // Sanitize filename to be safe
-        const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const filename = `${Date.now()}_${safeFilename}`;
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
 
-        // Ensure upload directory exists: public/uploads/valentine/[slug]
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'valentine', slug);
+        // Ensure upload directory exists: public/uploads
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads');
         await mkdir(uploadDir, { recursive: true });
 
-        await writeFile(path.join(uploadDir, filename), buffer);
+        // Create unique filename with slug prefix for organization
+        const uuid = crypto.randomUUID();
+        const extension = isImage ? 'webp' : file.name.split('.').pop();
+        const filename = `val_${slug || 'anon'}_${uuid}.${extension}`;
+        const filePath = path.join(uploadDir, filename);
+
+        if (isImage) {
+            try {
+                // Try to use sharp for optimization
+                await sharp(buffer)
+                    .resize(1200, 1200, {
+                        fit: 'inside',
+                        withoutEnlargement: true
+                    })
+                    .webp({ quality: 80 })
+                    .toFile(filePath);
+
+                console.log('Successfully processed Valentine image with Sharp:', filename);
+            } catch (sharpError) {
+                console.error('Sharp processing failed, falling back to original upload:', sharpError);
+                // Fallback for images if sharp fails
+                const originalFilename = `val_${slug || 'anon'}_${uuid}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+                const originalPath = path.join(uploadDir, originalFilename);
+                await writeFile(originalPath, buffer);
+
+                return NextResponse.json({
+                    success: true,
+                    url: `/api/images/${originalFilename}`
+                });
+            }
+        } else {
+            // Videos or other files
+            await writeFile(filePath, buffer);
+        }
 
         return NextResponse.json({
             success: true,
-            url: `/uploads/valentine/${slug}/${filename}`
+            url: `/api/images/${filename}`
         });
     } catch (error) {
         console.error('Valentine Upload failed:', error);
-        return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+        return NextResponse.json({ error: 'Upload failed', details: String(error) }, { status: 500 });
     }
 }

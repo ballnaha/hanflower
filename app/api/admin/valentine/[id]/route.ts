@@ -99,9 +99,18 @@ export async function PUT(
         const { urlsToDelete } = body;
         if (urlsToDelete && Array.isArray(urlsToDelete)) {
             for (const url of urlsToDelete) {
-                if (url && url.startsWith('/uploads')) {
+                if (!url) continue;
+
+                let filepath = '';
+                if (url.startsWith('/uploads')) {
+                    filepath = path.join(process.cwd(), 'public', url.startsWith('/') ? url.substring(1) : url);
+                } else if (url.startsWith('/api/images/')) {
+                    const filename = url.replace('/api/images/', '');
+                    filepath = path.join(process.cwd(), 'public', 'uploads', filename);
+                }
+
+                if (filepath) {
                     try {
-                        const filepath = path.join(process.cwd(), 'public', url.substring(1));
                         await fs.unlink(filepath).catch((err: any) => {
                             if (err.code !== 'ENOENT') console.error("Error deleting file:", err);
                         });
@@ -166,24 +175,57 @@ export async function DELETE(
         }
 
         // Delete background music file
-        if (card.backgroundMusicUrl && card.backgroundMusicUrl.startsWith('/uploads')) {
-            try {
-                const filepath = path.join(process.cwd(), 'public', card.backgroundMusicUrl.substring(1));
-                await fs.unlink(filepath).catch(() => { });
-            } catch (err) {
-                console.error("Music file deletion error:", err);
+        if (card.backgroundMusicUrl) {
+            let musicPath = '';
+            if (card.backgroundMusicUrl.startsWith('/uploads')) {
+                musicPath = path.join(process.cwd(), 'public', card.backgroundMusicUrl.startsWith('/') ? card.backgroundMusicUrl.substring(1) : card.backgroundMusicUrl);
+            } else if (card.backgroundMusicUrl.startsWith('/api/images/')) {
+                const filename = card.backgroundMusicUrl.replace('/api/images/', '');
+                musicPath = path.join(process.cwd(), 'public', 'uploads', filename);
+            }
+
+            if (musicPath) {
+                try {
+                    await fs.unlink(musicPath).catch(() => { });
+                } catch (err) {
+                    console.error("Music file deletion error:", err);
+                }
             }
         }
 
-        // Delete the entire folder for this slug if it exists
+        // Delete all memory files
+        if (card.memories && card.memories.length > 0) {
+            for (const memory of card.memories) {
+                if (!memory.url) continue;
+
+                let memoryPath = '';
+                if (memory.url.startsWith('/uploads')) {
+                    memoryPath = path.join(process.cwd(), 'public', memory.url.startsWith('/') ? memory.url.substring(1) : memory.url);
+                } else if (memory.url.startsWith('/api/images/')) {
+                    const filename = memory.url.replace('/api/images/', '');
+                    memoryPath = path.join(process.cwd(), 'public', 'uploads', filename);
+                }
+
+                if (memoryPath) {
+                    try {
+                        await fs.unlink(memoryPath).catch(() => { });
+                    } catch (err) {
+                        console.error("Memory file deletion error:", err);
+                    }
+                }
+            }
+        }
+
+        // Delete the legacy folder for this slug if it exists (backward compatibility)
         if (card.slug) {
             try {
                 const folderPath = path.join(process.cwd(), 'public', 'uploads', 'valentine', card.slug);
-                await fs.rm(folderPath, { recursive: true, force: true }).catch((err: any) => {
-                    console.error("Folder deletion error:", err);
-                });
+                const stats = await fs.stat(folderPath).catch(() => null);
+                if (stats && stats.isDirectory()) {
+                    await fs.rm(folderPath, { recursive: true, force: true }).catch(() => { });
+                }
             } catch (err) {
-                console.error("Slug folder deletion error:", err);
+                // Ignore folder deletion errors
             }
         }
 
