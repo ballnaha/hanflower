@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
@@ -14,6 +15,7 @@ async function main() {
             password: hashedPassword,
         },
         create: {
+            id: crypto.randomUUID(),
             username,
             password: hashedPassword,
             role: 'ADMIN',
