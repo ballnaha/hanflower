@@ -607,7 +607,7 @@ export default function CheckoutPage() {
                                                 <Box sx={{ display: 'flex', gap: 2.5 }}>
                                                     <Box sx={{ width: 80, height: 80, position: 'relative', borderRadius: '12px', overflow: 'hidden', bgcolor: '#FFF', border: '1px solid #F0F0F0', flexShrink: 0 }}>
                                                         <Image
-                                                            src={item.images && item.images[0] ? item.images[0] : '/images/placeholder-product.png'}
+                                                            src={item.image || (item.images && item.images[0]) || '/images/placeholder-product.png'}
                                                             alt={item.title}
                                                             fill
                                                             style={{ objectFit: 'contain', padding: '6px' }}
@@ -805,8 +805,8 @@ export default function CheckoutPage() {
                             </Paper>
                         </Box>
                     </Box>
-                </Box >
-            </Container >
+                </Box>
+            </Container>
 
             <Snackbar
                 open={showLineAlert}
