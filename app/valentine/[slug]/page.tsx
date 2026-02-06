@@ -14,18 +14,32 @@ import HeartCatcher from "./HeartCatcher";
 // ==========================================
 // 🚀 EXTREME PERFORMANCE COMPONENTS (MEMOIZED)
 // ==========================================
+// ⚡ ULTRA-LIGHT SVG HEART (No library overhead)
+const FastHeart = React.memo(({ color, size, style, variant = "Bold" }: any) => (
+    <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill={variant === "Bold" ? color : "none"}
+        stroke={variant === "Bold" ? "none" : color}
+        style={{ ...style, flexShrink: 0 }}
+        xmlns="http://www.w3.org/2000/svg"
+    >
+        <path d="M12.62 20.81c-.34.12-.9.12-1.24 0C8.48 19.82 2 15.69 2 8.69 2 5.6 4.5 3.1 7.59 3.1c1.82 0 3.41.88 4.41 2.23 1-1.35 2.59-2.23 4.41-2.23 3.09 0 5.59 2.5 5.59 5.59 0 7-6.48 11.13-9.38 12.12z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+));
+FastHeart.displayName = 'FastHeart';
+
 const AmbientHearts = React.memo(({ hearts }: { hearts: any[] }) => (
     <div className="fixed inset-0 pointer-events-none z-0" style={{ contain: 'strict' }}>
         {hearts.map((h) => (
-            <Heart
+            <FastHeart
                 key={h.id}
-                variant="Bold"
                 color="#FF99AA"
+                size={h.size}
                 style={{
                     position: 'absolute',
                     left: h.left,
-                    width: h.size,
-                    height: h.size,
                     opacity: 0.15,
                     animation: `float-heart-up ${h.duration}s linear infinite`,
                     animationDelay: `${h.delay}s`,
@@ -38,19 +52,40 @@ const AmbientHearts = React.memo(({ hearts }: { hearts: any[] }) => (
 ));
 AmbientHearts.displayName = 'AmbientHearts';
 
+const BurstHearts = React.memo(({ hearts, source }: { hearts: any[], source: string }) => (
+    <div className="fixed inset-0 pointer-events-none z-[60]" style={{ contain: 'layout paint' }}>
+        {hearts.map((h) => (
+            <FastHeart
+                key={h.id}
+                color={source === 'completion' ? "#FF3366" : "#FF99AA"}
+                size={h.size}
+                style={{
+                    position: 'absolute',
+                    left: `${h.left}%`,
+                    bottom: '-5%',
+                    opacity: 0,
+                    animation: `float-heart-up ${h.duration}s cubic-bezier(0.2, 0, 0.2, 1) forwards`,
+                    animationDelay: `${h.delay}s`,
+                    transform: 'translate3d(0,0,0)',
+                    willChange: 'transform'
+                }}
+            />
+        ))}
+    </div>
+));
+BurstHearts.displayName = 'BurstHearts';
+
 const BorderHearts = React.memo(({ hearts }: { hearts: any[] }) => (
     <div className="fixed inset-0 pointer-events-none z-10" style={{ contain: 'layout paint' }}>
         {hearts.map((h) => (
-            <Heart
+            <FastHeart
                 key={h.id}
-                variant="Bold"
                 color={h.color}
+                size={h.size}
                 style={{
                     position: 'absolute',
                     top: `${h.top}%`,
                     left: `${h.left}%`,
-                    width: h.size,
-                    height: h.size,
                     transform: `rotate(${h.rotation}deg) translate3d(0,0,0)`,
                     opacity: 0.9
                 }}
@@ -175,18 +210,18 @@ export default function ValentineSlugPage() {
     // Swiper Config
     const swiperCreativeConfig = useMemo(() => ({
         prev: {
-            translate: ['-120%', 0, 0],
-            rotate: [0, 0, -15],
+            translate: ['-115%', 0, 0],
+            rotate: [0, 0, -12],
             opacity: 0,
         },
         next: {
-            translate: ['15%', 0, -100],
-            rotate: [0, 0, 5],
-            scale: 0.9,
+            translate: ['12%', 0, -60],
+            rotate: [0, 0, 4],
+            scale: 0.94,
             opacity: 0.6,
         },
         perspective: true,
-        limitProgress: 2,
+        limitProgress: 3,
     }), []);
 
     // Background Music State
@@ -206,29 +241,30 @@ export default function ValentineSlugPage() {
     const swiperRef = useRef<any>(null);
     const isInternalUpdateRef = useRef(false);
 
-    const triggerHeartBurst = useCallback((source: 'interaction' | 'completion' = 'interaction') => {
+    const triggerHeartBurst = useCallback((source: 'interaction' | 'completion' | 'swipe' = 'interaction') => {
         const now = Date.now();
-        // Disallow interaction bursts during critical transition to save CPU
         if (isTransitioning && source === 'interaction') return;
 
-        if (now - lastBurstTimeRef.current < BURST_THROTTLE_MS && source === 'interaction') return;
+        // Throttle interaction/swipe bursts
+        const throttle = source === 'swipe' ? 400 : BURST_THROTTLE_MS;
+        if (now - lastBurstTimeRef.current < throttle && (source === 'interaction' || source === 'swipe')) return;
         lastBurstTimeRef.current = now;
 
-        setHeartBurstSource(source);
+        setHeartBurstSource(source === 'swipe' ? 'interaction' : source);
 
-        const count = source === 'completion' ? 8 : 5;
+        const count = source === 'completion' ? 12 : (source === 'swipe' ? 4 : 6);
         const newHearts = Array.from({ length: count }).map((_, i) => ({
             id: now + i,
-            left: Math.random() * 100,
-            size: source === 'completion' ? Math.random() * 30 + 30 : Math.random() * 20 + 20,
-            duration: Math.random() * 2 + 3,
-            delay: Math.random() * 0.5,
+            left: source === 'completion' ? Math.random() * 100 : (source === 'swipe' ? 30 + Math.random() * 40 : 20 + Math.random() * 60),
+            size: source === 'completion' ? 25 + Math.random() * 25 : (source === 'swipe' ? 12 + Math.random() * 10 : 15 + Math.random() * 15),
+            duration: source === 'swipe' ? 1 + Math.random() * 0.8 : 2 + Math.random() * 1.5,
+            delay: Math.random() * 0.15,
         }));
 
         setBurstHearts(newHearts);
         setTimeout(() => {
-            setBurstHearts([]);
-        }, 3000); // Reduced duration to clear memory faster
+            setBurstHearts(prev => prev.filter(h => !newHearts.some(nh => nh.id === h.id)));
+        }, 2500);
     }, [isTransitioning]);
 
 
@@ -417,22 +453,23 @@ export default function ValentineSlugPage() {
     const handleOpenBox = () => {
         if (isOpen || isTransitioning || isLidOpening) return;
 
-        // 1. TRY FULLSCREEN (Skip for iPhone as it's not supported for generic elements)
-        const isIPhone = typeof window !== 'undefined' && /iPhone/.test(navigator.userAgent);
-        if (typeof document !== 'undefined' && !isIPhone) {
-            const elem = document.documentElement as any;
-            const requestMethod = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
-            if (requestMethod && !document.fullscreenElement) {
-                requestMethod.call(elem).catch(() => { });
-                setIsFullscreen(true);
-            }
-        }
-
+        // 1. STAGGERED START: Visual feedback first
         setIsLidOpening(true);
         triggerHeartBurst('interaction');
 
-        // 2. STAGGERED START: Wait a tiny bit for the OS to handle resize before showing curtains
+        // 2. DELAYED FULLSCREEN & TRANSITION (Wait for lid-pop to start)
         setTimeout(() => {
+            // TRY FULLSCREEN (Skip for iPhone as it's not supported for generic elements)
+            const isIPhone = typeof window !== 'undefined' && /iPhone/.test(navigator.userAgent);
+            if (typeof document !== 'undefined' && !isIPhone && !document.fullscreenElement) {
+                const elem = document.documentElement as any;
+                const requestMethod = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
+                if (requestMethod) {
+                    requestMethod.call(elem).catch(() => { });
+                    setIsFullscreen(true);
+                }
+            }
+
             setIsTransitioning(true);
 
             // Music Build-up
@@ -446,24 +483,18 @@ export default function ValentineSlugPage() {
                 }
             }
 
-            const startSequence = () => {
-                // Sequence for 3s countdown (3, 2, 1) then reveal
+            // Curtain Sequence
+            setTimeout(() => {
+                setCountdown(0);
+                triggerHeartBurst('completion');
+
                 setTimeout(() => {
-                    setCountdown(0);
-                    triggerHeartBurst('completion');
-
-                    // Synchronization Point: Start opening sequence exactly when curtains begin to retreat
-                    setTimeout(() => {
-                        setCountdown(null);
-                        setIsOpen(true);
-                        // Total time matches CSS duration
-                        setTimeout(() => setIsTransitioning(false), 800);
-                    }, 400); // Wait just enough for "1" to fade and "Surprise" to pop
-                }, 3000);
-            };
-
-            startSequence();
-        }, 150); // 150ms buffer is enough for most mobile browsers to stabilize
+                    setCountdown(null);
+                    setIsOpen(true);
+                    setTimeout(() => setIsTransitioning(false), 800);
+                }, 400);
+            }, 3000);
+        }, 300); // 300ms allows the lid-pop animation to be visible before potentially heavy fullscreen/masking
     };
 
     useEffect(() => {
@@ -529,9 +560,13 @@ export default function ValentineSlugPage() {
     const handleSlideChange = useCallback((swiper: any) => {
         const activeIndex = swiper.activeIndex;
         const previousIndex = swiper.previousIndex;
-        const now = Date.now();
 
+        // Use batching (automatic in React 18)
         setCurrentSlideIndex(activeIndex);
+
+        if (activeIndex > 0) {
+            setHasSwiped(true);
+        }
 
         setSeenSlides(prev => {
             if (prev.has(previousIndex)) return prev;
@@ -540,44 +575,19 @@ export default function ValentineSlugPage() {
             return next;
         });
 
-        setRevealedSlides(prev => {
-            if (prev.has(activeIndex)) return prev;
-            const next = new Set(prev);
-            next.add(activeIndex);
-            return next;
-        });
+        // Create the "Surprise" reveal delay
+        setTimeout(() => {
+            setRevealedSlides(prev => {
+                if (prev.has(activeIndex)) return prev;
+                const next = new Set(prev);
+                next.add(activeIndex);
+                return next;
+            });
+        }, 500); // Wait for swipe to finish before starting fade-out
 
-        if (activeIndex > 0) {
-            setHasSwiped(true);
-        }
-
-        if (now - lastBurstTimeRef.current < BURST_THROTTLE_MS) {
-            return;
-        }
-        lastBurstTimeRef.current = now;
-
-        setBurstHearts((prev) => {
-            if (prev.length >= MAX_HEARTS) return prev;
-            const count = Math.min(4, MAX_HEARTS - prev.length);
-            if (count <= 0) return prev;
-
-            const newHearts = Array.from({ length: count }).map((_, i) => ({
-                id: now + i,
-                left: 25 + Math.random() * 50,
-                size: 14 + Math.random() * 14,
-                duration: 1 + Math.random() * 0.8,
-                delay: Math.random() * 0.2,
-            }));
-
-            setTimeout(() => {
-                setBurstHearts((current) =>
-                    current.filter(h => !newHearts.find(nh => nh.id === h.id))
-                );
-            }, 2000);
-
-            return [...prev, ...newHearts];
-        });
-    }, [hasSwiped]);
+        // Use dedicated burst for swipe
+        triggerHeartBurst('swipe');
+    }, [triggerHeartBurst]);
 
     if (isLoading) {
         return (
@@ -809,8 +819,8 @@ export default function ValentineSlugPage() {
                     50% { opacity: 1; transform: scale(1.2); }
                 }
                 @keyframes glow-pulse {
-                    0%, 100% { opacity: 0.3; transform: scale(1); }
-                    50% { opacity: 0.6; transform: scale(1.1); }
+                    0%, 100% { opacity: 0.4; }
+                    50% { opacity: 0.7; }
                 }
                 @media (max-width: 768px) {
                     .sunburst-bg {
@@ -827,14 +837,14 @@ export default function ValentineSlugPage() {
                 .gold-ribbon { background: linear-gradient(90deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C); }
                 
                 @keyframes curtain-left {
-                    0% { transform: translateX(-100%); }
-                    10%, 85% { transform: translateX(0); }
-                    100% { transform: translateX(-100%); }
+                    0% { transform: translate3d(-100%, 0, 0); }
+                    10%, 85% { transform: translate3d(0, 0, 0); }
+                    100% { transform: translate3d(-100%, 0, 0); }
                 }
                 @keyframes curtain-right {
-                    0% { transform: translateX(100%); }
-                    10%, 85% { transform: translateX(0); }
-                    100% { transform: translateX(100%); }
+                    0% { transform: translate3d(100%, 0, 0); }
+                    10%, 85% { transform: translate3d(0, 0, 0); }
+                    100% { transform: translate3d(100%, 0, 0); }
                 }
                 .curtain-panel {
                     position: fixed;
@@ -1135,15 +1145,14 @@ export default function ValentineSlugPage() {
                         {/* Floating Hearts Layer */}
                         <div className="absolute inset-0 pointer-events-none z-0">
                             {introHearts.map((h) => (
-                                <Heart
+                                <FastHeart
                                     key={h.id}
-                                    variant="Bold"
                                     color="#FF3366"
+                                    size={h.size}
                                     style={{
                                         position: 'absolute',
                                         left: h.left,
-                                        width: h.size,
-                                        height: h.size,
+                                        bottom: '-10%',
                                         opacity: 0,
                                         animation: `float-heart-up ${h.duration}s linear infinite`,
                                         animationDelay: `${h.delay}s`,
@@ -1152,10 +1161,11 @@ export default function ValentineSlugPage() {
                                     }}
                                 />
                             ))}
+                            <BurstHearts hearts={burstHearts} source={heartBurstSource} />
                         </div>
 
                         {/* Top Section: Lid */}
-                        <div className={`flex flex-col items-center z-20 ${isLidOpening ? 'animate-[lid-pop_0.6s_ease-out_forwards]' : 'animate-[float-lid_3s_ease-in-out_infinite]'}`}>
+                        <div className={`flex flex-col items-center z-20 ${isLidOpening ? 'animate-[lid-pop_0.6s_ease-out_forwards]' : 'animate-[float-lid_3s_ease-in-out_infinite]'}`} style={{ willChange: 'transform' }}>
                             <div className="relative w-64 h-16 bg-gradient-to-b from-[#9C2020] to-[#D32F2F] rounded-t-2xl shadow-[0_20px_40px_rgba(255,51,102,0.25)] border-b-4 border-black/10">
                                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-full gold-ribbon shadow-inner" />
                                 <div className="absolute -top-8 left-1/2 -translate-x-[90%] w-16 h-12 gold-ribbon rounded-full rotate-[-15deg] shadow-lg border border-yellow-600/20" />
@@ -1257,6 +1267,9 @@ export default function ValentineSlugPage() {
                 <AmbientHearts hearts={ambientHearts} />
                 <BorderHearts hearts={borderHearts} />
 
+                {/* Burst Hearts Layer - Main View */}
+                <BurstHearts hearts={burstHearts} source={heartBurstSource} />
+
                 {/* Main Layout - Balanced */}
                 <div className={`w-full h-full flex flex-col items-center justify-between py-4 relative z-10 uppercase-none ${isOpen && !isTransitioning ? 'reveal-container' : ''}`}>
 
@@ -1277,20 +1290,15 @@ export default function ValentineSlugPage() {
                             className="valentine-swiper w-[88vw] max-w-[340px] aspect-[9/16] sm:max-w-[360px] md:max-w-[420px]"
                             initialSlide={0}
                             followFinger={true}
-                            touchRatio={0.8}
-                            threshold={20}
+                            touchRatio={1}
+                            threshold={10}
                             resistance={true}
-                            resistanceRatio={0.3}
-                            speed={600}
+                            resistanceRatio={0.85}
+                            speed={400}
+                            roundLengths={true}
                             onSwiper={(swiper) => {
                                 swiperRef.current = swiper;
                                 setTimeout(() => setIsSwiperReady(true), 400);
-                            }}
-                            onTransitionStart={(swiper: any) => {
-                                swiper.allowTouchMove = false;
-                            }}
-                            onTransitionEnd={(swiper: any) => {
-                                swiper.allowTouchMove = true;
                             }}
                             onSlideChange={handleSlideChange}
                             creativeEffect={swiperCreativeConfig}
@@ -1377,15 +1385,19 @@ export default function ValentineSlugPage() {
                                                 </div>
                                             )}
 
-                                            {/* Reveal Overlay - White cover that fades out to hide mounting jump */}
+                                            {/* Reveal Overlay - Clean white cover for excitement */}
                                             <div
-                                                className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center transition-opacity duration-700 ease-out"
+                                                className="absolute inset-0 z-40 pointer-events-none flex flex-col items-center justify-center transition-all duration-1000 ease-in-out"
                                                 style={{
-                                                    backgroundColor: '#FFF5F7',
+                                                    backgroundColor: '#FFFFFF',
                                                     opacity: (index === 0 ? (isSwiperReady ? 0 : 1) : (revealedSlides.has(index) ? 0 : 1)),
+                                                    transform: (index === 0 ? (isSwiperReady ? 'scale(1.1)' : 'scale(1)') : (revealedSlides.has(index) ? 'scale(1.1)' : 'scale(1)')),
                                                 }}
                                             >
-                                                <Heart size={48} variant="Bold" color="#FF3366" className="animate-pulse" />
+                                                <FastHeart size={50} color="#FFD1DC" style={{ opacity: 0.6 }} />
+                                                <div className="mt-4 w-12 h-[2px] bg-pink-50 rounded-full overflow-hidden">
+                                                    <div className="w-full h-full bg-pink-200 origin-left animate-[loading-bar_1.5s_infinite]" />
+                                                </div>
                                             </div>
 
 

@@ -482,8 +482,8 @@ export default function CheckoutPage() {
                                                 '& .MuiTabs-indicator': { bgcolor: '#B76E79' }
                                             }}
                                         >
-                                            {paymentSettings.bank.enabled && <Tab label="โอนเงินธนาคาร" sx={{ textTransform: 'none', fontSize: '1rem', fontWeight: 600, fontFamily: 'Inter' }} />}
-                                            {paymentSettings.qr.enabled && <Tab label="สแกน QR Code" sx={{ textTransform: 'none', fontSize: '1rem', fontWeight: 600, fontFamily: 'Inter' }} />}
+                                            {paymentSettings.bank.enabled && <Tab label="โอนเงินธนาคาร" sx={{ textTransform: 'none', fontSize: '1rem', fontWeight: 600, fontFamily: 'Prompt' }} />}
+                                            {paymentSettings.qr.enabled && <Tab label="สแกน QR Code" sx={{ textTransform: 'none', fontSize: '1rem', fontWeight: 600, fontFamily: 'Prompt' }} />}
                                         </Tabs>
                                     </Box>
 
