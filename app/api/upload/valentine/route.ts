@@ -17,20 +17,22 @@ export async function POST(request: Request) {
         const buffer = Buffer.from(await file.arrayBuffer());
         const isImage = file.type.startsWith('image/');
         const isVideo = file.type.startsWith('video/');
+        const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
 
         // Ensure upload directory exists: public/uploads
         const uploadDir = path.join(process.cwd(), 'public', 'uploads');
         await mkdir(uploadDir, { recursive: true });
 
-        // Create unique filename with slug prefix for organization
+        // Create unique filename
         const uuid = crypto.randomUUID();
-        const extension = isImage ? 'webp' : file.name.split('.').pop();
+        // OPTIMIZED: Preserve GIF extension to keep animation, otherwise use webp for images, or original for others
+        const extension = (isImage && !isGif) ? 'webp' : file.name.split('.').pop();
         const filename = `val_${slug || 'anon'}_${uuid}.${extension}`;
         const filePath = path.join(uploadDir, filename);
 
-        if (isImage) {
+        if (isImage && !isGif) {
             try {
-                // Try to use sharp for optimization
+                // Try to use sharp for optimization (Only for non-GIF regular images)
                 await sharp(buffer)
                     .resize(1200, 1200, {
                         fit: 'inside',
@@ -53,8 +55,9 @@ export async function POST(request: Request) {
                 });
             }
         } else {
-            // Videos or other files
+            // GIFs, Videos or other files - SAVE ORIGINAL BUFFER
             await writeFile(filePath, buffer);
+            console.log(`Saved original file (GIF/Video/Other): ${filename}`);
         }
 
         return NextResponse.json({
