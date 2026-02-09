@@ -171,7 +171,8 @@ export default function ValentineSlugPage() {
 
     useEffect(() => {
         // Initial hearts for both layers to prevent empty screen on load
-        const iHearts = Array.from({ length: 12 }).map((_, i) => ({
+        // OPTIMIZED: Reduce counts (12 -> 8) for smoother mobile experience
+        const iHearts = Array.from({ length: 8 }).map((_, i) => ({
             id: i,
             left: `${Math.random() * 100}%`,
             size: 15 + Math.random() * 30,
@@ -180,7 +181,7 @@ export default function ValentineSlugPage() {
         }));
         setIntroHearts(iHearts);
 
-        const aHearts = Array.from({ length: 12 }).map((_, i) => ({
+        const aHearts = Array.from({ length: 8 }).map((_, i) => ({
             id: i + 100,
             left: `${Math.random() * 100}%`,
             size: 10 + Math.random() * 20,
@@ -197,7 +198,7 @@ export default function ValentineSlugPage() {
         for (let i = 0; i < 4; i++) bHeartsArr.push({ id: `r-${i}`, top: 10 + i * 22, left: 90, size: 18 + Math.random() * 8, rotation: Math.random() * 20 - 10, color: colors[i % 4] });
         setBorderHearts(bHeartsArr);
 
-        const sparkles = Array.from({ length: 4 }).map((_, i) => ({
+        const sparkles = Array.from({ length: 2 }).map((_, i) => ({
             id: i,
             left: `${15 + Math.random() * 70}%`,
             top: `${20 + Math.random() * 60}%`,
@@ -235,6 +236,7 @@ export default function ValentineSlugPage() {
     const [countdown, setCountdown] = useState<number | null>(null);
 
     // Refs
+    const containerRef = useRef<HTMLDivElement>(null);
     const lastBurstTimeRef = useRef<number>(0);
     const BURST_THROTTLE_MS = 800;
     const MAX_HEARTS = 6;
@@ -252,7 +254,7 @@ export default function ValentineSlugPage() {
 
         setHeartBurstSource(source === 'swipe' ? 'interaction' : source);
 
-        const count = source === 'completion' ? 12 : (source === 'swipe' ? 4 : 6);
+        const count = source === 'completion' ? 10 : (source === 'swipe' ? 3 : 5);
         const newHearts = Array.from({ length: count }).map((_, i) => ({
             id: now + i,
             left: source === 'completion' ? Math.random() * 100 : (source === 'swipe' ? 30 + Math.random() * 40 : 20 + Math.random() * 60),
@@ -459,11 +461,11 @@ export default function ValentineSlugPage() {
 
         // 2. DELAYED FULLSCREEN & TRANSITION (Wait for lid-pop to start)
         setTimeout(() => {
-            // TRY FULLSCREEN (Skip for iPhone as it's not supported for generic elements)
+            // TRY FULLSCREEN - Use the specific container ref for cleaner transition
             const isIPhone = typeof window !== 'undefined' && /iPhone/.test(navigator.userAgent);
             if (typeof document !== 'undefined' && !isIPhone && !document.fullscreenElement) {
-                const elem = document.documentElement as any;
-                const requestMethod = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
+                const elem = containerRef.current || document.documentElement;
+                const requestMethod = (elem as any).requestFullscreen || (elem as any).webkitRequestFullscreen || (elem as any).mozRequestFullScreen || (elem as any).msRequestFullscreen;
                 if (requestMethod) {
                     requestMethod.call(elem).catch(() => { });
                     setIsFullscreen(true);
@@ -639,36 +641,51 @@ export default function ValentineSlugPage() {
     }
 
     return (
-        <Box className="notranslate" sx={{
-            height: "100dvh",
-            width: "100vw",
-            background: displayContent.backgroundColor || "#FFF0F3",
-            backgroundImage: `radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 1) 0%, rgba(255, 230, 235, 1) 60%, rgba(245, 200, 210, 1) 100%)`,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            overflow: "hidden",
-            position: "relative",
-            fontFamily: "'Comfortaa', sans-serif"
-        }}>
+        <Box
+            ref={containerRef}
+            className="notranslate fullscreen-root"
+            sx={{
+                height: "100dvh",
+                width: "100vw",
+                background: displayContent.backgroundColor || "#FFF0F3",
+                backgroundColor: "var(--valentine-bg)",
+                backgroundImage: `radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 1) 0%, rgba(255, 230, 235, 1) 60%, rgba(245, 200, 210, 1) 100%)`,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                overflow: "hidden",
+                position: "relative",
+                fontFamily: "'Comfortaa', sans-serif"
+            }}>
             <style jsx global>{`
-                html, body {
-                    background-color: #FFF0F3 !important;
+                :root {
+                    --valentine-bg: ${displayContent.backgroundColor || "#FFF0F3"};
+                }
+                :root, html, body {
+                    background-color: var(--valentine-bg) !important;
                     margin: 0;
                     padding: 0;
                     overflow: hidden;
                     height: 100%;
                     width: 100%;
                 }
-                /* Force background color in fullscreen mode and its backdrop to prevent black flicker */
-                :fullscreen, ::-webkit-full-screen, ::-moz-full-screen, :-ms-fullscreen {
-                    background-color: #FFF0F3 !important;
+                /* Robust fullscreen background handling to prevent black flicker */
+                :fullscreen, :modal, 
+                ::backdrop, ::-webkit-backdrop, *::backdrop {
+                    background-color: var(--valentine-bg) !important;
                 }
-                ::backdrop {
-                    background-color: #FFF0F3 !important;
-                }
-                ::-webkit-backdrop {
-                    background-color: #FFF0F3 !important;
+                
+                /* Targeted browser overrides */
+                :-webkit-full-screen { background-color: var(--valentine-bg) !important; }
+                :-moz-full-screen { background-color: var(--valentine-bg) !important; }
+                :-ms-fullscreen { background-color: var(--valentine-bg) !important; }
+                :fullscreen { background-color: var(--valentine-bg) !important; }
+                
+                /* Ensure the element being full-screened has the background */
+                .fullscreen-root:fullscreen {
+                    background-color: var(--valentine-bg) !important;
+                    width: 100vw;
+                    height: 100vh;
                 }
                 @keyframes gentle-bounce {
                     0%, 100% { transform: translateY(0) scale(1); }
@@ -798,22 +815,6 @@ export default function ValentineSlugPage() {
                     100% { transform: translateX(200%); }
                 }
                 .animate-shine { animation: shine-sweep 3s ease-in-out infinite; }
-                .sunburst-bg { 
-                    position: absolute; 
-                    top: -100%; 
-                    left: -100%; 
-                    width: 300%; 
-                    height: 300%; 
-                    background: repeating-conic-gradient(from 0deg, rgba(255, 51, 102, 0.08) 0deg 10deg, rgba(255, 200, 210, 0.05) 10deg 20deg); 
-                    mask-image: radial-gradient(circle at center, black 20%, transparent 70%); 
-                    mix-blend-mode: overlay; 
-                    opacity: 0.7;
-                    animation: sunburst-rotate 30s linear infinite;
-                }
-                @keyframes sunburst-rotate {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
                 @keyframes sparkle-twinkle {
                     0%, 100% { opacity: 0; transform: scale(0.5); }
                     50% { opacity: 1; transform: scale(1.2); }
@@ -821,17 +822,6 @@ export default function ValentineSlugPage() {
                 @keyframes glow-pulse {
                     0%, 100% { opacity: 0.4; }
                     50% { opacity: 0.7; }
-                }
-                @media (max-width: 768px) {
-                    .sunburst-bg {
-                        background: repeating-conic-gradient(from 0deg, rgba(255, 51, 102, 0.06) 0deg 15deg, rgba(255, 200, 210, 0.03) 15deg 30deg);
-                        mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
-                        width: 200%;
-                        height: 200%;
-                        top: -50%;
-                        left: -50%;
-                        animation: sunburst-rotate 40s linear infinite;
-                    }
                 }
                 .shimmer-text { color: #4A151B; }
                 .gold-ribbon { background: linear-gradient(90deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C); }
@@ -1001,8 +991,8 @@ export default function ValentineSlugPage() {
                     zIndex: 2147483647, // Absolute max for fullscreen UI
                     pointerEvents: isTransitioning ? 'auto' : 'none',
                     opacity: isTransitioning ? 1 : 0,
-                    backgroundColor: '#FFF0F3',
-                    background: (countdown === 0 || (isOpen && isTransitioning)) ? '#FFFFFF' : '#FFF0F3',
+                    backgroundColor: displayContent.backgroundColor || '#FFF0F3',
+                    background: (countdown === 0 || (isOpen && isTransitioning)) ? '#FFFFFF' : (displayContent.backgroundColor || '#FFF0F3'),
                     transition: 'opacity 0.3s ease-out',
                     willChange: 'opacity'
                 }}
@@ -1214,8 +1204,7 @@ export default function ValentineSlugPage() {
 
                             <div className="flex flex-col items-center gap-6">
                                 <div className="relative flex items-center justify-center">
-                                    <div className="absolute w-14 h-14 bg-[#FF3366] rounded-full opacity-25 animate-[ring-spread_3s_ease-out_infinite]" />
-                                    <div className="absolute w-14 h-14 bg-[#FF3366] rounded-full opacity-15 animate-[ring-spread_3s_ease-out_infinite_0.8s]" />
+                                    <div className="absolute w-14 h-14 bg-[#FF3366] rounded-full opacity-20 animate-[ring-spread_3s_ease-out_infinite]" />
                                     <div className="absolute w-14 h-14 bg-[#FF99AA] rounded-full opacity-10 animate-[ring-spread_3s_ease-out_infinite_1.5s]" />
                                     <div className="relative z-10 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
                                         <Heart size={20} variant="Bold" color="#FF1493" />
@@ -1314,9 +1303,9 @@ export default function ValentineSlugPage() {
                                             <div className="absolute inset-0 bg-gradient-to-tr from-[#FF336610] via-transparent to-[#FFD1DC15] z-10 pointer-events-none" />
                                             <div className="photo-gloss-dynamic" />
 
-                                            {/* Advanced Micro-Sparkles Area - Stable Deterministic Positions */}
+                                            {/* Advanced Micro-Sparkles Area - Reduced count (5 -> 3) for performance */}
                                             <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
-                                                {[...Array(5)].map((_, i) => {
+                                                {[...Array(3)].map((_, i) => {
                                                     // Stable positions based on index to prevent jump on re-render
                                                     const left = ((i * 19) + (index * 23)) % 85 + 7;
                                                     const top = ((i * 29) + (index * 17)) % 85 + 7;

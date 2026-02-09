@@ -20,13 +20,13 @@ export async function GET(
 
         // If phone number is provided, verify it matches
         if (tel) {
-            whereCondition.tel = tel;
+            whereCondition.customerPhone = tel;
         }
 
         const order = await prisma.order.findFirst({
             where: whereCondition,
             include: {
-                orderitem: {
+                items: {
                     include: {
                         product: true
                     }
@@ -38,10 +38,24 @@ export async function GET(
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
 
-        // Map orderitem to items for consistency with frontend
+        // Format items to include product details directly
+        const formattedItems = order.items.map((item: any) => ({
+            ...item,
+            title: item.product?.title || 'Unknown Product',
+            image: item.product?.image || null,
+        }));
+
+        // Map order for consistency with both frontend pages
         const formattedOrder = {
             ...order,
-            items: order.orderitem
+            items: formattedItems,
+            orderitem: formattedItems, // Support admin page
+            tel: order.customerPhone,
+            grandTotal: order.totalAmount,
+            shippingCost: order.shippingFee,
+            // Assuming subtotal is total - shipping for now if discount is not stored
+            subtotal: Number(order.totalAmount) - Number(order.shippingFee),
+            discount: 0 // Default to 0 if not in DB
         };
 
         return NextResponse.json(formattedOrder);

@@ -14,8 +14,15 @@ export async function GET() {
             }
         });
 
-        // Orders already have 'items' relation, so just return them
-        const formattedOrders = orders;
+        // Map Prisma fields to frontend-expected fields
+        const formattedOrders = orders.map(order => ({
+            ...order,
+            tel: order.customerPhone,
+            grandTotal: order.totalAmount,
+            shippingCost: order.shippingFee,
+            subtotal: Number(order.totalAmount) - Number(order.shippingFee),
+            discount: 0
+        }));
 
         return NextResponse.json(formattedOrders);
     } catch (error) {
