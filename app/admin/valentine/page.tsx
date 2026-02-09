@@ -32,6 +32,7 @@ import {
 } from "iconsax-react";
 import Link from "next/link";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { useSnackbar } from "@/components/admin/AdminSnackbar";
 import QRCode from "qrcode";
 import html2canvas from "html2canvas";
 
@@ -40,6 +41,7 @@ export default function AdminValentinePage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [duplicateConfirmOpen, setDuplicateConfirmOpen] = useState(false);
     const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
     const [qrDialogOpen, setQrDialogOpen] = useState(false);
     const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
@@ -48,6 +50,8 @@ export default function AdminValentinePage() {
     const [qrOrientation, setQrOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
     const cardRef = useRef<HTMLDivElement>(null);
     const [downloading, setDownloading] = useState(false);
+    const [viewingCard, setViewingCard] = useState<any>(null);
+    const { showSuccess, showError } = useSnackbar();
 
     const fetchCards = async () => {
         setLoading(true);
@@ -80,8 +84,14 @@ export default function AdminValentinePage() {
             if (res.ok) {
                 setCards(cards.filter(c => c.id !== selectedCardId));
                 setDeleteConfirmOpen(false);
+                showSuccess("Card deleted successfully");
+            } else {
+                showError("Failed to delete card");
             }
-        } catch (error) { console.error(error); }
+        } catch (error) {
+            console.error(error);
+            showError("An error occurred while deleting");
+        }
     };
 
     const handleShowQR = async (card: any) => {
@@ -89,7 +99,35 @@ export default function AdminValentinePage() {
         const qr = await QRCode.toDataURL(url, { width: 400, margin: 2, color: { dark: '#000000', light: '#00000000' } });
         setQrPreviewUrl(qr);
         setQrTitle(card.title);
+        setViewingCard(card);
         setQrDialogOpen(true);
+    };
+
+    const handleDuplicateClick = (id: string) => {
+        setSelectedCardId(id);
+        setDuplicateConfirmOpen(true);
+    };
+
+    const handleDuplicate = async () => {
+        if (!selectedCardId) return;
+
+        try {
+            setLoading(true);
+            const res = await fetch(`/api/admin/valentine/${selectedCardId}/duplicate`, { method: "POST" });
+            if (res.ok) {
+                await fetchCards();
+                showSuccess("Card duplicated successfully");
+                setDuplicateConfirmOpen(false);
+            } else {
+                console.error("Failed to duplicate");
+                showError("Failed to duplicate card");
+                setLoading(false);
+            }
+        } catch (error) {
+            console.error("Failed to duplicate card", error);
+            showError("An error occurred while duplicating");
+            setLoading(false);
+        }
     };
 
     const handleDownloadCard = async () => {
@@ -217,6 +255,9 @@ export default function AdminValentinePage() {
                                 <Button component={Link} href={`/admin/valentine/${card.id}`} fullWidth variant="outlined" startIcon={<Edit size="16" />} sx={{ borderRadius: '10px', textTransform: 'none', color: '#B76E79', borderColor: '#B76E79', '&:hover': { borderColor: '#A45D68', bgcolor: 'rgba(183, 110, 121, 0.05)' } }}>
                                     Edit Settings
                                 </Button>
+                                <IconButton onClick={() => handleDuplicateClick(card.id)} sx={{ bgcolor: '#E6F7FF', color: '#1890FF', borderRadius: '10px', '&:hover': { bgcolor: '#BAE7FF' } }}>
+                                    <Copy size="18" variant="Bold" color="#1890FF" />
+                                </IconButton>
                                 <IconButton onClick={() => handleDeleteClick(card.id)} sx={{ bgcolor: '#FFF1F0', color: '#FF4D4F', borderRadius: '10px', '&:hover': { bgcolor: '#FFCCC7' } }}>
                                     <Trash size="18" variant="Bold" color="#FF4D4F" />
                                 </IconButton>
@@ -256,75 +297,84 @@ export default function AdminValentinePage() {
 
                     <Box sx={{ textAlign: 'center', py: 2 }}>
                         {/* Card Mockup */}
-                        <Box
-                            ref={cardRef}
-                            sx={{
-                                width: '100%',
-                                maxWidth: qrOrientation === 'horizontal' ? '500px' : '350px',
-                                mx: 'auto',
-                                aspectRatio: qrOrientation === 'horizontal' ? '1.6 / 1' : '1 / 1.6',
-                                background: '#fff', // Ensure solid background for capture
-                                backgroundImage: `url(/images/card_blank${qrOrientation === 'vertical' ? '_vertical' : ''}.jpg)`,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                                borderRadius: '12px',
-                                boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
-                                display: 'flex',
-                                flexDirection: qrOrientation === 'horizontal' ? 'row' : 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                p: 3,
-                                position: 'relative',
-                                overflow: 'hidden'
-                            }}>
-                            {/* Crop Marks for cutting */}
-                            <Box sx={{ position: 'absolute', top: 0, left: 0, width: '15px', height: '15px', borderTop: '1px solid rgba(0,0,0,0.1)', borderLeft: '1px solid rgba(0,0,0,0.1)' }} />
-                            <Box sx={{ position: 'absolute', top: 0, right: 0, width: '15px', height: '15px', borderTop: '1px solid rgba(0,0,0,0.1)', borderRight: '1px solid rgba(0,0,0,0.1)' }} />
-                            <Box sx={{ position: 'absolute', bottom: 0, left: 0, width: '15px', height: '15px', borderBottom: '1px solid rgba(0,0,0,0.1)', borderLeft: '1px solid rgba(0,0,0,0.1)' }} />
-                            <Box sx={{ position: 'absolute', bottom: 0, right: 0, width: '15px', height: '15px', borderBottom: '1px solid rgba(0,0,0,0.1)', borderRight: '1px solid rgba(0,0,0,0.1)' }} />
+                        {/* Card Mockup Wrapper for Capture */}
+                        <Box ref={cardRef} sx={{ bgcolor: '#fff', p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', width: 'fit-content', mx: 'auto' }}>
+                            <Box
+                                sx={{
+                                    width: '100%',
+                                    maxWidth: qrOrientation === 'horizontal' ? '500px' : '350px',
+                                    aspectRatio: qrOrientation === 'horizontal' ? '1.6 / 1' : '1 / 1.6',
+                                    background: '#fff', // Ensure solid background for capture
+                                    backgroundImage: `url(/images/card_blank${qrOrientation === 'vertical' ? '_vertical' : ''}.jpg)`,
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+                                    display: 'flex',
+                                    flexDirection: qrOrientation === 'horizontal' ? 'row' : 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    p: 3,
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}>
+                                {/* Crop Marks for cutting */}
+                                <Box sx={{ position: 'absolute', top: 0, left: 0, width: '15px', height: '15px', borderTop: '1px solid rgba(0,0,0,0.1)', borderLeft: '1px solid rgba(0,0,0,0.1)' }} />
+                                <Box sx={{ position: 'absolute', top: 0, right: 0, width: '15px', height: '15px', borderTop: '1px solid rgba(0,0,0,0.1)', borderRight: '1px solid rgba(0,0,0,0.1)' }} />
+                                <Box sx={{ position: 'absolute', bottom: 0, left: 0, width: '15px', height: '15px', borderBottom: '1px solid rgba(0,0,0,0.1)', borderLeft: '1px solid rgba(0,0,0,0.1)' }} />
+                                <Box sx={{ position: 'absolute', bottom: 0, right: 0, width: '15px', height: '15px', borderBottom: '1px solid rgba(0,0,0,0.1)', borderRight: '1px solid rgba(0,0,0,0.1)' }} />
 
-                            {/* QR Section */}
-                            <Box sx={{
-                                flex: 1,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                zIndex: 1
-                            }}>
-                                <Typography sx={{ fontSize: qrOrientation === 'horizontal' ? '12px' : '14px', fontWeight: 800, mb: 0, color: '#2C1A1D', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                                    {cards.find(c => c.title === qrTitle)?.jobName || "FOR MY LOVE"}
-                                </Typography>
-                                {qrPreviewUrl && (
-                                    <Box sx={{ p: 0, borderRadius: '4px' }}>
-                                        <img src={qrPreviewUrl} style={{ width: qrOrientation === 'horizontal' ? '350px' : '250px', height: 'auto', display: 'block' }} alt="QR" />
-                                    </Box>
-                                )}
-                                <Typography sx={{ fontSize: '10px', mt: 1, color: '#666', fontWeight: 500 }}>
-                                    สแกนเพื่อดูข้อความ
-                                </Typography>
+                                {/* QR Section */}
+                                <Box sx={{
+                                    flex: 1,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: 1
+                                }}>
+                                    <Typography sx={{ fontSize: qrOrientation === 'horizontal' ? '12px' : '14px', fontWeight: 800, mb: 0, color: '#2C1A1D', letterSpacing: '0.1em' }}>
+                                        {viewingCard?.jobName || "For My Love"}
+                                    </Typography>
+                                    {qrPreviewUrl && (
+                                        <Box sx={{ p: 0, borderRadius: '4px' }}>
+                                            <img src={qrPreviewUrl} style={{ width: qrOrientation === 'horizontal' ? '350px' : '250px', height: 'auto', display: 'block' }} alt="QR" />
+                                        </Box>
+                                    )}
+                                    <Typography sx={{ fontSize: '10px', mt: 1, color: '#666', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        สแกนเพื่อดูข้อความ
+                                        <Typography component="span" sx={{ fontSize: '9px', fontFamily: 'monospace', color: '#B76E79', bgcolor: 'rgba(183,110,121,0.1)', px: 0.5, borderRadius: '4px' }}>
+                                            #{viewingCard?.slug}
+                                        </Typography>
+                                    </Typography>
+                                </Box>
+
+                                {/* Heart Section */}
+                                <Box sx={{
+                                    flex: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    mt: qrOrientation === 'vertical' ? 2 : 0,
+                                    zIndex: 1
+                                }}>
+                                    <img
+                                        src="/images/heart.png"
+                                        style={{
+                                            width: qrOrientation === 'horizontal' ? '60%' : '50%',
+                                            height: 'auto',
+                                            opacity: 0.9,
+                                            filter: 'drop-shadow(0 5px 15px rgba(183,110,121,0.2))'
+                                        }}
+                                        alt="Heart"
+                                    />
+                                </Box>
                             </Box>
 
-                            {/* Heart Section */}
-                            <Box sx={{
-                                flex: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                mt: qrOrientation === 'vertical' ? 2 : 0,
-                                zIndex: 1
-                            }}>
-                                <img
-                                    src="/images/heart.png"
-                                    style={{
-                                        width: qrOrientation === 'horizontal' ? '60%' : '50%',
-                                        height: 'auto',
-                                        opacity: 0.9,
-                                        filter: 'drop-shadow(0 5px 15px rgba(183,110,121,0.2))'
-                                    }}
-                                    alt="Heart"
-                                />
-                            </Box>
+                            {/* Hidden Label for Admin */}
+                            <Typography variant="caption" sx={{ mt: 1, color: '#999', fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                                {viewingCard?.slug} • {viewingCard?.jobName || 'No Job Name'}
+                            </Typography>
                         </Box>
 
                         <Typography variant="subtitle2" fontWeight="bold" sx={{ mt: 3, color: '#5D4037' }}>{qrTitle}</Typography>
@@ -350,6 +400,15 @@ export default function AdminValentinePage() {
                 <DialogActions>
                     <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
                     <Button color="error" onClick={handleDelete}>Delete</Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={duplicateConfirmOpen} onClose={() => setDuplicateConfirmOpen(false)}>
+                <DialogTitle>Duplicate this card?</DialogTitle>
+                <DialogContent>This will create a copy of the card with a new slug.</DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDuplicateConfirmOpen(false)}>Cancel</Button>
+                    <Button variant="contained" onClick={handleDuplicate} sx={{ bgcolor: '#FFF', '&:hover': { bgcolor: '#FFF' } }}>Duplicate</Button>
                 </DialogActions>
             </Dialog>
         </AdminLayout>

@@ -226,11 +226,11 @@ export default function ValentineCardForm({ initialData, isNew = false }: Valent
     const { control, handleSubmit, reset, watch, setValue, register, getValues, formState: { errors } } = useForm<ValentineCardFormData>({
         defaultValues: initialData ? sanitizeData(initialData) : {
             jobName: "",
-            title: "FOR MY LOVE",
+            title: "For My Love",
             openingText: "Tap to open",
             greeting: "Happy Valentine's Day",
             subtitle: "My Heart",
-            message: "ขอส่งมอบความรักผ่านดอกไม้ช่อนี้ สุขสันต์วันวาเลนไทน์นะครับ/คะ",
+            message: "ขอส่งมอบความรักผ่านดอกไม้ช่อนี้ สุขสันต์วันวาเลนไทน์นะคะ",
             signer: "HanFlower",
             slug: generateRandomSlug(),
             backgroundColor: "#FFF0F3",

@@ -1,5 +1,6 @@
 import { AdminUIProvider } from '@/context/AdminUIContext';
 import { SessionProvider } from 'next-auth/react';
+import { SnackbarProvider } from '@/components/admin/AdminSnackbar';
 
 export default function AdminRootLayout({
     children,
@@ -9,7 +10,9 @@ export default function AdminRootLayout({
     return (
         <SessionProvider>
             <AdminUIProvider>
-                {children}
+                <SnackbarProvider>
+                    {children}
+                </SnackbarProvider>
             </AdminUIProvider>
         </SessionProvider>
     );
