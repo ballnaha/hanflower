@@ -491,9 +491,13 @@ export default function ValentineSlugPage() {
                 triggerHeartBurst('completion');
 
                 setTimeout(() => {
-                    setCountdown(null);
+                    // setCountdown(null); // REMOVED: Preventing glitch where numbers reappear
                     setIsOpen(true);
-                    setTimeout(() => setIsTransitioning(false), 800);
+                    setTimeout(() => {
+                        setIsTransitioning(false);
+                        // Optional: Reset countdown after transition is fully hidden
+                        setTimeout(() => setCountdown(null), 500);
+                    }, 800);
                 }, 400);
             }, 3000);
         }, 300); // 300ms allows the lid-pop animation to be visible before potentially heavy fullscreen/masking
@@ -647,9 +651,9 @@ export default function ValentineSlugPage() {
             sx={{
                 height: "100dvh",
                 width: "100vw",
-                background: displayContent.backgroundColor || "#FFF0F3",
-                backgroundColor: "var(--valentine-bg)",
+                backgroundColor: displayContent.backgroundColor || "#FFF0F3",
                 backgroundImage: `radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 1) 0%, rgba(255, 230, 235, 1) 60%, rgba(245, 200, 210, 1) 100%)`,
+                backgroundAttachment: 'fixed', // Helps with some mobile spacing
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -663,6 +667,7 @@ export default function ValentineSlugPage() {
                 }
                 :root, html, body {
                     background-color: var(--valentine-bg) !important;
+                    background: var(--valentine-bg) !important;
                     margin: 0;
                     padding: 0;
                     overflow: hidden;
@@ -1370,7 +1375,31 @@ export default function ValentineSlugPage() {
                                                 </div>
                                             ) : (
                                                 <div className="w-full h-full relative">
-                                                    <img src={memory.url} alt={memory.caption} className="w-full h-full object-cover" loading={index === 0 ? "eager" : "lazy"} />
+                                                    {memory.url.toLowerCase().includes('.gif') ? (
+                                                        // GIF Logic: Only play/load when active to ensure it starts from beginning
+                                                        <React.Fragment key={`gif-${index}-${index === currentSlideIndex}`}>
+                                                            {index === currentSlideIndex ? (
+                                                                <img
+                                                                    src={memory.url}
+                                                                    alt={memory.caption}
+                                                                    className="w-full h-full object-cover animate-in fade-in duration-300"
+                                                                    loading="eager"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center bg-gray-50/50">
+                                                                    {memory.thumbnail ? (
+                                                                        <img src={memory.thumbnail} alt="thumbnail" className="w-full h-full object-cover opacity-80 blur-sm" />
+                                                                    ) : (
+                                                                        <div className="flex flex-col items-center justify-center h-full w-full">
+                                                                            <CircularProgress size={24} sx={{ color: '#FF99AA' }} />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </React.Fragment>
+                                                    ) : (
+                                                        <img src={memory.url} alt={memory.caption} className="w-full h-full object-cover" loading={index === 0 ? "eager" : "lazy"} />
+                                                    )}
                                                 </div>
                                             )}
 

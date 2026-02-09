@@ -310,7 +310,7 @@ export default function ValentineCardForm({ initialData, isNew = false }: Valent
 
     const handleRemoveMemory = (index: number) => {
         const memory = watchedMemories[index];
-        if (memory && memory.url && memory.url.startsWith('/uploads')) {
+        if (memory && memory.url && (memory.url.startsWith('/uploads') || memory.url.startsWith('/api/images/'))) {
             setUrlsToDelete(prev => [...prev, memory.url]);
         }
         removeMemory(index);

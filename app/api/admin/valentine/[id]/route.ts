@@ -5,6 +5,33 @@ import { revalidatePath } from "next/cache";
 import fs from 'fs/promises';
 import path from 'path';
 
+// Helper to check if a file is used by other cards
+async function isFileUsed(url: string, currentCardId: string): Promise<boolean> {
+    if (!url) return false;
+
+    // Check memory usage in OTHER cards
+    const memoryCount = await prisma.valentineMemory.count({
+        where: {
+            url: url,
+            cardId: { not: currentCardId }
+        }
+    });
+
+    if (memoryCount > 0) return true;
+
+    // Check background music usage in OTHER cards
+    const musicCount = await prisma.valentineCard.count({
+        where: {
+            backgroundMusicUrl: url,
+            id: { not: currentCardId }
+        }
+    });
+
+    if (musicCount > 0) return true;
+
+    return false;
+}
+
 // GET - Get single valentine card with memories
 export async function GET(
     req: NextRequest,
@@ -95,11 +122,39 @@ export async function PUT(
             }
         });
 
-        // Delete specified files if urlsToDelete is provided (handle both memories and music)
+        // Handle memories update if provided (DELETE first, then Create)
+        if (memories && Array.isArray(memories)) {
+            await prisma.valentineMemory.deleteMany({
+                where: { cardId: id }
+            });
+
+            if (memories.length > 0) {
+                await prisma.valentineMemory.createMany({
+                    data: memories.map((m: any, index: number) => ({
+                        cardId: id,
+                        type: m.type || 'image',
+                        url: m.url,
+                        caption: m.caption,
+                        thumbnail: m.thumbnail,
+                        order: m.order ?? index
+                    }))
+                });
+            }
+        }
+
+        // Delete specified files if urlsToDelete is provided
+        // CRITICAL: Check if file is shared (e.g. from Duplicate) before deleting
         const { urlsToDelete } = body;
         if (urlsToDelete && Array.isArray(urlsToDelete)) {
             for (const url of urlsToDelete) {
                 if (!url) continue;
+
+                // CHECK REFERENCE COUNT
+                const isUsed = await isFileUsed(url, id);
+                if (isUsed) {
+                    console.log(`Skipping deletion of shared file: ${url}`);
+                    continue;
+                }
 
                 let filepath = '';
                 if (url.startsWith('/uploads')) {
@@ -118,28 +173,6 @@ export async function PUT(
                         console.error("File deletion logic error:", err);
                     }
                 }
-            }
-        }
-
-        // Handle memories update if provided
-        if (memories && Array.isArray(memories)) {
-
-            // Simple approach: delete all and recreate
-            await prisma.valentineMemory.deleteMany({
-                where: { cardId: id }
-            });
-
-            if (memories.length > 0) {
-                await prisma.valentineMemory.createMany({
-                    data: memories.map((m: any, index: number) => ({
-                        cardId: id,
-                        type: m.type || 'image',
-                        url: m.url,
-                        caption: m.caption,
-                        thumbnail: m.thumbnail,
-                        order: m.order ?? index
-                    }))
-                });
             }
         }
 
@@ -174,49 +207,47 @@ export async function DELETE(
             return NextResponse.json({ error: "Valentine card not found" }, { status: 404 });
         }
 
-        // Delete background music file
-        if (card.backgroundMusicUrl) {
-            let musicPath = '';
-            if (card.backgroundMusicUrl.startsWith('/uploads')) {
-                musicPath = path.join(process.cwd(), 'public', card.backgroundMusicUrl.startsWith('/') ? card.backgroundMusicUrl.substring(1) : card.backgroundMusicUrl);
-            } else if (card.backgroundMusicUrl.startsWith('/api/images/')) {
-                const filename = card.backgroundMusicUrl.replace('/api/images/', '');
-                musicPath = path.join(process.cwd(), 'public', 'uploads', filename);
-            }
-
-            if (musicPath) {
-                try {
-                    await fs.unlink(musicPath).catch(() => { });
-                } catch (err) {
-                    console.error("Music file deletion error:", err);
-                }
-            }
+        // Step 1: Collect files to potentially delete
+        const filesToDelete = new Set<string>();
+        if (card.backgroundMusicUrl) filesToDelete.add(card.backgroundMusicUrl);
+        if (card.memories) {
+            card.memories.forEach(m => {
+                if (m.url) filesToDelete.add(m.url);
+            });
         }
 
-        // Delete all memory files
-        if (card.memories && card.memories.length > 0) {
-            for (const memory of card.memories) {
-                if (!memory.url) continue;
+        // Step 2: Delete from DB
+        await prisma.valentineCard.delete({
+            where: { id }
+        });
 
-                let memoryPath = '';
-                if (memory.url.startsWith('/uploads')) {
-                    memoryPath = path.join(process.cwd(), 'public', memory.url.startsWith('/') ? memory.url.substring(1) : memory.url);
-                } else if (memory.url.startsWith('/api/images/')) {
-                    const filename = memory.url.replace('/api/images/', '');
-                    memoryPath = path.join(process.cwd(), 'public', 'uploads', filename);
-                }
+        // Step 3: Check usage and delete physical files if unused
+        for (const url of Array.from(filesToDelete)) {
+            const isUsed = await isFileUsed(url, id); // id is deleted, so we check "not: id" (all other cards)
+            if (isUsed) {
+                console.log(`Skipping deletion of shared file: ${url}`);
+                continue;
+            }
 
-                if (memoryPath) {
-                    try {
-                        await fs.unlink(memoryPath).catch(() => { });
-                    } catch (err) {
-                        console.error("Memory file deletion error:", err);
-                    }
+            let filepath = '';
+            if (url.startsWith('/uploads')) {
+                filepath = path.join(process.cwd(), 'public', url.startsWith('/') ? url.substring(1) : url);
+            } else if (url.startsWith('/api/images/')) {
+                const filename = url.replace('/api/images/', '');
+                filepath = path.join(process.cwd(), 'public', 'uploads', filename);
+            }
+
+            if (filepath) {
+                try {
+                    await fs.unlink(filepath).catch(() => { });
+                } catch (err) {
+                    console.error("File deletion error:", err);
                 }
             }
         }
 
         // Delete the legacy folder for this slug if it exists (backward compatibility)
+        // Only if no other card uses this slug (which is unique anyway)
         if (card.slug) {
             try {
                 const folderPath = path.join(process.cwd(), 'public', 'uploads', 'valentine', card.slug);
@@ -229,12 +260,8 @@ export async function DELETE(
             }
         }
 
-        await prisma.valentineCard.delete({
-            where: { id }
-        });
-
         revalidatePath('/valentine');
-        revalidatePath(`/valentine/${card.slug}`);
+        revalidatePath(`/valentine/`);
 
         return NextResponse.json({ success: true });
     } catch (error) {
