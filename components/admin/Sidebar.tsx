@@ -106,8 +106,9 @@ export default function Sidebar() {
             showSuccess('ออกจากระบบสำเร็จ กำลังกลับสู่หน้าแรก...');
 
             setTimeout(() => {
-                window.location.href = '/admin/login';
-            }, 1000);
+                // Force hard reload to clear any memory cache
+                window.location.replace('/admin/login');
+            }, 500);
         } catch (error) {
             showError('เกิดข้อผิดพลาดในการออกจากระบบ');
             setIsLoggingOut(false);

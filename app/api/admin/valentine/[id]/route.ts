@@ -90,13 +90,20 @@ export async function PUT(
         // Validate and filter product IDs
         let validProductIds: string[] = [];
         if (orderedProducts && Array.isArray(orderedProducts) && orderedProducts.length > 0) {
-            const products = await (prisma as any).product.findMany({
-                where: {
-                    id: { in: orderedProducts }
-                },
-                select: { id: true }
-            });
-            validProductIds = products.map((p: any) => p.id);
+            // Ensure we only pass strings to Prisma
+            const safeProductIds = orderedProducts
+                .filter((p: any) => typeof p === 'string' || typeof p === 'number')
+                .map((p: any) => String(p));
+
+            if (safeProductIds.length > 0) {
+                const products = await (prisma as any).product.findMany({
+                    where: {
+                        id: { in: safeProductIds }
+                    },
+                    select: { id: true }
+                });
+                validProductIds = products.map((p: any) => p.id);
+            }
         }
 
         // Update main card data

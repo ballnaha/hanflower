@@ -296,6 +296,7 @@ export default function ValentineCardForm({ initialData, isNew = false }: Valent
         if (!videoUrlInput) return;
         const videoId = extractVideoId(videoUrlInput, videoTypeInput);
         appendMemory({
+            id: generateRandomSlug(),
             type: videoTypeInput,
             url: videoId,
             caption: videoCaptionInput || ""
@@ -423,6 +424,14 @@ export default function ValentineCardForm({ initialData, isNew = false }: Valent
                 finalData.orderedProducts = finalData.productIds;
             }
 
+            // Ensure memories order is updated based on current array position
+            if (finalData.memories && Array.isArray(finalData.memories)) {
+                finalData.memories = finalData.memories.map((m: any, index: number) => ({
+                    ...m,
+                    order: index
+                }));
+            }
+
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
@@ -465,6 +474,7 @@ export default function ValentineCardForm({ initialData, isNew = false }: Valent
         }
 
         const newMemories = acceptedFiles.map(file => ({
+            id: generateRandomSlug(),
             type: file.type.startsWith('video') ? 'video' : 'image',
             url: URL.createObjectURL(file),
             caption: file.name,

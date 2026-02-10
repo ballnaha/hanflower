@@ -19,7 +19,16 @@ export default auth((req) => {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    return NextResponse.next();
+    const response = NextResponse.next();
+
+    // Prevent caching for admin routes to ensure logout works immediately
+    if (isAdminRoute) {
+        response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+        response.headers.set("Pragma", "no-cache");
+        response.headers.set("Expires", "0");
+    }
+
+    return response;
 });
 
 export const config = {
