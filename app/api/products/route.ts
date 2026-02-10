@@ -1,6 +1,6 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { randomUUID } from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,17 +10,17 @@ export async function GET(request: NextRequest) {
         const limitParam = searchParams.get('limit');
         const limit = limitParam ? parseInt(limitParam, 10) : undefined;
 
-        const products = await prisma.product.findMany({
+        const products = await (prisma as any).product.findMany({
             include: {
-                productimage: true,
-                productdetail: true,
-                productfeature: true,
-                productshipping: true,
+                productimages: true,
+                productdetails: true,
+                productfeatures: true,
+                productshippings: true,
                 category: true
             },
             orderBy: [
-                { priority: 'asc' }, // Lower priority value first (asc)
-                { createdAt: 'desc' } // Then by newest
+                { priority: 'asc' },
+                { createdAt: 'desc' }
             ],
             ...(limit && { take: limit })
         });
@@ -43,11 +43,11 @@ export async function GET(request: NextRequest) {
                     originalPriceVelvet: product.originalPriceVelvet?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || "",
                     discountVelvet: product.discountVelvet?.toString() || "",
                     image: product.image,
-                    images: product.productimage?.map((img: any) => img.url) || [],
+                    images: product.productimages?.map((img: any) => img.url) || [],
                     description: product.description,
-                    details: product.productdetail?.map((d: any) => d.text) || [],
-                    features: product.productfeature?.map((f: any) => f.text) || [],
-                    shipping: product.productshipping?.map((s: any) => s.text) || [],
+                    details: product.productdetails?.map((d: any) => d.text) || [],
+                    features: product.productfeatures?.map((f: any) => f.text) || [],
+                    shipping: product.productshippings?.map((s: any) => s.text) || [],
                     stock: product.stock,
                     stockVelvet: product.stockVelvet,
                     priority: product.priority,
@@ -82,9 +82,8 @@ export async function POST(request: NextRequest) {
             categoryId, hasQrCode, qrCodePrice, isNew, isBestSeller
         } = body;
 
-        const newProduct = await prisma.product.create({
+        const newProduct = await (prisma as any).product.create({
             data: {
-                id: randomUUID(),
                 title,
                 sku,
                 slug,
@@ -105,25 +104,24 @@ export async function POST(request: NextRequest) {
                 qrCodePrice: qrCodePrice ? parseFloat(qrCodePrice.toString().replace(/,/g, '')) : 0,
                 isNew: !!isNew,
                 isBestSeller: !!isBestSeller,
-                updatedAt: new Date(),
-                productimage: {
+                productimages: {
                     create: images?.map((url: string) => ({ url })) || []
                 },
-                productdetail: {
+                productdetails: {
                     create: details?.map((text: string) => ({ text })) || []
                 },
-                productfeature: {
+                productfeatures: {
                     create: features?.map((text: string) => ({ text })) || []
                 },
-                productshipping: {
+                productshippings: {
                     create: shipping?.map((text: string) => ({ text })) || []
                 }
             },
             include: {
-                productimage: true,
-                productdetail: true,
-                productfeature: true,
-                productshipping: true
+                productimages: true,
+                productdetails: true,
+                productfeatures: true,
+                productshippings: true
             }
         });
 

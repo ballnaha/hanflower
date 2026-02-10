@@ -5,7 +5,7 @@ export async function GET() {
     try {
         const photos = await (prisma as any).eventPhoto.findMany({
             where: {
-                album: {
+                eventalbum: {
                     OR: [
                         { category: 'Our Customer' },
                         { category: { startsWith: 'Customer:' } }
@@ -17,7 +17,7 @@ export async function GET() {
                 createdAt: 'desc'
             },
             include: {
-                album: {
+                eventalbum: {
                     select: {
                         title: true
                     }
@@ -28,7 +28,7 @@ export async function GET() {
         const result = photos.map((photo: any) => ({
             id: photo.id,
             url: photo.url,
-            caption: photo.caption || photo.album.title
+            caption: photo.caption || photo.eventalbum.title
         }));
 
         return NextResponse.json(result);

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { randomUUID } from 'crypto';
 
 export async function GET() {
     try {
@@ -28,7 +27,6 @@ export async function POST(request: NextRequest) {
 
         const category = await prisma.category.create({
             data: {
-                id: randomUUID(),
                 title,
                 name: title,
                 subtitle: subtitle || null,
@@ -37,7 +35,6 @@ export async function POST(request: NextRequest) {
                 image: image || '',
                 priority: Number(priority) || 0,
                 isActive: isActive !== undefined ? isActive : true,
-                updatedAt: new Date(),
             }
         });
 

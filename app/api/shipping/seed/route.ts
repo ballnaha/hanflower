@@ -12,7 +12,7 @@ export async function GET() {
         ];
 
         for (const method of shippingMethods) {
-            await prisma.shippingmethod.upsert({
+            await prisma.shippingMethod.upsert({
                 where: { code: method.code },
                 update: {},  // Don't update if exists
                 create: method

@@ -11,24 +11,24 @@ async function getProduct(identifier: string) {
     const decodedId = decodeURIComponent(identifier);
 
     // Try to find by id first, then by slug
-    let product = await prisma.product.findUnique({
+    let product = await (prisma as any).product.findUnique({
         where: { id: decodedId },
         include: {
-            productimage: true,
-            productdetail: true,
-            productfeature: true,
-            productshipping: true
+            productimages: true,
+            productdetails: true,
+            productfeatures: true,
+            productshippings: true
         }
     });
 
     if (!product) {
-        product = await prisma.product.findUnique({
+        product = await (prisma as any).product.findUnique({
             where: { slug: decodedId },
             include: {
-                productimage: true,
-                productdetail: true,
-                productfeature: true,
-                productshipping: true
+                productimages: true,
+                productdetails: true,
+                productfeatures: true,
+                productshippings: true
             }
         });
     }
@@ -38,10 +38,10 @@ async function getProduct(identifier: string) {
     // Normalize for the rest of the file
     return {
         ...product,
-        images: product.productimage.map(img => img.url),
-        details: product.productdetail.map(d => d.text),
-        features: product.productfeature.map(f => f.text),
-        shipping: product.productshipping.map(s => s.text)
+        images: product.productimages.map((img: any) => img.url),
+        details: product.productdetails.map((d: any) => d.text),
+        features: product.productfeatures.map((f: any) => f.text),
+        shipping: product.productshippings.map((s: any) => s.text)
     };
 }
 
@@ -100,7 +100,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 // Generate static params for static generation (optional, for performance)
 export async function generateStaticParams() {
-    const products = await prisma.product.findMany({
+    const products = await (prisma as any).product.findMany({
         select: { slug: true }
     });
 

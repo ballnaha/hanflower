@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -46,14 +46,14 @@ export default function NewEventPage() {
     const [categories, setCategories] = useState<string[]>([]);
     const filter = createFilterOptions<string>();
 
-    useState(() => {
+    useEffect(() => {
         fetch('/api/admin/events/categories?excludeCategory=Customer')
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) setCategories(data);
             })
             .catch(err => console.error('Error fetching categories:', err));
-    });
+    }, []);
 
     const [formData, setFormData] = useState({
         title: '',

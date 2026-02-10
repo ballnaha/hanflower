@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -45,7 +45,7 @@ export default function NewCustomerPage() {
     const [categories, setCategories] = useState<string[]>([]);
     const filter = createFilterOptions<string>();
 
-    useState(() => {
+    useEffect(() => {
         fetch('/api/admin/events/categories?category=Customer')
             .then(res => res.json())
             .then(data => {
@@ -55,7 +55,7 @@ export default function NewCustomerPage() {
                 }
             })
             .catch(err => console.error('Error fetching categories:', err));
-    });
+    }, []);
 
     const [formData, setFormData] = useState({
         title: '',

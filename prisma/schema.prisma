@@ -165,6 +165,7 @@ model Coupon {
   minSpend    Float     @default(0)
   maxDiscount Float?
   limit       Int?
+  used        Int       @default(0)
   expireAt    DateTime?
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())

@@ -12,7 +12,7 @@ async function main() {
     ];
 
     for (const method of shippingMethods) {
-        await prisma.shippingmethod.upsert({
+        await (prisma as any).shippingMethod.upsert({
             where: { code: method.code },
             update: method,
             create: method
@@ -21,13 +21,13 @@ async function main() {
     console.log('✅ Seeded shipping methods!');
 
     // Clear existing data
-    await prisma.orderitem.deleteMany();
-    await prisma.order.deleteMany();
-    await prisma.productfeature.deleteMany();
-    await prisma.productdetail.deleteMany();
-    await prisma.productimage.deleteMany();
-    await prisma.product.deleteMany();
-    await prisma.category.deleteMany();
+    await (prisma as any).orderItem.deleteMany();
+    await (prisma as any).order.deleteMany();
+    await (prisma as any).productFeature.deleteMany();
+    await (prisma as any).productDetail.deleteMany();
+    await (prisma as any).productImage.deleteMany();
+    await (prisma as any).product.deleteMany();
+    await (prisma as any).category.deleteMany();
 
     const productsData = [
         {
@@ -210,17 +210,17 @@ async function main() {
     for (const productData of productsData) {
         const { images, details, features, ...product } = productData;
 
-        await prisma.product.create({
+        await (prisma as any).product.create({
             data: {
                 ...product,
                 id: product.sku, // Use SKU as ID since it's unique
-                productimage: {
+                productimages: {
                     create: images.map(url => ({ url }))
                 },
-                productdetail: {
+                productdetails: {
                     create: details.map(text => ({ text }))
                 },
-                productfeature: {
+                productfeatures: {
                     create: features.map(text => ({ text }))
                 }
             }
@@ -270,7 +270,7 @@ async function main() {
     ];
 
     for (const collection of collectionsData) {
-        await prisma.category.upsert({
+        await (prisma as any).category.upsert({
             where: { id: collection.id },
             update: collection,
             create: collection

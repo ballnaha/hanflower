@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 // GET all shipping methods
 export async function GET() {
     try {
-        const methods = await prisma.shippingmethod.findMany({
+        const methods = await prisma.shippingMethod.findMany({
             orderBy: { priority: 'asc' }
         });
 
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
         // Upsert each shipping method
         for (const method of methods) {
-            await prisma.shippingmethod.upsert({
+            await prisma.shippingMethod.upsert({
                 where: { code: method.code },
                 update: {
                     name: method.name,
