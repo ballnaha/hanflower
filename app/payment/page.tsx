@@ -41,6 +41,7 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
+import { useNotification } from '@/context/NotificationContext';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -94,6 +95,7 @@ export default function CheckoutPage() {
     const [tabValue, setTabValue] = useState(0);
     const router = useRouter();
     const { cartItems, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
+    const { showSuccess, showError, showWarning } = useNotification();
     const [shippingInfo, setShippingInfo] = useState({
         name: '',
         tel: '',
@@ -109,15 +111,9 @@ export default function CheckoutPage() {
     const [isCheckingCode, setIsCheckingCode] = useState(false);
     const [couponError, setCouponError] = useState('');
     const [copied, setCopied] = useState(false);
-    const [showLineAlert, setShowLineAlert] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Snackbar State
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' | 'info' }>({
-        open: false,
-        message: '',
-        severity: 'error'
-    });
+
 
     // Shipping Methods from API
     interface ShippingMethodType {
@@ -246,19 +242,19 @@ export default function CheckoutPage() {
     const handlePlaceOrder = async () => {
         // Validation
         if (cartItems.length === 0) {
-            setSnackbar({ open: true, message: 'ตะกร้าสินค้าว่างเปล่า กรุณาเลือกสินค้าก่อน', severity: 'warning' });
+            showWarning('ตะกร้าสินค้าว่างเปล่า กรุณาเลือกสินค้าก่อน');
             return;
         }
         if (!shippingInfo.name) {
-            setSnackbar({ open: true, message: 'กรุณากรอกชื่อ-นามสกุล', severity: 'error' });
+            showError('กรุณากรอกชื่อ-นามสกุล');
             return;
         }
         if (!shippingInfo.tel) {
-            setSnackbar({ open: true, message: 'กรุณากรอกเบอร์โทรศัพท์', severity: 'error' });
+            showError('กรุณากรอกเบอร์โทรศัพท์');
             return;
         }
         if (!shippingInfo.address) {
-            setSnackbar({ open: true, message: 'กรุณากรอกที่อยู่จัดส่ง', severity: 'error' });
+            showError('กรุณากรอกที่อยู่จัดส่ง');
             return;
         }
 
@@ -269,7 +265,7 @@ export default function CheckoutPage() {
             paymentMethodCode = 'qr_code';
         } else {
             // Fallback or error if no payment method is selected/enabled
-            setSnackbar({ open: true, message: 'กรุณาเลือกช่องทางการชำระเงิน', severity: 'error' });
+            showError('กรุณาเลือกช่องทางการชำระเงิน');
             return;
         }
 
@@ -301,19 +297,19 @@ export default function CheckoutPage() {
                 router.push(`/order/${data.orderId}`);
             } else {
                 if (data.error.includes('no longer exist')) {
-                    setSnackbar({ open: true, message: 'สินค้าในตะกร้าเป็นข้อมูลเก่า ระบบจะล้างตะกร้าเพื่อให้เลือกสินค้าใหม่', severity: 'warning' });
+                    showWarning('สินค้าในตะกร้าเป็นข้อมูลเก่า ระบบจะล้างตะกร้าเพื่อให้เลือกสินค้าใหม่');
                     setTimeout(() => {
                         clearCart();
                         router.push('/products');
                     }, 2000);
                 } else {
-                    setSnackbar({ open: true, message: 'เกิดข้อผิดพลาด: ' + data.error, severity: 'error' });
+                    showError('เกิดข้อผิดพลาด: ' + data.error);
                 }
                 setIsSubmitting(false);
             }
         } catch (error) {
             console.error(error);
-            setSnackbar({ open: true, message: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง', severity: 'error' });
+            showError('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
             setIsSubmitting(false);
         }
     };
@@ -322,6 +318,7 @@ export default function CheckoutPage() {
         navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+        showSuccess('คัดลอกเลขบัญชีแล้ว');
     };
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -808,38 +805,6 @@ export default function CheckoutPage() {
                 </Box>
             </Container>
 
-            <Snackbar
-                open={showLineAlert}
-                autoHideDuration={4000}
-                onClose={() => setShowLineAlert(false)}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-            >
-                <Alert onClose={() => setShowLineAlert(false)} severity="success" sx={{ width: '100%', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-                    Order details copied! Please paste in LINE chat.
-                </Alert>
-            </Snackbar>
-
-            {/* Validation Snackbar */}
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={4000}
-                onClose={() => setSnackbar({ ...snackbar, open: false })}
-                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-            >
-                <Alert
-                    onClose={() => setSnackbar({ ...snackbar, open: false })}
-                    severity={snackbar.severity}
-                    sx={{
-                        width: '100%',
-                        borderRadius: '12px',
-                        boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
-                        '& .MuiAlert-icon': { alignItems: 'center' },
-                        fontWeight: 500
-                    }}
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
         </Box >
     );
 }

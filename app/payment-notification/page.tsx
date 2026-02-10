@@ -42,6 +42,7 @@ import {
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useNotification } from '@/context/NotificationContext';
 
 export default function PaymentNotificationPage() {
     const [orderId, setOrderId] = useState('');
@@ -58,6 +59,7 @@ export default function PaymentNotificationPage() {
     const [copied, setCopied] = useState(false);
     const [paymentSettings, setPaymentSettings] = useState<any>(null);
     const [isReuploading, setIsReuploading] = useState(false);
+    const { showSuccess } = useNotification();
 
     const resizeImage = (file: File, maxWidth: number = 1200, maxHeight: number = 1200): Promise<File> => {
         return new Promise((resolve) => {
@@ -213,6 +215,7 @@ export default function PaymentNotificationPage() {
         navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+        showSuccess('คัดลอกสำเร็จแล้ว');
     };
 
     const getStatusLabel = (status: string) => {

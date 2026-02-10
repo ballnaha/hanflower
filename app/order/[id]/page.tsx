@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toPng } from "html-to-image";
 import OrderReceipt from '@/components/order/OrderReceipt';
+import { useNotification } from '@/context/NotificationContext';
 
 export default function OrderSuccessPage() {
     const params = useParams();
@@ -17,6 +18,7 @@ export default function OrderSuccessPage() {
     const [file, setFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+    const { showSuccess } = useNotification();
     const invoiceRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -85,14 +87,13 @@ export default function OrderSuccessPage() {
 
     const handleCopy = () => {
         navigator.clipboard.writeText('012-3-45678-9');
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        showSuccess('คัดลอกเลขที่บัญชีแล้ว');
     };
 
     const handleCopySummary = () => {
         const summary = `รายการสั่งซื้อ #${order.id}\nลูกค้า: ${order.customerName}\nโทร: ${order.tel}\nยอดรวม: ${parseFloat(order.grandTotal).toLocaleString()} บาท\n------------------\n${(order.items || []).map((i: any) => `- ${i.title} x${i.quantity}`).join('\n')}`;
         navigator.clipboard.writeText(summary);
-        alert('คัดลอกสรุปรายการสั่งซื้อแล้ว คุณสามารถนำไปวางใน LINE ได้ทันที');
+        showSuccess('คัดลอกสรุปรายการสั่งซื้อแล้ว');
     };
 
     const handleNotifyLine = () => {
