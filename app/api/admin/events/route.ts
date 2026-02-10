@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
@@ -16,14 +17,14 @@ export async function GET(request: Request) {
             where.category = { not: { contains: excludeCategory } };
         }
 
-        const albums = await (prisma as any).eventalbum.findMany({
+        const albums = await (prisma as any).eventAlbum.findMany({
             where,
             orderBy: {
                 priority: 'desc'
             },
             include: {
                 _count: {
-                    select: { eventphoto: true }
+                    select: { eventphotos: true }
                 }
             }
         });
@@ -31,7 +32,7 @@ export async function GET(request: Request) {
         const transformed = albums.map((album: any) => ({
             ...album,
             _count: {
-                photos: album._count?.eventphoto || 0
+                photos: album._count?.eventphotos || 0
             }
         }));
 
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        const album = await (prisma as any).eventalbum.create({
+        const album = await (prisma as any).eventAlbum.create({
             data: {
                 title,
                 category,
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
                 coverImage,
                 priority: parseInt(String(priority)) || 0,
                 isActive: isActive !== undefined ? isActive : true,
-                eventphoto: photos && Array.isArray(photos) ? {
+                eventphotos: photos && Array.isArray(photos) ? {
                     create: photos.map((p: any, idx: number) => ({
                         url: p.url,
                         caption: p.caption || '',
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
                 } : undefined
             },
             include: {
-                eventphoto: true
+                eventphotos: true
             }
         });
 

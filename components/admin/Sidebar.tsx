@@ -95,8 +95,17 @@ export default function Sidebar() {
 
             // Clear cookies explicitly if needed (Next-Auth handles its own but good for thoroughness)
             document.cookie.split(";").forEach((c) => {
-                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                const name = c.split("=")[0].trim();
+                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/admin";
             });
+
+            // Call the custom logout API to clear the admin-token if it exists
+            try {
+                await fetch('/api/admin/logout', { method: 'POST' });
+            } catch (e) {
+                console.error("Custom logout API failed", e);
+            }
 
             showSuccess('ออกจากระบบสำเร็จ กำลังกลับสู่หน้าแรก...');
 

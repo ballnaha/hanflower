@@ -2,14 +2,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "crypto";
 
 // GET - List all valentine cards for admin
 export async function GET() {
     try {
-        const cards = await prisma.valentinecard.findMany({
+        const cards = await (prisma as any).valentineCard.findMany({
             include: {
                 _count: {
-                    select: { valentinememory: true }
+                    select: { valentinememories: true }
                 },
                 valentinecardtoproduct: true
             },
@@ -20,7 +21,7 @@ export async function GET() {
         const transformed = cards.map((card: any) => ({
             ...card,
             _count: {
-                memories: card._count?.valentinememory || 0
+                memories: card._count?.valentinememories || 0
             },
             orderedProducts: card.valentinecardtoproduct
         }));
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
             const potentialIds = orderedProducts.filter((id: any) => !!id && typeof id === 'string');
 
             if (potentialIds.length > 0) {
-                const products = await prisma.product.findMany({
+                const products = await (prisma as any).product.findMany({
                     where: {
                         id: { in: potentialIds }
                     },
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const card = await prisma.valentinecard.create({
+        const card = await (prisma as any).valentineCard.create({
             data: {
                 slug,
                 jobName: jobName || null,
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
                 note: note || null,
                 status: status || "active",
                 disabledAt: disabledAt ? new Date(disabledAt) : null,
-                valentinememory: {
+                valentinememories: {
                     create: memories && Array.isArray(memories) ? memories.map((m: any, index: number) => ({
                         type: m.type || 'image',
                         url: m.url,

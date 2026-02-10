@@ -10,7 +10,7 @@ async function isFileUsed(url: string, currentCardId: string): Promise<boolean> 
     if (!url) return false;
 
     // Check memory usage in OTHER cards
-    const memoryCount = await prisma.valentinememory.count({
+    const memoryCount = await (prisma as any).valentineMemory.count({
         where: {
             url: url,
             cardId: { not: currentCardId }
@@ -20,7 +20,7 @@ async function isFileUsed(url: string, currentCardId: string): Promise<boolean> 
     if (memoryCount > 0) return true;
 
     // Check background music usage in OTHER cards
-    const musicCount = await prisma.valentinecard.count({
+    const musicCount = await (prisma as any).valentineCard.count({
         where: {
             backgroundMusicUrl: url,
             id: { not: currentCardId }
@@ -41,10 +41,10 @@ export async function GET(
         const params = await context.params;
         const { id } = params;
 
-        const card = await prisma.valentinecard.findUnique({
+        const card = await (prisma as any).valentineCard.findUnique({
             where: { id },
             include: {
-                valentinememory: {
+                valentinememories: {
                     orderBy: { order: 'asc' }
                 },
                 valentinecardtoproduct: true
@@ -58,7 +58,7 @@ export async function GET(
         // Transform for frontend
         const transformed = {
             ...card,
-            memories: card.valentinememory,
+            memories: card.valentinememories,
             orderedProducts: card.valentinecardtoproduct?.map((p: any) => p.B) || []
         };
 
@@ -90,7 +90,7 @@ export async function PUT(
         // Validate and filter product IDs
         let validProductIds: string[] = [];
         if (orderedProducts && Array.isArray(orderedProducts) && orderedProducts.length > 0) {
-            const products = await prisma.product.findMany({
+            const products = await (prisma as any).product.findMany({
                 where: {
                     id: { in: orderedProducts }
                 },
@@ -100,7 +100,7 @@ export async function PUT(
         }
 
         // Update main card data
-        const card = await prisma.valentinecard.update({
+        const card = await (prisma as any).valentineCard.update({
             where: { id },
             data: {
                 slug,
@@ -132,12 +132,12 @@ export async function PUT(
 
         // Handle memories update if provided (DELETE first, then Create)
         if (memories && Array.isArray(memories)) {
-            await prisma.valentinememory.deleteMany({
+            await (prisma as any).valentineMemory.deleteMany({
                 where: { cardId: id }
             });
 
             if (memories.length > 0) {
-                await prisma.valentinememory.createMany({
+                await (prisma as any).valentineMemory.createMany({
                     data: memories.map((m: any, index: number) => ({
                         cardId: id,
                         type: m.type || 'image',
@@ -151,13 +151,11 @@ export async function PUT(
         }
 
         // Delete specified files if urlsToDelete is provided
-        // CRITICAL: Check if file is shared (e.g. from Duplicate) before deleting
         const { urlsToDelete } = body;
         if (urlsToDelete && Array.isArray(urlsToDelete)) {
             for (const url of urlsToDelete) {
                 if (!url) continue;
 
-                // CHECK REFERENCE COUNT
                 const isUsed = await isFileUsed(url, id);
                 if (isUsed) {
                     console.log(`Skipping deletion of shared file: ${url}`);
@@ -206,9 +204,9 @@ export async function DELETE(
         const params = await context.params;
         const { id } = params;
 
-        const card = await prisma.valentinecard.findUnique({
+        const card = await (prisma as any).valentineCard.findUnique({
             where: { id },
-            include: { valentinememory: true }
+            include: { valentinememories: true }
         });
 
         if (!card) {
@@ -218,20 +216,20 @@ export async function DELETE(
         // Step 1: Collect files to potentially delete
         const filesToDelete = new Set<string>();
         if (card.backgroundMusicUrl) filesToDelete.add(card.backgroundMusicUrl);
-        if (card.valentinememory) {
-            card.valentinememory.forEach(m => {
+        if (card.valentinememories) {
+            card.valentinememories.forEach((m: any) => {
                 if (m.url) filesToDelete.add(m.url);
             });
         }
 
         // Step 2: Delete from DB
-        await prisma.valentinecard.delete({
+        await (prisma as any).valentineCard.delete({
             where: { id }
         });
 
         // Step 3: Check usage and delete physical files if unused
         for (const url of Array.from(filesToDelete)) {
-            const isUsed = await isFileUsed(url, id); // id is deleted, so we check "not: id" (all other cards)
+            const isUsed = await isFileUsed(url, id);
             if (isUsed) {
                 console.log(`Skipping deletion of shared file: ${url}`);
                 continue;
@@ -254,8 +252,6 @@ export async function DELETE(
             }
         }
 
-        // Delete the legacy folder for this slug if it exists (backward compatibility)
-        // Only if no other card uses this slug (which is unique anyway)
         if (card.slug) {
             try {
                 const folderPath = path.join(process.cwd(), 'public', 'uploads', 'valentine', card.slug);

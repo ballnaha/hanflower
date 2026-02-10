@@ -1,11 +1,11 @@
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { randomUUID } from 'crypto';
 
 export async function GET() {
     try {
-        const users = await prisma.user.findMany({
+        const users = await (prisma as any).user.findMany({
             select: {
                 id: true,
                 username: true,
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
         }
 
-        const existingUser = await prisma.user.findUnique({
+        const existingUser = await (prisma as any).user.findUnique({
             where: { username },
         });
 
@@ -41,13 +41,11 @@ export async function POST(request: Request) {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const user = await prisma.user.create({
+        const user = await (prisma as any).user.create({
             data: {
-                id: randomUUID(),
                 username,
                 password: hashedPassword,
-                role: role || 'ADMIN',
-                updatedAt: new Date(),
+                role: role || 'ADMIN'
             },
         });
 

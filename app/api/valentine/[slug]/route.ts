@@ -11,7 +11,7 @@ export async function GET(
         const { slug } = params;
         const now = new Date();
 
-        const valentine = await prisma.valentinecard.findFirst({
+        const valentine = await (prisma as any).valentineCard.findFirst({
             where: {
                 slug: slug,
                 status: 'active',
@@ -22,7 +22,7 @@ export async function GET(
                 ]
             },
             include: {
-                valentinememory: {
+                valentinememories: {
                     orderBy: {
                         order: 'asc'
                     }
@@ -40,9 +40,9 @@ export async function GET(
         // Transform for frontend
         const transformed = {
             ...valentine,
-            memories: valentine.valentinememory
+            memories: valentine.valentinememories
         };
-        delete (transformed as any).valentinememory;
+        delete (transformed as any).valentinememories;
 
         return NextResponse.json(transformed);
     } catch (error) {

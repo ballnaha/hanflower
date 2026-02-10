@@ -7,8 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model category {
-  id          String    @id
+model Category {
+  id          String    @id @default(uuid())
   name        String?
   title       String
   subtitle    String?
@@ -19,11 +19,13 @@ model category {
   priority    Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  product     product[]
+  products     Product[]
+
+  @@map("category")
 }
 
-model product {
-  id                     String                   @id
+model Product {
+  id                     String                   @id @default(uuid())
   title                  String
   slug                   String                   @unique(map: "Product_slug_key")
   type                   String
@@ -46,55 +48,60 @@ model product {
   priceVelvet            Decimal?                 @db.Decimal(10, 2)
   qrCodePrice            Decimal?                 @default(150.00) @db.Decimal(10, 2)
   stockVelvet            Int                      @default(0)
-  valentinecardtoproduct valentinecardtoproduct[]
-  orderitem              orderitem[]
-  category               category?                @relation(fields: [categoryId], references: [id], map: "Product_categoryId_fkey")
-  productdetail          productdetail[]
-  productfeature         productfeature[]
-  productimage           productimage[]
-  productshipping        productshipping[]
+  valentinecardtoproduct ValentineCardToProduct[]
+  orderitems              OrderItem[]
+  category               Category?                @relation(fields: [categoryId], references: [id], map: "Product_categoryId_fkey")
+  productdetails          ProductDetail[]
+  productfeatures         ProductFeature[]
+  productimages           ProductImage[]
+  productshippings        ProductShipping[]
 
   @@index([categoryId], map: "Product_categoryId_fkey")
+  @@map("product")
 }
 
-model productdetail {
+model ProductDetail {
   id        String  @id @default(uuid())
   text      String
   productId String
-  product   product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductDetail_productId_fkey")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductDetail_productId_fkey")
 
   @@index([productId], map: "ProductDetail_productId_fkey")
+  @@map("productdetail")
 }
 
-model productfeature {
+model ProductFeature {
   id        String  @id @default(uuid())
   text      String
   productId String
-  product   product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductFeature_productId_fkey")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductFeature_productId_fkey")
 
   @@index([productId], map: "ProductFeature_productId_fkey")
+  @@map("productfeature")
 }
 
-model productimage {
+model ProductImage {
   id        String  @id @default(uuid())
   url       String
   productId String
-  product   product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductImage_productId_fkey")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductImage_productId_fkey")
 
   @@index([productId], map: "ProductImage_productId_fkey")
+  @@map("productimage")
 }
 
-model productshipping {
+model ProductShipping {
   id        String  @id @default(uuid())
   text      String
   productId String
-  product   product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductShipping_productId_fkey")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductShipping_productId_fkey")
 
   @@index([productId], map: "ProductShipping_productId_fkey")
+  @@map("productshipping")
 }
 
-model order {
-  id              String      @id
+model Order {
+  id              String      @id @default(uuid())
   orderNumber     String      @unique(map: "Order_orderNumber_key")
   customerName    String
   customerEmail   String
@@ -109,24 +116,27 @@ model order {
   notes           String?     @db.Text
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
-  items           orderitem[]
+  items           OrderItem[]
+
+  @@map("order")
 }
 
-model orderitem {
-  id        String  @id
+model OrderItem {
+  id        String  @id @default(uuid())
   orderId   String
   productId String
   quantity  Int
   price     Decimal @db.Decimal(10, 2)
-  order     order   @relation(fields: [orderId], references: [id], onDelete: Cascade, map: "OrderItem_orderId_fkey")
-  product   product @relation(fields: [productId], references: [id], map: "OrderItem_productId_fkey")
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade, map: "OrderItem_orderId_fkey")
+  product   Product @relation(fields: [productId], references: [id], map: "OrderItem_productId_fkey")
 
   @@index([orderId], map: "OrderItem_orderId_fkey")
   @@index([productId], map: "OrderItem_productId_fkey")
+  @@map("orderitem")
 }
 
-model user {
-  id        String   @id
+model User {
+  id        String   @id @default(uuid())
   password  String
   role      String   @default("user")
   createdAt DateTime @default(now())
@@ -134,16 +144,20 @@ model user {
   email     String?  @unique(map: "User_email_key")
   name      String?
   username  String   @unique
+
+  @@map("user")
 }
 
-model setting {
+model Setting {
   key         String   @id
   value       String   @db.Text
   description String?
   updatedAt   DateTime @updatedAt
+
+  @@map("setting")
 }
 
-model coupon {
+model Coupon {
   id          String    @id @default(cuid())
   code        String    @unique
   discount    Float
@@ -155,9 +169,11 @@ model coupon {
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@map("coupon")
 }
 
-model shippingmethod {
+model ShippingMethod {
   id            String   @id @default(cuid())
   code          String   @unique
   name          String
@@ -168,21 +184,23 @@ model shippingmethod {
   priority      Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@map("shippingmethod")
 }
 
-model valentinecardtoproduct {
+model ValentineCardToProduct {
   A             String
   B             String
-  valentinecard valentinecard @relation(fields: [A], references: [id], onDelete: Cascade, map: "_ValentineCardToproduct_A_fkey")
-  product       product       @relation(fields: [B], references: [id], onDelete: Cascade, map: "_ValentineCardToproduct_B_fkey")
+  valentineCard ValentineCard @relation(fields: [A], references: [id], onDelete: Cascade, map: "_ValentineCardToproduct_A_fkey")
+  product       Product       @relation(fields: [B], references: [id], onDelete: Cascade, map: "_ValentineCardToproduct_B_fkey")
 
   @@unique([A, B], map: "_ValentineCardToproduct_AB_unique")
   @@index([B], map: "_ValentineCardToproduct_B_index")
   @@map("_valentinecardtoproduct")
 }
 
-model eventalbum {
-  id          String       @id
+model EventAlbum {
+  id          String       @id @default(uuid())
   title       String
   category    String?
   location    String?
@@ -192,24 +210,27 @@ model eventalbum {
   isActive    Boolean      @default(true)
   priority    Int          @default(0)
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime
-  eventphoto  eventphoto[]
+  updatedAt   DateTime     @updatedAt
+  eventphotos EventPhoto[]
+
+  @@map("eventalbum")
 }
 
-model eventphoto {
-  id         String     @id
+model EventPhoto {
+  id         String     @id @default(uuid())
   albumId    String
   url        String
   caption    String?
   order      Int        @default(0)
   createdAt  DateTime   @default(now())
-  eventalbum eventalbum @relation(fields: [albumId], references: [id], onDelete: Cascade, map: "EventPhoto_albumId_fkey")
+  eventalbum EventAlbum @relation(fields: [albumId], references: [id], onDelete: Cascade, map: "EventPhoto_albumId_fkey")
 
   @@index([albumId], map: "EventPhoto_albumId_fkey")
+  @@map("eventphoto")
 }
 
-model valentinecard {
-  id                       String                   @id
+model ValentineCard {
+  id                       String                   @id @default(uuid())
   slug                     String                   @unique(map: "ValentineCard_slug_key")
   jobName                  String?
   title                    String
@@ -231,14 +252,16 @@ model valentinecard {
   customerAddress          String?                  @db.Text
   note                     String?                  @db.Text
   createdAt                DateTime                 @default(now())
-  updatedAt                DateTime
-  valentinecardtoproduct   valentinecardtoproduct[]
-  valentinememory          valentinememory[]
-  valentinescore           valentinescore[]
+  updatedAt                DateTime                 @updatedAt
+  valentinecardtoproduct   ValentineCardToProduct[]
+  valentinememories        ValentineMemory[]
+  valentinescores          ValentineScore[]
+
+  @@map("valentinecard")
 }
 
-model valentinememory {
-  id            String        @id
+model ValentineMemory {
+  id            String        @id @default(uuid())
   cardId        String
   type          String        @default("image")
   url           String        @db.Text
@@ -246,22 +269,24 @@ model valentinememory {
   thumbnail     String?       @db.Text
   order         Int           @default(0)
   createdAt     DateTime      @default(now())
-  updatedAt     DateTime
-  valentinecard valentinecard @relation(fields: [cardId], references: [id], onDelete: Cascade, map: "ValentineMemory_cardId_fkey")
+  updatedAt     DateTime      @updatedAt
+  valentineCard ValentineCard @relation(fields: [cardId], references: [id], onDelete: Cascade, map: "ValentineMemory_cardId_fkey")
 
   @@index([cardId], map: "ValentineMemory_cardId_fkey")
+  @@map("valentinememory")
 }
 
-model valentinescore {
-  id            String        @id
+model ValentineScore {
+  id            String        @id @default(uuid())
   cardId        String
   score         Int
   createdAt     DateTime      @default(now())
   name          String
   playerId      String
-  valentinecard valentinecard @relation(fields: [cardId], references: [id], onDelete: Cascade, map: "ValentineScore_cardId_fkey")
+  valentineCard ValentineCard @relation(fields: [cardId], references: [id], onDelete: Cascade, map: "ValentineScore_cardId_fkey")
 
   @@index([cardId], map: "ValentineScore_cardId_fkey")
   @@index([playerId], map: "ValentineScore_playerId_idx")
   @@index([score], map: "ValentineScore_score_idx")
+  @@map("valentinescore")
 }

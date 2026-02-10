@@ -12,10 +12,10 @@ export async function POST(
         const { id } = params;
 
         // 1. Fetch the original card
-        const originalCard = await prisma.valentinecard.findUnique({
+        const originalCard = await (prisma as any).valentineCard.findUnique({
             where: { id },
             include: {
-                valentinememory: true,
+                valentinememories: true,
                 valentinecardtoproduct: true
             }
         });
@@ -27,21 +27,20 @@ export async function POST(
         // 2. Generate new unique slug
         const generateSlug = () => Math.random().toString(36).substring(2, 8);
         let newSlug = generateSlug();
-        while (await prisma.valentinecard.findUnique({ where: { slug: newSlug } })) {
+        while (await (prisma as any).valentineCard.findUnique({ where: { slug: newSlug } })) {
             newSlug = generateSlug();
         }
 
         // 3. Create the new card
-        // Only exclude unique IDs and timestamps
-        const { id: _, createdAt, updatedAt, valentinememory, valentinecardtoproduct, slug, jobName, ...cardData } = originalCard as any;
+        const { id: _, createdAt, updatedAt, valentinememories, valentinecardtoproduct, slug, jobName, ...cardData } = originalCard as any;
 
-        const newCard = await prisma.valentinecard.create({
+        const newCard = await (prisma as any).valentineCard.create({
             data: {
                 ...cardData,
                 slug: newSlug,
                 jobName: jobName ? `${jobName} (Copy)` : null,
-                valentinememory: {
-                    create: valentinememory.map((m: any) => ({
+                valentinememories: {
+                    create: valentinememories.map((m: any) => ({
                         type: m.type,
                         url: m.url, // Reusing the same image URL
                         caption: m.caption,
