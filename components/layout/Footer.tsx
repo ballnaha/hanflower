@@ -49,8 +49,8 @@ export default function Footer() {
                         }}
                     >
                         {[
-                            { label: 'Shop', href: '/products' },
-                            { label: 'Story', href: '/about' },
+                            { label: 'Products', href: '/products' },
+                            { label: 'About', href: '/about' },
                             { label: 'Payment', href: '/payment-notification' },
                             { label: 'Contact', href: '/contact' },
                         ].map((item) => {
@@ -99,7 +99,7 @@ export default function Footer() {
                             fontWeight: 400
                         }}
                     >
-                        © 2026 HANFLOWER STUDIO. PRESERVING EMOTIONS.
+                        © 2026 HANFLOWER THAILAND.
                     </Typography>
                 </Box>
             </Container>

@@ -21,6 +21,8 @@ interface AdminConfirmDialogProps {
     onConfirm: () => void;
     onClose: () => void;
     isLoading?: boolean;
+    icon?: React.ReactNode;
+    color?: string;
 }
 
 export default function AdminConfirmDialog({
@@ -31,7 +33,9 @@ export default function AdminConfirmDialog({
     cancelLabel = 'ยกเลิก',
     onConfirm,
     onClose,
-    isLoading = false
+    isLoading = false,
+    icon,
+    color = '#FF4D4F'
 }: AdminConfirmDialogProps) {
     return (
         <Dialog
@@ -51,14 +55,14 @@ export default function AdminConfirmDialog({
                     width: '64px',
                     height: '64px',
                     borderRadius: '20px',
-                    bgcolor: '#FF4D4F15',
+                    bgcolor: `${color}15`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     margin: '0 auto',
                     mb: 3
                 }}>
-                    <Trash size={32} color="#FF4D4F" variant="Bulk" />
+                    {icon || <Trash size={32} color={color} variant="Bulk" />}
                 </Box>
 
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#1A1A1A' }}>
@@ -92,13 +96,13 @@ export default function AdminConfirmDialog({
                     disabled={isLoading}
                     sx={{
                         borderRadius: '12px',
-                        bgcolor: '#FF4D4F',
+                        bgcolor: color,
                         py: 1.5,
                         boxShadow: 'none',
-                        '&:hover': { bgcolor: '#D4380D', boxShadow: 'none' }
+                        '&:hover': { bgcolor: color, opacity: 0.9, boxShadow: 'none' }
                     }}
                 >
-                    {isLoading ? 'กำลังลบ...' : confirmLabel}
+                    {isLoading ? 'กำลังดำเนินการ...' : confirmLabel}
                 </Button>
             </DialogActions>
         </Dialog>

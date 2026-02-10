@@ -13,9 +13,9 @@ export default function MobileNav() {
 
     const navItems = [
         { label: 'HOME', icon: Home, href: '/' },
-        { label: 'SHOP', icon: Shop, href: '/products' },
-        { label: 'FAVORITES', icon: Heart, href: '/favorites' },
-        { label: 'ACCOUNT', icon: User, href: '/account' },
+        { label: 'PRODUCTS', icon: Shop, href: '/products' },
+        { label: 'PAYMENT', icon: ScanBarcode, href: '/payment-notification' },
+        { label: 'CONTACT', icon: User, href: '/contact' },
     ];
 
     return (

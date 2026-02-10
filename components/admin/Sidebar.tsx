@@ -22,9 +22,11 @@ import {
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useNotification } from '@/context/NotificationContext';
 import { useAdminUI } from '@/context/AdminUIContext';
 import { signOut } from 'next-auth/react';
+import { useSnackbar } from '@/components/admin/AdminSnackbar';
+import AdminConfirmDialog from './AdminConfirmDialog';
+import { useState } from 'react';
 
 const SIDEBAR_WIDTH = 280;
 const COLLAPSED_WIDTH = 88;
@@ -68,19 +70,42 @@ const menuGroups = [
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
-    const { showSuccess, showError } = useNotification();
+    const { showSuccess, showError } = useSnackbar();
     const { isSidebarOpen, closeSidebar, isCollapsed } = useAdminUI();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+    const [logoutOpen, setLogoutOpen] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const handleLogout = async () => {
-        if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
-            try {
-                await signOut({ callbackUrl: '/admin/login' });
-                showSuccess('ออกจากระบบสำเร็จ');
-            } catch (error) {
-                showError('เกิดข้อผิดพลาดในการออกจากระบบ');
+        setIsLoggingOut(true);
+        try {
+            // Thoroughly clear sessions and local state
+            await signOut({ redirect: false });
+
+            // Clear all local storage related to admin if any
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.includes('admin') || key.includes('next-auth'))) {
+                    keysToRemove.push(key);
+                }
             }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+
+            // Clear cookies explicitly if needed (Next-Auth handles its own but good for thoroughness)
+            document.cookie.split(";").forEach((c) => {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+
+            showSuccess('ออกจากระบบสำเร็จ กำลังกลับสู่หน้าแรก...');
+
+            setTimeout(() => {
+                window.location.href = '/admin/login';
+            }, 1000);
+        } catch (error) {
+            showError('เกิดข้อผิดพลาดในการออกจากระบบ');
+            setIsLoggingOut(false);
         }
     };
 
@@ -222,7 +247,7 @@ export default function Sidebar() {
                 <Divider sx={{ mb: 2, opacity: 0.5 }} />
                 <Tooltip title={isCollapsed && !isMobile ? "ออกจากระบบ" : ""} placement="right">
                     <ListItemButton
-                        onClick={handleLogout}
+                        onClick={() => setLogoutOpen(true)}
                         sx={{
                             borderRadius: '12px',
                             py: 1.5,
@@ -252,6 +277,18 @@ export default function Sidebar() {
                     </ListItemButton>
                 </Tooltip>
             </Box>
+
+            <AdminConfirmDialog
+                open={logoutOpen}
+                onClose={() => setLogoutOpen(false)}
+                onConfirm={handleLogout}
+                isLoading={isLoggingOut}
+                title="ยืนยันการออกจากระบบ"
+                message="คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบการจัดการ?"
+                confirmLabel="ออกจากระบบ"
+                cancelLabel="ยกเลิก"
+                icon={<Logout size={32} color="#FF4D4F" variant="Bulk" />}
+            />
         </Box>
     );
 

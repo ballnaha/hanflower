@@ -216,7 +216,7 @@ export default function Header() {
                                         { label: 'EVENTS', href: '/events' },
                                         { label: 'ABOUT US', href: '/about' },
                                         { label: 'OUR CUSTOMERS', href: '/our-customer' },
-
+                                        { label: 'CONTACT', href: '/contact' },
                                     ].map((link) => {
                                         const isExternal = false;
                                         const Component = Link;
@@ -356,6 +356,7 @@ export default function Header() {
                                 { label: 'EVENTS', href: '/events' },
                                 { label: 'ABOUT US', href: '/about' },
                                 { label: 'OUR CUSTOMERS', href: '/our-customer' },
+                                { label: 'CONTACT', href: '/contact' },
                             ].map((item) => (
                                 <ListItem key={item.label} disablePadding>
                                     <ListItemButton sx={{ textAlign: 'center', py: 2 }} component={Link} href={item.href}>
