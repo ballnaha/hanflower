@@ -14,10 +14,10 @@ export async function GET(
         const pId = searchParams.get('playerId');
 
         // 1. Total players globally (Performance: fast count)
-        const totalPlayers = await prisma.valentineScore.count();
+        const totalPlayers = await prisma.valentinescore.count();
 
         // 2. Global Top 10 (Using index on score)
-        const topScores = await prisma.valentineScore.findMany({
+        const topScores = await prisma.valentinescore.findMany({
             orderBy: { score: 'desc' },
             take: 10,
             select: {
@@ -32,14 +32,14 @@ export async function GET(
         let userRank = null;
         let userBestScore = 0; // Track the actual score value
         if (pId) {
-            const userScore = await prisma.valentineScore.findFirst({
+            const userScore = await prisma.valentinescore.findFirst({
                 where: { playerId: pId },
                 orderBy: { score: 'desc' }
             });
 
             if (userScore) {
                 userBestScore = userScore.score;
-                const countHigher = await prisma.valentineScore.count({
+                const countHigher = await prisma.valentinescore.count({
                     where: {
                         score: { gt: userScore.score }
                     }
@@ -89,7 +89,7 @@ export async function POST(
         }
 
         // Find the current card ID for logging purposes
-        const card = await prisma.valentineCard.findUnique({
+        const card = await prisma.valentinecard.findUnique({
             where: { slug },
             select: { id: true }
         });
@@ -99,7 +99,7 @@ export async function POST(
         }
 
         // 1. GLOBAL Name Check: Ensure name is not taken by another playerId system-wide
-        const nameTaken = await prisma.valentineScore.findFirst({
+        const nameTaken = await prisma.valentinescore.findFirst({
             where: {
                 name: name,
                 playerId: { not: playerId }
@@ -111,7 +111,7 @@ export async function POST(
         }
 
         // 2. GLOBAL UPSERT: Find any record for this player ID across all cards
-        const existingScore = await prisma.valentineScore.findFirst({
+        const existingScore = await prisma.valentinescore.findFirst({
             where: { playerId: playerId },
             orderBy: { score: 'desc' } // Pick the highest one if duplicates exist
         });
@@ -119,7 +119,7 @@ export async function POST(
         let result;
         if (existingScore) {
             // Update name and only update score if it's a new high score
-            result = await prisma.valentineScore.update({
+            result = await prisma.valentinescore.update({
                 where: { id: existingScore.id },
                 data: {
                     name: name,
@@ -130,7 +130,7 @@ export async function POST(
             });
         } else {
             // Create brand new global record
-            result = await prisma.valentineScore.create({
+            result = await prisma.valentinescore.create({
                 data: {
                     cardId: card.id,
                     playerId,

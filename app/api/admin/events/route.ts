@@ -16,19 +16,26 @@ export async function GET(request: Request) {
             where.category = { not: { contains: excludeCategory } };
         }
 
-        const albums = await (prisma as any).eventAlbum.findMany({
+        const albums = await (prisma as any).eventalbum.findMany({
             where,
             orderBy: {
                 priority: 'desc'
             },
             include: {
                 _count: {
-                    select: { photos: true }
+                    select: { eventphoto: true }
                 }
             }
         });
 
-        return NextResponse.json(albums);
+        const transformed = albums.map((album: any) => ({
+            ...album,
+            _count: {
+                photos: album._count?.eventphoto || 0
+            }
+        }));
+
+        return NextResponse.json(transformed);
     } catch (error) {
         console.error('Error fetching admin events:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -45,7 +52,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        const album = await (prisma as any).eventAlbum.create({
+        const album = await (prisma as any).eventalbum.create({
             data: {
                 title,
                 category,
@@ -54,7 +61,7 @@ export async function POST(request: Request) {
                 coverImage,
                 priority: parseInt(String(priority)) || 0,
                 isActive: isActive !== undefined ? isActive : true,
-                photos: photos && Array.isArray(photos) ? {
+                eventphoto: photos && Array.isArray(photos) ? {
                     create: photos.map((p: any, idx: number) => ({
                         url: p.url,
                         caption: p.caption || '',
@@ -63,7 +70,7 @@ export async function POST(request: Request) {
                 } : undefined
             },
             include: {
-                photos: true
+                eventphoto: true
             }
         });
 

@@ -8,7 +8,7 @@ async function isFileUsed(url: string, currentAlbumId: string): Promise<boolean>
     if (!url) return false;
 
     // 1. Check in OTHER event albums (cover image)
-    const albumCount = await (prisma as any).eventAlbum.count({
+    const albumCount = await (prisma as any).eventalbum.count({
         where: {
             coverImage: url,
             id: { not: currentAlbumId }
@@ -17,7 +17,7 @@ async function isFileUsed(url: string, currentAlbumId: string): Promise<boolean>
     if (albumCount > 0) return true;
 
     // 2. Check in OTHER event photos
-    const photoCount = await (prisma as any).eventPhoto.count({
+    const photoCount = await (prisma as any).eventphoto.count({
         where: {
             url: url,
             albumId: { not: currentAlbumId }
@@ -38,7 +38,7 @@ async function isFileUsed(url: string, currentAlbumId: string): Promise<boolean>
     if (productImageCount > 0) return true;
 
     // 5. Check in valentine memories
-    const valentineCount = await (prisma as any).valentineMemory.count({
+    const valentineCount = await (prisma as any).valentinememory.count({
         where: { url }
     });
     if (valentineCount > 0) return true;
@@ -92,10 +92,10 @@ export async function GET(
 ) {
     try {
         const { id } = await params;
-        const album = await (prisma as any).eventAlbum.findUnique({
+        const album = await (prisma as any).eventalbum.findUnique({
             where: { id },
             include: {
-                photos: {
+                eventphoto: {
                     orderBy: {
                         order: 'asc'
                     }
@@ -107,7 +107,14 @@ export async function GET(
             return NextResponse.json({ error: 'Album not found' }, { status: 404 });
         }
 
-        return NextResponse.json(album);
+        // Transform for frontend
+        const transformedAlbum = {
+            ...album,
+            photos: album.eventphoto
+        };
+        delete (transformedAlbum as any).eventphoto;
+
+        return NextResponse.json(transformedAlbum);
     } catch (error) {
         console.error('Error fetching admin event album:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -124,9 +131,9 @@ export async function PUT(
         const { title, category, location, date, coverImage, priority, isActive, photos } = body;
 
         // Collect old data for cleanup
-        const oldAlbum = await (prisma as any).eventAlbum.findUnique({
+        const oldAlbum = await (prisma as any).eventalbum.findUnique({
             where: { id },
-            include: { photos: true }
+            include: { eventphoto: true }
         });
 
         if (!oldAlbum) {
@@ -134,7 +141,7 @@ export async function PUT(
         }
 
         // Update album details
-        const updatedAlbum = await (prisma as any).eventAlbum.update({
+        const updatedAlbum = await (prisma as any).eventalbum.update({
             where: { id },
             data: {
                 title,
@@ -150,15 +157,15 @@ export async function PUT(
         // If photos are provided, update them
         if (photos && Array.isArray(photos)) {
             // Get current URLs to find which ones are removed
-            const oldPhotoUrls = oldAlbum.photos.map((p: any) => p.url);
+            const oldPhotoUrls = oldAlbum.eventphoto.map((p: any) => p.url);
             const newPhotoUrls = photos.map((p: any) => p.url);
 
-            await (prisma as any).eventPhoto.deleteMany({
+            await (prisma as any).eventphoto.deleteMany({
                 where: { albumId: id }
             });
 
             if (photos.length > 0) {
-                await (prisma as any).eventPhoto.createMany({
+                await (prisma as any).eventphoto.createMany({
                     data: photos.map((photo: any, index: number) => ({
                         albumId: id,
                         url: photo.url,
@@ -198,9 +205,9 @@ export async function DELETE(
         const { id } = await params;
 
         // Fetch album first to get file URLs
-        const album = await (prisma as any).eventAlbum.findUnique({
+        const album = await (prisma as any).eventalbum.findUnique({
             where: { id },
-            include: { photos: true }
+            include: { eventphoto: true }
         });
 
         if (!album) {
@@ -210,17 +217,17 @@ export async function DELETE(
         // Collect all files to delete
         const filesToDelete = new Set<string>();
         if (album.coverImage) filesToDelete.add(album.coverImage);
-        album.photos.forEach((p: any) => {
+        album.eventphoto.forEach((p: any) => {
             if (p.url) filesToDelete.add(p.url);
         });
 
         // Delete related photos from DB first
-        await (prisma as any).eventPhoto.deleteMany({
+        await (prisma as any).eventphoto.deleteMany({
             where: { albumId: id }
         });
 
         // Delete album from DB
-        await (prisma as any).eventAlbum.delete({
+        await (prisma as any).eventalbum.delete({
             where: { id }
         });
 

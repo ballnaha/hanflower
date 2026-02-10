@@ -14,7 +14,7 @@ export async function GET(request: Request) {
             where.category = { not: { contains: excludeCategory } };
         }
 
-        const categories = await (prisma as any).eventAlbum.findMany({
+        const categories = await (prisma as any).eventalbum.findMany({
             where,
             select: {
                 category: true

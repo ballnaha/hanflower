@@ -6,17 +6,26 @@ import { revalidatePath } from "next/cache";
 // GET - List all valentine cards for admin
 export async function GET() {
     try {
-        const cards = await prisma.valentineCard.findMany({
+        const cards = await prisma.valentinecard.findMany({
             include: {
                 _count: {
-                    select: { memories: true }
+                    select: { valentinememory: true }
                 },
-                orderedProducts: true
+                valentinecardtoproduct: true
             },
             orderBy: { createdAt: 'desc' }
         });
 
-        return NextResponse.json(cards);
+        // Transform for frontend
+        const transformed = cards.map((card: any) => ({
+            ...card,
+            _count: {
+                memories: card._count?.valentinememory || 0
+            },
+            orderedProducts: card.valentinecardtoproduct
+        }));
+
+        return NextResponse.json(transformed);
     } catch (error) {
         console.error("Error fetching valentine cards:", error);
         return NextResponse.json({ error: "Failed to fetch valentine cards" }, { status: 500 });
@@ -52,7 +61,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const card = await prisma.valentineCard.create({
+        const card = await prisma.valentinecard.create({
             data: {
                 slug,
                 jobName: jobName || null,
@@ -74,7 +83,7 @@ export async function POST(req: NextRequest) {
                 note: note || null,
                 status: status || "active",
                 disabledAt: disabledAt ? new Date(disabledAt) : null,
-                memories: {
+                valentinememory: {
                     create: memories && Array.isArray(memories) ? memories.map((m: any, index: number) => ({
                         type: m.type || 'image',
                         url: m.url,
@@ -83,8 +92,8 @@ export async function POST(req: NextRequest) {
                         order: m.order ?? index
                     })) : []
                 },
-                orderedProducts: {
-                    connect: validProductIds.map(id => ({ id }))
+                valentinecardtoproduct: {
+                    create: validProductIds.map(id => ({ B: id })) // Use create for the join table since it's an explicit many-to-many model in schema
                 }
             }
         });

@@ -12,11 +12,11 @@ export async function POST(
         const { id } = params;
 
         // 1. Fetch the original card
-        const originalCard = await prisma.valentineCard.findUnique({
+        const originalCard = await prisma.valentinecard.findUnique({
             where: { id },
             include: {
-                memories: true,
-                orderedProducts: true
+                valentinememory: true,
+                valentinecardtoproduct: true
             }
         });
 
@@ -25,25 +25,23 @@ export async function POST(
         }
 
         // 2. Generate new unique slug
-        // 2. Generate new unique random slug
         const generateSlug = () => Math.random().toString(36).substring(2, 8);
         let newSlug = generateSlug();
-        while (await prisma.valentineCard.findUnique({ where: { slug: newSlug } })) {
+        while (await prisma.valentinecard.findUnique({ where: { slug: newSlug } })) {
             newSlug = generateSlug();
         }
 
         // 3. Create the new card
         // Only exclude unique IDs and timestamps
-        const { id: _, createdAt, updatedAt, memories, orderedProducts, slug, jobName, ...cardData } = originalCard;
+        const { id: _, createdAt, updatedAt, valentinememory, valentinecardtoproduct, slug, jobName, ...cardData } = originalCard as any;
 
-        const newCard = await prisma.valentineCard.create({
+        const newCard = await prisma.valentinecard.create({
             data: {
                 ...cardData,
                 slug: newSlug,
                 jobName: jobName ? `${jobName} (Copy)` : null,
-                title: originalCard.title, // Title can be same
-                memories: {
-                    create: memories.map(m => ({
+                valentinememory: {
+                    create: valentinememory.map((m: any) => ({
                         type: m.type,
                         url: m.url, // Reusing the same image URL
                         caption: m.caption,
@@ -51,8 +49,8 @@ export async function POST(
                         order: m.order
                     }))
                 },
-                orderedProducts: {
-                    connect: orderedProducts.map(p => ({ id: p.id }))
+                valentinecardtoproduct: {
+                    create: valentinecardtoproduct.map((p: any) => ({ B: p.B }))
                 }
             }
         });

@@ -21,14 +21,14 @@ export async function GET(request: Request) {
             };
         }
 
-        const albums = await (prisma as any).eventAlbum.findMany({
+        const albums = await (prisma as any).eventalbum.findMany({
             where,
             orderBy: {
                 priority: 'desc',
             },
             include: {
                 _count: {
-                    select: { photos: true }
+                    select: { eventphoto: true }
                 }
             }
         });
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
             location: album.location,
             date: album.date,
             image: album.coverImage,
-            imagesCount: album._count?.photos || 0
+            imagesCount: album._count?.eventphoto || 0
         }));
 
         return NextResponse.json(result);

@@ -10,7 +10,7 @@ async function isFileUsed(url: string, currentCardId: string): Promise<boolean> 
     if (!url) return false;
 
     // Check memory usage in OTHER cards
-    const memoryCount = await prisma.valentineMemory.count({
+    const memoryCount = await prisma.valentinememory.count({
         where: {
             url: url,
             cardId: { not: currentCardId }
@@ -20,7 +20,7 @@ async function isFileUsed(url: string, currentCardId: string): Promise<boolean> 
     if (memoryCount > 0) return true;
 
     // Check background music usage in OTHER cards
-    const musicCount = await prisma.valentineCard.count({
+    const musicCount = await prisma.valentinecard.count({
         where: {
             backgroundMusicUrl: url,
             id: { not: currentCardId }
@@ -41,13 +41,13 @@ export async function GET(
         const params = await context.params;
         const { id } = params;
 
-        const card = await prisma.valentineCard.findUnique({
+        const card = await prisma.valentinecard.findUnique({
             where: { id },
             include: {
-                memories: {
+                valentinememory: {
                     orderBy: { order: 'asc' }
                 },
-                orderedProducts: true
+                valentinecardtoproduct: true
             }
         });
 
@@ -55,7 +55,14 @@ export async function GET(
             return NextResponse.json({ error: "Valentine card not found" }, { status: 404 });
         }
 
-        return NextResponse.json(card);
+        // Transform for frontend
+        const transformed = {
+            ...card,
+            memories: card.valentinememory,
+            orderedProducts: card.valentinecardtoproduct?.map((p: any) => p.B) || []
+        };
+
+        return NextResponse.json(transformed);
     } catch (error) {
         console.error("Error fetching valentine card:", error);
         return NextResponse.json({ error: "Failed to fetch valentine card" }, { status: 500 });
@@ -93,7 +100,7 @@ export async function PUT(
         }
 
         // Update main card data
-        const card = await prisma.valentineCard.update({
+        const card = await prisma.valentinecard.update({
             where: { id },
             data: {
                 slug,
@@ -116,20 +123,21 @@ export async function PUT(
                 note,
                 status,
                 disabledAt: disabledAt ? new Date(disabledAt) : null,
-                orderedProducts: {
-                    set: validProductIds.map(id => ({ id }))
+                valentinecardtoproduct: {
+                    deleteMany: {},
+                    create: validProductIds.map(pid => ({ B: pid }))
                 }
             }
         });
 
         // Handle memories update if provided (DELETE first, then Create)
         if (memories && Array.isArray(memories)) {
-            await prisma.valentineMemory.deleteMany({
+            await prisma.valentinememory.deleteMany({
                 where: { cardId: id }
             });
 
             if (memories.length > 0) {
-                await prisma.valentineMemory.createMany({
+                await prisma.valentinememory.createMany({
                     data: memories.map((m: any, index: number) => ({
                         cardId: id,
                         type: m.type || 'image',
@@ -198,9 +206,9 @@ export async function DELETE(
         const params = await context.params;
         const { id } = params;
 
-        const card = await prisma.valentineCard.findUnique({
+        const card = await prisma.valentinecard.findUnique({
             where: { id },
-            include: { memories: true }
+            include: { valentinememory: true }
         });
 
         if (!card) {
@@ -210,14 +218,14 @@ export async function DELETE(
         // Step 1: Collect files to potentially delete
         const filesToDelete = new Set<string>();
         if (card.backgroundMusicUrl) filesToDelete.add(card.backgroundMusicUrl);
-        if (card.memories) {
-            card.memories.forEach(m => {
+        if (card.valentinememory) {
+            card.valentinememory.forEach(m => {
                 if (m.url) filesToDelete.add(m.url);
             });
         }
 
         // Step 2: Delete from DB
-        await prisma.valentineCard.delete({
+        await prisma.valentinecard.delete({
             where: { id }
         });
 
