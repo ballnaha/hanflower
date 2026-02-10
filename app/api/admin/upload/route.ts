@@ -3,6 +3,9 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import sharp from 'sharp';
 
+// Set max duration to 5 minutes for large file uploads
+export const maxDuration = 300;
+
 export async function POST(request: NextRequest) {
     try {
         const formData = await request.formData();
@@ -25,17 +28,33 @@ export async function POST(request: NextRequest) {
 
         const uploadedPaths: string[] = [];
 
-        for (const file of files) {
-            const bytes = await file.arrayBuffer();
-            const buffer = Buffer.from(bytes);
+        for (const file of files as File[]) {
+            const buffer = Buffer.from(await file.arrayBuffer());
+            const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
+            const isGif = file.type === 'image/gif' || fileExt === 'gif';
 
             // Create unique filename
-            const filename = `${crypto.randomUUID()}.webp`;
+            const uniqueId = crypto.randomUUID();
+
+            // If it's a GIF, use original extension and bypass sharp optimization to preserve animation
+            if (isGif) {
+                const filename = `${uniqueId}.gif`;
+                const filePath = join(uploadDir, filename);
+                const relativePath = folder ? `/uploads/${folder}/${filename}` : `/uploads/${filename}`;
+
+                // Write original buffer directly
+                await writeFile(filePath, buffer);
+                console.log('Saved GIF directly (bypassed optimization):', filename);
+                uploadedPaths.push(relativePath);
+                continue; // Skip sharp processing for this file
+            }
+
+            // For non-GIF images, try sharp optimization
+            const filename = `${uniqueId}.webp`;
             const filePath = join(uploadDir, filename);
             const relativePath = folder ? `/uploads/${folder}/${filename}` : `/uploads/${filename}`;
 
             try {
-                // Try to use sharp for optimization
                 await sharp(buffer)
                     .resize(1200, 1200, {
                         fit: 'inside',
@@ -49,7 +68,8 @@ export async function POST(request: NextRequest) {
             } catch (sharpError) {
                 console.error('Sharp processing failed, falling back to original upload:', sharpError);
 
-                const originalFilename = `${crypto.randomUUID()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+                // Fallback: save original file
+                const originalFilename = `${uniqueId}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
                 const originalFilePath = join(uploadDir, originalFilename);
                 const originalRelativePath = folder ? `/uploads/${folder}/${originalFilename}` : `/uploads/${originalFilename}`;
 

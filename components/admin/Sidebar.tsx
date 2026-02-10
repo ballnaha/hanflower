@@ -101,11 +101,7 @@ export default function Sidebar() {
             });
 
             // Call the custom logout API to clear the admin-token if it exists
-            try {
-                await fetch('/api/admin/logout', { method: 'POST' });
-            } catch (e) {
-                console.error("Custom logout API failed", e);
-            }
+
 
             showSuccess('ออกจากระบบสำเร็จ กำลังกลับสู่หน้าแรก...');
 

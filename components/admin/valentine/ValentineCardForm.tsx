@@ -316,29 +316,75 @@ export default function ValentineCardForm({ initialData, isNew = false }: Valent
         removeMemory(index);
     };
 
+    const [loadingText, setLoadingText] = useState("");
+
+    const uploadFileWithProgress = (file: File, slug: string, onProgress: (percent: number) => void): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('slug', slug);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/upload/valentine', true);
+
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    const percentComplete = Math.round((event.loaded / event.total) * 100);
+                    onProgress(percentComplete);
+                }
+            };
+
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        resolve(response.url);
+                    } catch (e) {
+                        reject(new Error("Invalid response format"));
+                    }
+                } else {
+                    reject(new Error(`Upload failed with status ${xhr.status}`));
+                }
+            };
+
+            xhr.onerror = () => {
+                reject(new Error("Upload failed due to network error"));
+            };
+
+            xhr.send(formData);
+        });
+    };
+
     const onSubmit = async (data: any) => {
         setLoading(true);
         setUploadProgress(0);
+        setLoadingText("กำลังเตรียมข้อมูล...");
+
         try {
             let finalData = { ...data, urlsToDelete };
             const memoriesToUpload = data.memories.filter((m: any) => m.file);
-            const totalToUpload = memoriesToUpload.length + (musicFile ? 1 : 0);
-            let uploadedCount = 0;
+            const totalFiles = memoriesToUpload.length + (musicFile ? 1 : 0);
+            let processedFiles = 0;
+
+            // Helper to update total progress based on current file progress + finished files
+            const updateOverallProgress = (currentFilePercent: number) => {
+                const totalPercent = Math.round(((processedFiles * 100) + currentFilePercent) / totalFiles);
+                setUploadProgress(totalPercent);
+            };
 
             // 1. Upload Music File if selected
             if (musicFile) {
-                const formData = new FormData();
-                formData.append('file', musicFile);
-                formData.append('slug', data.slug);
-
-                const uploadRes = await fetch('/api/upload/valentine', { method: 'POST', body: formData });
-                if (uploadRes.ok) {
-                    const uploadData = await uploadRes.json();
-                    finalData.backgroundMusicUrl = uploadData.url;
-                    uploadedCount++;
-                    setUploadProgress(Math.round((uploadedCount / totalToUpload) * 100));
-                } else {
-                    throw new Error("อัปโหลดไฟล์เพลงล้มเหลว");
+                setLoadingText(`กำลังอัปโหลดเพลง (${processedFiles + 1}/${totalFiles})...`);
+                try {
+                    const musicUrl = await uploadFileWithProgress(musicFile, data.slug, (percent) => {
+                        updateOverallProgress(percent);
+                        if (percent === 100) setLoadingText("กำลังประมวลผลไฟล์เพลง...");
+                    });
+                    finalData.backgroundMusicUrl = musicUrl;
+                    processedFiles++;
+                    updateOverallProgress(0); // Reset current file progress
+                } catch (error) {
+                    throw new Error("อัปโหลดไฟล์เพลงล้มเหลว: " + (error as Error).message);
                 }
             }
 
@@ -347,23 +393,27 @@ export default function ValentineCardForm({ initialData, isNew = false }: Valent
                 for (let i = 0; i < data.memories.length; i++) {
                     const memory = data.memories[i];
                     if (memory.file) {
-                        const formData = new FormData();
-                        formData.append('file', memory.file);
-                        formData.append('slug', data.slug);
+                        setLoadingText(`กำลังอัปโหลดไฟล์ ${i + 1}/${data.memories.length}: ${memory.file.name}...`);
 
-                        const res = await fetch('/api/upload/valentine', { method: 'POST', body: formData });
-                        if (res.ok) {
-                            const uploadRes = await res.json();
-                            finalData.memories[i].url = uploadRes.url;
+                        try {
+                            const uploadedUrl = await uploadFileWithProgress(memory.file, data.slug, (percent) => {
+                                updateOverallProgress(percent);
+                                if (percent === 100) setLoadingText(`กำลังประมวลผล ${memory.file.name}...`);
+                            });
+
+                            finalData.memories[i].url = uploadedUrl;
                             delete finalData.memories[i].file;
-                            uploadedCount++;
-                            setUploadProgress(Math.round((uploadedCount / totalToUpload) * 100));
-                        } else {
-                            throw new Error(`Failed to upload ${memory.file.name}`);
+                            processedFiles++;
+                            updateOverallProgress(0);
+                        } catch (error) {
+                            throw new Error(`อัปโหลดไฟล์ ${memory.file.name} ล้มเหลว`);
                         }
                     }
                 }
             }
+
+            setLoadingText("กำลังบันทึกข้อมูล...");
+            setUploadProgress(100);
 
             const url = isNew ? "/api/admin/valentine" : `/api/admin/valentine/${initialData.id}`;
             const method = isNew ? "POST" : "PUT";
@@ -392,6 +442,7 @@ export default function ValentineCardForm({ initialData, isNew = false }: Valent
         } finally {
             setLoading(false);
             setUploadProgress(null);
+            setLoadingText("");
         }
     };
 
@@ -802,25 +853,40 @@ export default function ValentineCardForm({ initialData, isNew = false }: Valent
                     </div>
 
                     <Box sx={{ mb: 4 }}>
-                        {uploadProgress !== null && (
-                            <Box sx={{ width: '100%', mb: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                    <Typography variant="body2" color="textSecondary" fontWeight="bold">กำลังอัปโหลดไฟล์...</Typography>
-                                    <Typography variant="body2" color="textSecondary">{uploadProgress}%</Typography>
+                        {loading && (
+                            <Box sx={{ width: '100%', mb: 4, bgcolor: '#fdfbf7', p: 3, borderRadius: 3, border: '1px solid rgba(212, 175, 55, 0.2)' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
+                                    <CircularProgress size={20} sx={{ color: '#D4AF37' }} />
+                                    <Typography variant="body1" fontWeight="bold" sx={{ color: '#855a0b' }}>
+                                        {loadingText || "กำลังประมวลผล..."}
+                                    </Typography>
+                                    <Box sx={{ flexGrow: 1 }} />
+                                    {uploadProgress !== null && (
+                                        <Typography variant="body2" fontWeight="bold" sx={{ color: '#D4AF37' }}>
+                                            {uploadProgress}%
+                                        </Typography>
+                                    )}
                                 </Box>
-                                <LinearProgress
-                                    variant="determinate"
-                                    value={uploadProgress}
-                                    sx={{
-                                        height: 8,
-                                        borderRadius: 4,
-                                        bgcolor: 'rgba(212, 175, 55, 0.1)',
-                                        '& .MuiLinearProgress-bar': {
-                                            bgcolor: '#D4AF37',
-                                            borderRadius: 4
-                                        }
-                                    }}
-                                />
+                                {uploadProgress !== null && (
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={uploadProgress}
+                                        sx={{
+                                            height: 10,
+                                            borderRadius: 5,
+                                            bgcolor: 'rgba(212, 175, 55, 0.1)',
+                                            '& .MuiLinearProgress-bar': {
+                                                bgcolor: '#D4AF37',
+                                                borderRadius: 5,
+                                                backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)',
+                                                backgroundSize: '1rem 1rem'
+                                            }
+                                        }}
+                                    />
+                                )}
+                                <Typography variant="caption" sx={{ mt: 1.5, display: 'block', color: '#9ca3af', fontStyle: 'italic' }}>
+                                    * กรุณาอย่าปิดหน้าต่างนี้ ระบบกำลังอัปโหลดไฟล์ขนาดใหญ่และประมวลผลภาพ
+                                </Typography>
                             </Box>
                         )}
                         <Tabs

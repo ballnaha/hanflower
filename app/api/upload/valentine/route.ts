@@ -4,6 +4,9 @@ import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import sharp from 'sharp';
 
+// Set max duration for large file uploads
+export const maxDuration = 300;
+
 export async function POST(request: Request) {
     try {
         const formData = await request.formData();
