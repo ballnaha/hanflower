@@ -56,6 +56,7 @@ export default function Header() {
             }}
         >
             {pathname === '/' && <PromotionBar />}
+            {/* Header logic adjustment to treat /events like home page */}
             <Box sx={{
                 width: '100%',
                 bgcolor: (isProductPage || isScrolled) ? 'rgba(255, 255, 255, 0.98)' : 'transparent',
@@ -163,10 +164,10 @@ export default function Header() {
                                     onClick={handleDrawerToggle}
                                     sx={{
                                         display: { xs: 'flex', md: 'none' }, // Show only on mobile
-                                        color: (pathname === '/' && !isScrolled) ? '#FFF' : '#5D4037'
+                                        color: ((pathname === '/' || pathname === '/events') && !isScrolled) ? '#FFF' : '#5D4037'
                                     }}
                                 >
-                                    <HambergerMenu size={24} variant="Outline" color={(pathname === '/' && !isScrolled) ? '#FFF' : '#5D4037'} />
+                                    <HambergerMenu size={24} variant="Outline" color={((pathname === '/' || pathname === '/events') && !isScrolled) ? '#FFF' : '#5D4037'} />
                                 </IconButton>
 
                                 <Box sx={{ display: { xs: 'none', md: 'block' } }}>
@@ -178,7 +179,7 @@ export default function Header() {
                                                 fill
                                                 style={{
                                                     objectFit: 'contain',
-                                                    filter: isScrolled ? 'none' : (pathname === '/' && !isScrolled ? 'brightness(0) invert(1)' : 'none'),
+                                                    filter: isScrolled ? 'none' : ((pathname === '/' || pathname === '/events') && !isScrolled ? 'brightness(0) invert(1)' : 'none'),
                                                     transition: 'filter 0.5s ease'
                                                 }}
                                                 priority
@@ -199,7 +200,7 @@ export default function Header() {
                                                 fill
                                                 style={{
                                                     objectFit: 'contain',
-                                                    filter: isScrolled ? 'none' : (pathname === '/' && !isScrolled ? 'brightness(0) invert(1)' : 'none'),
+                                                    filter: isScrolled ? 'none' : ((pathname === '/' || pathname === '/events') && !isScrolled ? 'brightness(0) invert(1)' : 'none'),
                                                     transition: 'filter 0.5s ease'
                                                 }}
                                                 priority
@@ -212,7 +213,7 @@ export default function Header() {
                                 <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: { md: 4, lg: 8 } }}>
                                     {[
                                         { label: 'FLOWERS', href: '/products?category=bouquet' },
-                                        { label: 'EVENTS', href: '/coming-soon' },
+                                        { label: 'EVENTS', href: '/events' },
                                         { label: 'ABOUT US', href: '/about' },
                                         { label: 'OUR CUSTOMERS', href: '/coming-soon' },
 
@@ -228,13 +229,13 @@ export default function Header() {
                                                         fontSize: '0.85rem',
                                                         textTransform: 'uppercase',
                                                         letterSpacing: '0.25em',
-                                                        color: isScrolled ? '#5D4037' : (pathname === '/' && !isScrolled ? '#FFFFFF' : '#5D4037'),
+                                                        color: isScrolled ? '#5D4037' : ((pathname === '/' || pathname === '/events') && !isScrolled ? '#FFFFFF' : '#5D4037'),
                                                         textDecoration: 'none',
                                                         fontWeight: 600,
                                                         display: 'block',
                                                         padding: '10px 0',
                                                         transition: 'all 0.4s ease',
-                                                        opacity: isScrolled ? 1 : 0.9
+                                                        opacity: (pathname === link.href) ? 1 : (isScrolled ? 1 : 0.9)
                                                     }}
                                                     className="nav-link"
                                                 >
@@ -244,7 +245,7 @@ export default function Header() {
                                                     position: 'absolute',
                                                     bottom: 0,
                                                     left: '50%',
-                                                    width: '0%',
+                                                    width: (pathname === link.href) ? '100%' : '0%',
                                                     height: '1px',
                                                     bgcolor: '#D4AF37',
                                                     transition: 'all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
@@ -264,7 +265,7 @@ export default function Header() {
                                     aria-label="shopping cart"
                                     onClick={() => toggleCart(true)}
                                     sx={{
-                                        color: isScrolled ? '#5D4037' : (pathname === '/' && !isScrolled ? '#FFFFFF' : '#5D4037'),
+                                        color: isScrolled ? '#5D4037' : ((pathname === '/' || pathname === '/events') && !isScrolled ? '#FFFFFF' : '#5D4037'),
                                         transition: 'transform 0.2s',
                                         '&:hover': { transform: 'scale(1.1)' }
                                     }}
@@ -279,7 +280,7 @@ export default function Header() {
                                             }
                                         }}
                                     >
-                                        <ShoppingBag size="22" variant="Outline" color={isScrolled ? '#5D4037' : (pathname === '/' && !isScrolled ? '#FFFFFF' : '#B76E79')} />
+                                        <ShoppingBag size="22" variant="Outline" color={isScrolled ? '#5D4037' : ((pathname === '/' || pathname === '/events') && !isScrolled ? '#FFFFFF' : '#B76E79')} />
                                     </Badge>
                                 </IconButton>
 
@@ -290,7 +291,7 @@ export default function Header() {
                                     href="https://line.me/ti/p/~fonms2"
                                     target="_blank"
                                     sx={{
-                                        bgcolor: isScrolled || pathname !== '/' ? '#06C755' : 'rgba(255, 255, 255, 0.15)',
+                                        bgcolor: isScrolled || (pathname !== '/' && pathname !== '/events') ? '#06C755' : 'rgba(255, 255, 255, 0.15)',
                                         backdropFilter: 'blur(10px)',
                                         borderRadius: '100px', // Tablet style pill
                                         px: { xs: 1.5, md: 3 },
@@ -302,7 +303,7 @@ export default function Header() {
                                         fontWeight: 600,
                                         letterSpacing: '0.02em',
                                         border: '1px solid',
-                                        borderColor: isScrolled || pathname !== '/' ? '#06C755' : 'rgba(255, 255, 255, 0.4)',
+                                        borderColor: isScrolled || (pathname !== '/' && pathname !== '/events') ? '#06C755' : 'rgba(255, 255, 255, 0.4)',
                                         transition: 'all 0.3s ease',
                                         '&:hover': {
                                             bgcolor: '#05B54C',

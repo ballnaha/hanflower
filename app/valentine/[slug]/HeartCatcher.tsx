@@ -25,7 +25,7 @@ interface HeartCatcherProps {
 
 // --- OPTIMIZED SUB-COMPONENTS ---
 
-const MemoizedHeart = React.memo(({ heart, onCatch }: { heart: FallingHeart, onCatch: (id: string, x: number, y: number, points: number, color: string) => void }) => {
+const MemoizedHeart = React.memo(({ heart, onCatch }: { heart: FallingHeart, onCatch: (id: string, x: number, y: number, points: number, color: string, type: string) => void }) => {
     return (
         <div
             className="absolute cursor-pointer select-none group animate-[heart-lifecycle_1.5s_ease-in-out_forwards]"
@@ -36,14 +36,9 @@ const MemoizedHeart = React.memo(({ heart, onCatch }: { heart: FallingHeart, onC
                 zIndex: heart.type === 'super' ? 50 : 40,
                 willChange: 'opacity, transform'
             }}
-            onMouseDown={(e) => {
+            onPointerDown={(e) => {
                 e.stopPropagation();
-                onCatch(heart.id, heart.x, heart.y, heart.points, heart.color);
-            }}
-            onTouchStart={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onCatch(heart.id, heart.x, heart.y, heart.points, heart.color);
+                onCatch(heart.id, heart.x, heart.y, heart.points, heart.color, heart.type);
             }}
         >
             <div className="transition-transform active:scale-125 duration-150" style={{ transform: 'translateZ(0)' }}>
@@ -171,6 +166,7 @@ export default function HeartCatcher({ onComplete, onClose, targetScore = 1000, 
     const gameTimerRef = useRef<NodeJS.Timeout | null>(null);
     const rainbowSpawnedRef = useRef<number>(0);
     const spawnsSinceLastClockRef = useRef<number>(0);
+    const clocksSpawnedRef = useRef<number>(0);
     const timeLeftRef = useRef(timeLeft);
     const scoreRef = useRef(score);
 
@@ -191,23 +187,27 @@ export default function HeartCatcher({ onComplete, onClose, targetScore = 1000, 
         // Dynamic Luck: Increase clock rate when time is low (Clutch Luck)
         const clockThreshold = currentTimeLeft < 10 ? 0.985 : 0.995;
 
-        // Pity System
-        const scoreFactor = Math.floor(currentScore / 500) * 10;
-        const pityThreshold = (currentTimeLeft < 10 ? 30 : 60) + scoreFactor;
+        // Pity System: Prevents infinite game by capping the help
+        // Limit scoreFactor to not assist too much (max -30)
+        const scoreFactor = Math.max(-30, Math.floor(currentScore / 500) * 10);
+        const basePity = currentTimeLeft < 10 ? 25 : 50;
+        const pityThreshold = Math.max(25, basePity + scoreFactor);
         const needsPityClock = spawnsSinceLastClockRef.current >= pityThreshold;
+        const canSpawnClock = clocksSpawnedRef.current < 8; // MAX 8 CLOCKS PER GAME
 
-        if (rainbowSpawnedRef.current < 2 && rand > 0.99) {
+        if (rainbowSpawnedRef.current < 2 && rand > 0.992) {
             type = 'rainbow';
             points = 250;
             color = "linear-gradient(45deg, #FF3366, #FFD700, #33FFF6, #A033FF)";
             size = 55 + Math.random() * 10;
             rainbowSpawnedRef.current += 1;
-        } else if (rand > clockThreshold || needsPityClock) {
+        } else if ((rand > clockThreshold || needsPityClock) && canSpawnClock) {
             type = 'clock';
             points = 0;
             color = "#3B82F6";
             size = 40 + Math.random() * 10;
             spawnsSinceLastClockRef.current = 0;
+            clocksSpawnedRef.current += 1;
         } else {
             spawnsSinceLastClockRef.current += 1;
 
@@ -252,22 +252,22 @@ export default function HeartCatcher({ onComplete, onClose, targetScore = 1000, 
         }, 1500);
     }, []); // No dependencies - use refs instead
 
-    const createParticles = (x: number, y: number, color: string) => {
-        const timestamp = Date.now();
-        const randSeed = Math.random();
-        const newParticles = Array.from({ length: 8 }).map((_, i) => ({
+    const createParticles = useCallback((x: number, y: number, color: string) => {
+        const timestamp = performance.now();
+        const count = 6; // Reduced for performance
+        const newParticles = Array.from({ length: count }).map((_, i) => ({
             id: `p-${timestamp}-${i}-${Math.random().toString(36).substr(2, 5)}`,
             x,
             y,
             color,
-            angle: (Math.PI * 2 / 8) * i,
-            speed: 2 + Math.random() * 3
+            angle: (Math.PI * 2 / count) * i,
+            speed: 1.5 + Math.random() * 2
         }));
-        setParticles(prev => [...prev, ...newParticles]);
+        setParticles(prev => [...prev.slice(-12), ...newParticles]); // Keep total particles low
         setTimeout(() => {
             setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)));
-        }, 1000);
-    };
+        }, 800);
+    }, []);
 
     const stopGame = useCallback(() => {
         setIsGameOver(true);
@@ -284,6 +284,7 @@ export default function HeartCatcher({ onComplete, onClose, targetScore = 1000, 
         setIsGameOver(false);
         rainbowSpawnedRef.current = 0;
         spawnsSinceLastClockRef.current = 0;
+        clocksSpawnedRef.current = 0;
 
         // Clear any existing timers before starting new ones
         if (spawnTimerRef.current) clearInterval(spawnTimerRef.current);
@@ -314,33 +315,30 @@ export default function HeartCatcher({ onComplete, onClose, targetScore = 1000, 
         }
     }, [timeLeft === 10, gameStarted, isGameOver, spawnHeart]);
 
-    const catchHeart = useCallback((id: string, x: number, y: number, points: number, color: string) => {
-        setHearts(prev => {
-            const heart = prev.find(h => h.id === id);
-            if (!heart) return prev;
+    const catchHeart = useCallback((id: string, x: number, y: number, points: number, color: string, type: string) => {
+        // 1. Calculate and update score/time outside of setHearts
+        let bonusText: number | string = "";
+        if (type === 'clock') {
+            const extraTime = 3 + Math.floor(Math.random() * 4);
+            setTimeLeft(prevTime => Math.min(prevTime + extraTime, 60));
+            bonusText = `+${extraTime}s`;
+        } else {
+            setScore(prevScore => prevScore + points);
+            bonusText = points > 0 ? `+${points}` : `${points}`;
+        }
 
-            let bonusText: number | string = "";
+        // 2. Clear heart immediately
+        setHearts(prev => prev.filter(h => h.id !== id));
 
-            if (heart.type === 'clock') {
-                const extraTime = 3 + Math.floor(Math.random() * 4);
-                setTimeLeft(prevTime => Math.min(prevTime + extraTime, 60));
-                bonusText = `+${extraTime}s`;
-            } else {
-                setScore(prevScore => prevScore + points);
-                bonusText = points > 0 ? `+${points}` : `${points}`;
-            }
+        // 3. Trigger side effects (Particles and Floating Scores)
+        createParticles(x, y, color);
+        const scoreId = `score-${performance.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        setFloatingScores(fs => [...fs.slice(-5), { id: scoreId, x, y, points: bonusText as any }]); // Limit floating scores
 
-            // Sync Particles and Scores
-            createParticles(x, y, color);
-            const scoreId = `score-${performance.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            setFloatingScores(fs => [...fs, { id: scoreId, x, y, points: bonusText as any }]);
-            setTimeout(() => {
-                setFloatingScores(fs => fs.filter(s => s.id !== scoreId));
-            }, 800);
-
-            return prev.filter(h => h.id !== id);
-        });
-    }, []);
+        setTimeout(() => {
+            setFloatingScores(fs => fs.filter(s => s.id !== scoreId));
+        }, 700);
+    }, [createParticles]);
 
     // Cleanup
     useEffect(() => {
@@ -356,8 +354,8 @@ export default function HeartCatcher({ onComplete, onClose, targetScore = 1000, 
 
             {/* Dreamy Background Overlay */}
             <div className="absolute inset-0 pointer-events-none opacity-40">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-pink-300 blur-[120px] rounded-full animate-pulse" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-rose-300 blur-[120px] rounded-full animate-pulse [animation-delay:1s]" />
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-pink-300 blur-[60px] rounded-full animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-rose-300 blur-[60px] rounded-full animate-pulse [animation-delay:1s]" />
             </div>
 
             {/* Header / Stats - Fixed Height and No Wrap to prevent layout jumping */}
@@ -477,7 +475,7 @@ export default function HeartCatcher({ onComplete, onClose, targetScore = 1000, 
                                     style={{ fontFamily: 'var(--font-mali), sans-serif' }}
                                 >
                                     <Cup size="16" variant="Bold" color="#FF3366" />
-                                    ดูตารางอันดับ 🏆
+                                    โพสคะแนน 🏆
                                 </button>
 
                                 <button

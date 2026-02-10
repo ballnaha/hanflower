@@ -1,0 +1,493 @@
+'use client';
+
+import { useState } from 'react';
+import {
+    Box,
+    Typography,
+    Button,
+    Paper,
+    TextField,
+    IconButton,
+    Avatar,
+    FormControlLabel,
+    Switch,
+    Divider,
+    Stack,
+    CircularProgress,
+    Tooltip,
+    Autocomplete,
+    createFilterOptions
+} from '@mui/material';
+import {
+    Add,
+    ArrowLeft,
+    Gallery,
+    Trash,
+    TickCircle,
+    Image as ImageIcon
+} from 'iconsax-react';
+import AdminLayout from '@/components/admin/AdminLayout';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useNotification } from '@/context/NotificationContext';
+import { NumberStepper } from '@/components/ui';
+
+interface PhotoItem {
+    file?: File;
+    preview: string;
+    caption: string;
+}
+
+export default function NewEventPage() {
+    const router = useRouter();
+    const { showSuccess, showError } = useNotification();
+    const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [categories, setCategories] = useState<string[]>([]);
+    const filter = createFilterOptions<string>();
+
+    useState(() => {
+        fetch('/api/admin/events/categories')
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) setCategories(data);
+            })
+            .catch(err => console.error('Error fetching categories:', err));
+    });
+
+    const [formData, setFormData] = useState({
+        title: '',
+        category: '',
+        location: '',
+        date: '',
+        coverImage: '',
+        priority: 0,
+        isActive: true
+    });
+
+    const [photos, setPhotos] = useState<PhotoItem[]>([]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value, type, checked } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    const handleRemovePhoto = (index: number) => {
+        setPhotos(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleCaptionChange = (index: number, value: string) => {
+        setPhotos(prev => prev.map((p, i) => i === index ? { ...p, caption: value } : p));
+    };
+
+    const resizeImage = (file: File): Promise<File> => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const max = 1200;
+
+                    if (width > height) {
+                        if (width > max) {
+                            height *= max / width;
+                            width = max;
+                        }
+                    } else {
+                        if (height > max) {
+                            width *= max / height;
+                            height = max;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            resolve(new File([blob], file.name, { type: 'image/webp' }));
+                        } else {
+                            resolve(file);
+                        }
+                    }, 'image/webp', 0.8);
+                };
+            };
+        });
+    };
+
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        setUploading(true);
+        try {
+            const newPhotoItems: PhotoItem[] = [];
+            for (let i = 0; i < files.length; i++) {
+                const resized = await resizeImage(files[i]);
+                newPhotoItems.push({
+                    file: resized,
+                    preview: URL.createObjectURL(resized),
+                    caption: ''
+                });
+            }
+            setPhotos(prev => [...prev, ...newPhotoItems]);
+        } catch (error) {
+            console.error('File selection error:', error);
+            showError('เกิดข้อผิดพลาดในการประมวลผลรูปภาพ');
+        } finally {
+            setUploading(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+            // 1. Upload images first
+            let uploadedPhotos: { url: string; caption: string; order: number }[] = [];
+
+            if (photos.length > 0) {
+                const formDataUpload = new FormData();
+                formDataUpload.append('folder', 'events');
+                photos.forEach(p => {
+                    if (p.file) formDataUpload.append('files', p.file);
+                });
+
+                const uploadRes = await fetch('/api/admin/upload', {
+                    method: 'POST',
+                    body: formDataUpload
+                });
+
+                if (uploadRes.ok) {
+                    const uploadData = await uploadRes.json();
+                    uploadedPhotos = uploadData.paths.map((path: string, index: number) => ({
+                        url: path,
+                        caption: photos[index].caption,
+                        order: index
+                    }));
+                } else {
+                    throw new Error('Upload failed');
+                }
+            }
+
+            // 2. Prepare final form data
+            const firstImageUrl = uploadedPhotos.length > 0 ? uploadedPhotos[0].url : '';
+
+            const res = await fetch('/api/admin/events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...formData,
+                    coverImage: firstImageUrl,
+                    photos: uploadedPhotos
+                }),
+            });
+
+            if (res.ok) {
+                showSuccess('สร้างอัลบั้มเรียบร้อยแล้ว');
+                router.push('/admin/events');
+            } else {
+                const err = await res.json();
+                showError(err.error || 'เกิดข้อผิดพลาด');
+            }
+        } catch (error) {
+            console.error('Error creating album:', error);
+            showError('ไม่สามารถสร้างอัลบั้มได้');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <AdminLayout title="เพิ่มอัลบั้มพอร์ตโฟลิโอใหม่">
+            <form onSubmit={handleSubmit}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(12, 1fr)' }, gap: 4, alignItems: 'start' }}>
+                    {/* Left Column: Basic Info */}
+                    <Box sx={{ gridColumn: { xs: 'span 12', lg: 'span 8' } }}>
+                        <Paper elevation={0} sx={{ p: 4, borderRadius: '20px', border: '1px solid rgba(0,0,0,0.03)' }}>
+                            <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>ข้อมูลอัลบั้ม</Typography>
+
+                            <Stack spacing={3}>
+                                <TextField
+                                    label="ชื่ออัลบั้ม (Title)"
+                                    name="title"
+                                    value={formData.title}
+                                    onChange={handleChange}
+                                    fullWidth
+                                    required
+                                    placeholder="เช่น The Grand Heritage Wedding"
+                                />
+
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                    <Autocomplete
+                                        value={formData.category}
+                                        onChange={(event, newValue) => {
+                                            if (typeof newValue === 'string') {
+                                                setFormData({ ...formData, category: newValue });
+                                            } else if (newValue && (newValue as any).inputValue) {
+                                                // Create a new value from the user input
+                                                setFormData({ ...formData, category: (newValue as any).inputValue });
+                                            } else {
+                                                setFormData({ ...formData, category: newValue || '' });
+                                            }
+                                        }}
+                                        filterOptions={(options, params) => {
+                                            const filtered = filter(options, params);
+
+                                            const { inputValue } = params;
+                                            // Suggest the creation of a new value
+                                            const isExisting = options.some((option) => inputValue === option);
+                                            if (inputValue !== '' && !isExisting) {
+                                                (filtered as any).push({
+                                                    inputValue,
+                                                    title: `เพิ่มหมวดหมู่ใหม่: "${inputValue}"`,
+                                                });
+                                            }
+
+                                            return filtered;
+                                        }}
+                                        selectOnFocus
+                                        clearOnBlur
+                                        handleHomeEndKeys
+                                        id="category-autocomplete"
+                                        options={categories}
+                                        getOptionLabel={(option) => {
+                                            // Value selected with enter, right from the input
+                                            if (typeof option === 'string') {
+                                                return option;
+                                            }
+                                            // Add "xxx" option created dynamically
+                                            if ((option as any).inputValue) {
+                                                return (option as any).inputValue;
+                                            }
+                                            // Regular option
+                                            return (option as any).title || option;
+                                        }}
+                                        renderOption={(props, option) => {
+                                            const { key, ...optionProps } = props as any;
+                                            return (
+                                                <li key={key} {...optionProps}>
+                                                    {typeof option === 'string' ? option : (option as any).title}
+                                                </li>
+                                            );
+                                        }}
+                                        freeSolo
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label="หมวดหมู่ (Category)"
+                                                placeholder="เลือกหรือพิมพ์เพื่อสร้างใหม่"
+                                            />
+                                        )}
+                                        fullWidth
+                                    />
+                                    <TextField
+                                        label="สถานที่ (Location)"
+                                        name="location"
+                                        value={formData.location}
+                                        onChange={handleChange}
+                                        fullWidth
+                                        placeholder="เช่น Capella Bangkok"
+                                    />
+                                </Box>
+
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                    <TextField
+                                        label="วันที่/เดือน (Date)"
+                                        name="date"
+                                        value={formData.date}
+                                        onChange={handleChange}
+                                        fullWidth
+                                        placeholder="เช่น Jan 2024"
+                                    />
+                                    <NumberStepper
+                                        label="ลำดับการแสดงผล (Priority)"
+                                        value={Number(formData.priority)}
+                                        onChange={(val) => setFormData(prev => ({ ...prev, priority: val }))}
+                                        min={0}
+                                        max={999}
+                                        width="100%"
+                                    />
+                                </Box>
+
+                                <Box sx={{ p: 2, bgcolor: 'rgba(183, 110, 121, 0.03)', borderRadius: '12px', border: '1px dashed #B76E79' }}>
+                                    <Typography variant="body2" sx={{ color: '#B76E79', mb: 0, fontWeight: 600 }}>
+                                        * รูปภาพแรกในรายการด้านล่างจะถูกใช้เป็นภาพหน้าปกโดยอัตโนมัติ
+                                    </Typography>
+                                </Box>
+                            </Stack>
+                        </Paper>
+
+                        {/* Photo Gallery Section */}
+                        <Paper elevation={0} sx={{ p: 4, mt: 4, borderRadius: '20px', border: '1px solid rgba(0,0,0,0.03)' }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                <Box>
+                                    <Typography variant="h6" sx={{ fontWeight: 700 }}>รูปภาพในอัลบั้ม ({photos.length})</Typography>
+                                    <Typography variant="caption" color="text.secondary">รูปแรกจะถูกใช้เป็นหน้าปก</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                    <Button
+                                        variant="contained"
+                                        component="label"
+                                        disabled={uploading}
+                                        startIcon={uploading ? <CircularProgress size={18} color="inherit" /> : <Add size={18} />}
+                                        sx={{ borderRadius: '10px', textTransform: 'none', bgcolor: '#B76E79', '&:hover': { bgcolor: '#A45D68' } }}
+                                    >
+                                        เพิ่มรูปภาพ (Multiple)
+                                        <input type="file" hidden multiple accept="image/*" onChange={handleFileSelect} />
+                                    </Button>
+                                </Box>
+                            </Box>
+
+                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
+                                {photos.map((photo, index) => (
+                                    <Paper
+                                        key={index}
+                                        elevation={0}
+                                        sx={{
+                                            borderRadius: '16px',
+                                            overflow: 'hidden',
+                                            border: index === 0 ? '2px solid #B76E79' : '1px solid rgba(0,0,0,0.05)',
+                                            position: 'relative',
+                                            transition: 'transform 0.2s',
+                                            '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 10px 20px rgba(0,0,0,0.05)' }
+                                        }}
+                                    >
+                                        <Box sx={{ position: 'relative', pt: '75%', bgcolor: '#f0f0f0' }}>
+                                            <img
+                                                src={photo.preview}
+                                                alt={`Preview ${index}`}
+                                                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                                            />
+                                            <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleRemovePhoto(index)}
+                                                    sx={{ bgcolor: 'rgba(255,255,255,0.9)', color: '#d32f2f', '&:hover': { bgcolor: '#fff' } }}
+                                                >
+                                                    <Trash size={16} variant="Bold" color="#d32f2f" />
+                                                </IconButton>
+                                            </Box>
+                                            {index === 0 && (
+                                                <Box sx={{ position: 'absolute', top: 8, left: 8, bgcolor: '#B76E79', color: 'white', px: 1, py: 0.5, borderRadius: '6px', fontSize: '10px', fontWeight: 700 }}>
+                                                    COVER PHOTO
+                                                </Box>
+                                            )}
+                                        </Box>
+                                        <Box sx={{ p: 1.5 }}>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                placeholder="ใส่คำอธิบายภาพ..."
+                                                variant="standard"
+                                                value={photo.caption}
+                                                onChange={(e) => handleCaptionChange(index, e.target.value)}
+                                                InputProps={{ disableUnderline: true, sx: { fontSize: '0.85rem' } }}
+                                            />
+                                        </Box>
+                                    </Paper>
+                                ))}
+
+                                {photos.length === 0 && (
+                                    <Box sx={{
+                                        gridColumn: '1 / -1',
+                                        py: 8,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        border: '2px dashed #ddd',
+                                        borderRadius: '20px',
+                                        color: '#aaa',
+                                        cursor: 'pointer',
+                                        '&:hover': { bgcolor: 'rgba(0,0,0,0.01)', borderColor: '#B76E79' }
+                                    }} component="label">
+                                        <input type="file" hidden multiple accept="image/*" onChange={handleFileSelect} />
+                                        <ImageIcon size={48} variant="Outline" color="#B76E79" style={{ opacity: 0.5, marginBottom: 16 }} />
+                                        <Typography variant="body1" fontWeight={500}>คลิกเพื่อเลือกรูปภาพ</Typography>
+                                        <Typography variant="caption">แนะนำสัดส่วน 4:3 หรือ 16:9</Typography>
+                                    </Box>
+                                )}
+                            </Box>
+                        </Paper>
+                    </Box>
+
+                    {/* Right Column: Status & Publish */}
+                    <Box sx={{ gridColumn: { xs: 'span 12', lg: 'span 4' }, position: 'sticky', top: 100 }}>
+                        <Paper elevation={0} sx={{ p: 4, borderRadius: '20px', border: '1px solid rgba(0,0,0,0.03)' }}>
+                            <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>สถานะการแสดงผล</Typography>
+
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        name="isActive"
+                                        checked={formData.isActive}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                                        color="warning"
+                                    />
+                                }
+                                label={formData.isActive ? "แสดงในหน้าเว็บ" : "ซ่อนจากหน้าเว็บ"}
+                                sx={{ mb: 3, display: 'block' }}
+                            />
+
+                            <Divider sx={{ my: 3 }} />
+
+                            <Box sx={{ p: 2, bgcolor: '#FFF9F8', borderRadius: '12px', mb: 3, textAlign: 'center' }}>
+                                <Typography variant="caption" sx={{ color: '#B76E79', fontWeight: 600, display: 'block', mb: 1, textAlign: 'left' }}>
+                                    PREVIEW COVER
+                                </Typography>
+                                {photos.length > 0 ? (
+                                    <Avatar
+                                        src={photos[0].preview}
+                                        variant="rounded"
+                                        sx={{ width: '100%', height: 200, bgcolor: '#F5F5F5' }}
+                                    />
+                                ) : (
+                                    <Box sx={{ width: '100%', height: 200, bgcolor: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
+                                        <Gallery size={40} color="#B76E79" style={{ opacity: 0.4 }} />
+                                    </Box>
+                                )}
+                            </Box>
+
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                fullWidth
+                                disabled={loading || photos.length === 0}
+                                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <TickCircle size={20} />}
+                                sx={{
+                                    bgcolor: '#B76E79',
+                                    borderRadius: '12px',
+                                    py: 1.5,
+                                    fontWeight: 700,
+                                    fontSize: '1rem',
+                                    boxShadow: '0 10px 20px rgba(183, 110, 121, 0.2)',
+                                    '&:hover': { bgcolor: '#A45D68' }
+                                }}
+                            >
+                                {loading ? 'กำลังบันทึก...' : 'บันทึกอัลบั้ม'}
+                            </Button>
+                            {photos.length === 0 && (
+                                <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1, textAlign: 'center' }}>
+                                    * โปรดเพิ่มรูปภาพอย่างน้อย 1 รูป
+                                </Typography>
+                            )}
+                        </Paper>
+                    </Box>
+                </Box>
+            </form>
+        </AdminLayout>
+    );
+}

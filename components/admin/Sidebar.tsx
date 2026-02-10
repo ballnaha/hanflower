@@ -14,6 +14,7 @@ import {
     Truck,
     Card,
     Heart,
+    Gallery,
     Eye,
     Notification as NotificationIcon
 } from 'iconsax-react';
@@ -41,6 +42,7 @@ const menuGroups = [
             { text: 'คำสั่งซื้อ', icon: ReceiptItem, path: '/admin/orders' },
             { text: 'จัดการสินค้า', icon: BoxIcon, path: '/admin/products' },
             { text: 'จัดการหมวดหมู่', icon: Category, path: '/admin/categories' },
+            { text: 'จัดการ Events', icon: Gallery, path: '/admin/events' },
         ]
     },
     {
@@ -152,7 +154,9 @@ export default function Sidebar() {
                         )}
                         <List disablePadding>
                             {group.items.map((item) => {
-                                const isActive = pathname === item.path;
+                                const isActive = item.path === '/admin'
+                                    ? pathname === '/admin'
+                                    : pathname.startsWith(item.path);
                                 const button = (
                                     <ListItemButton
                                         component={Link}

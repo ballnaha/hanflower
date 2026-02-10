@@ -235,4 +235,29 @@ model ValentineScore {
   @@index([score])
 }
 
+model EventAlbum {
+  id           String       @id @default(cuid())
+  title        String
+  category     String?      // e.g., Wedding, Corporate
+  location     String?
+  date         String?      // e.g., Jan 2024
+  coverImage   String
+  imagesCount  Int          @default(0)
+  isActive     Boolean      @default(true)
+  priority     Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  photos       EventPhoto[]
+}
+
+model EventPhoto {
+  id        String     @id @default(cuid())
+  albumId   String
+  url       String
+  caption   String?
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+  album     EventAlbum @relation(fields: [albumId], references: [id], onDelete: Cascade)
+}
+
 

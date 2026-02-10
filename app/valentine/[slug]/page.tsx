@@ -1343,11 +1343,11 @@ export default function ValentineSlugPage() {
                 style={{ visibility: isTransitioning || isOpen ? 'visible' : 'hidden', willChange: 'opacity' }}
             >
                 {/* Decorative Hearts Flowing in background (Optimized) */}
-                <AmbientHearts hearts={ambientHearts} />
-                <BorderHearts hearts={borderHearts} />
+                {!showHeartGame && <AmbientHearts hearts={ambientHearts} />}
+                {!showHeartGame && <BorderHearts hearts={borderHearts} />}
 
                 {/* Burst Hearts Layer - Main View */}
-                <BurstHearts hearts={burstHearts} source={heartBurstSource} />
+                {!showHeartGame && <BurstHearts hearts={burstHearts} source={heartBurstSource} />}
 
                 {/* Main Layout - Balanced */}
                 <div className={`w-full h-full flex flex-col items-center justify-between py-4 relative z-10 uppercase-none ${isOpen && !isTransitioning ? 'reveal-container' : ''}`}>

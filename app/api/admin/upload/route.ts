@@ -7,18 +7,19 @@ export async function POST(request: NextRequest) {
     try {
         const formData = await request.formData();
         const files = formData.getAll('files') as File[];
+        const folder = formData.get('folder') as string || '';
 
         if (!files || files.length === 0) {
             return NextResponse.json({ error: 'No files uploaded' }, { status: 400 });
         }
 
-        const uploadDir = join(process.cwd(), 'public', 'uploads');
+        const baseUploadDir = join(process.cwd(), 'public', 'uploads');
+        const uploadDir = folder ? join(baseUploadDir, folder) : baseUploadDir;
 
         // Ensure upload directory exists
         try {
             await mkdir(uploadDir, { recursive: true });
         } catch (err) {
-            // Already exists or permission issue
             console.log('Upload directory check:', err);
         }
 
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
             // Create unique filename
             const filename = `${crypto.randomUUID()}.webp`;
             const filePath = join(uploadDir, filename);
+            const relativePath = folder ? `/uploads/${folder}/${filename}` : `/uploads/${filename}`;
 
             try {
                 // Try to use sharp for optimization
@@ -43,16 +45,16 @@ export async function POST(request: NextRequest) {
                     .toFile(filePath);
 
                 console.log('Successfully processed image with Sharp:', filename);
-                uploadedPaths.push(`/api/images/${filename}`);
+                uploadedPaths.push(relativePath);
             } catch (sharpError) {
                 console.error('Sharp processing failed, falling back to original upload:', sharpError);
 
-                // Fallback: Save original file if sharp fails
-                // Change extension to original if it's not webp, but here we'll keep it simple
                 const originalFilename = `${crypto.randomUUID()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-                const originalPath = join(uploadDir, originalFilename);
-                await writeFile(originalPath, buffer);
-                uploadedPaths.push(`/api/images/${originalFilename}`);
+                const originalFilePath = join(uploadDir, originalFilename);
+                const originalRelativePath = folder ? `/uploads/${folder}/${originalFilename}` : `/uploads/${originalFilename}`;
+
+                await writeFile(originalFilePath, buffer);
+                uploadedPaths.push(originalRelativePath);
             }
         }
 
