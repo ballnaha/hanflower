@@ -161,15 +161,17 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(({ order }, r
                     '&::before, &::after': {
                         content: '""',
                         position: 'absolute',
-                        width: 14,
-                        height: 14,
-                        bgcolor: '#FFFFFF', // This might need to change if used in modal
+                        width: 16,
+                        height: 16,
+                        bgcolor: '#F5F5F5', // Match the page background or transparent
                         borderRadius: '50%',
-                        top: -8,
-                        border: '1px solid #EEE'
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        border: '1px solid #EEE',
+                        zIndex: 2
                     },
-                    '&::before': { left: -32 },
-                    '&::after': { right: -32 }
+                    '&::before': { left: -9 },
+                    '&::after': { right: -9 }
                 }} />
 
                 {/* Price Summary */}

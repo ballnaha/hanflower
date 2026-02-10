@@ -5,7 +5,7 @@ import { ArrowRight, Copy, TickCircle, Import, Gallery, TruckFast, Timer, Docume
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import html2canvas from 'html2canvas';
+import { toPng } from "html-to-image";
 import OrderReceipt from '@/components/order/OrderReceipt';
 
 export default function OrderSuccessPage() {
@@ -104,16 +104,20 @@ export default function OrderSuccessPage() {
         if (!invoiceRef.current) return;
 
         try {
-            const canvas = await html2canvas(invoiceRef.current, {
+            const dataUrl = await toPng(invoiceRef.current, {
                 backgroundColor: '#FFFFFF',
-                scale: 2, // Higher quality
-                useCORS: true,
-                logging: false
+                pixelRatio: 3, // Higher quality for better clarity
+                cacheBust: true,
+                style: {
+                    margin: '0',
+                    transform: 'none', // Remove any transforms
+                    width: '380px', // Strict width
+                }
             });
 
             const link = document.createElement('a');
             link.download = `invoice-${order.id}.png`;
-            link.href = canvas.toDataURL('image/png');
+            link.href = dataUrl;
             link.click();
         } catch (error) {
             console.error('Error saving invoice:', error);

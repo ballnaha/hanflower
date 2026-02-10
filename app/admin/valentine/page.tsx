@@ -34,7 +34,7 @@ import Link from "next/link";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useSnackbar } from "@/components/admin/AdminSnackbar";
 import QRCode from "qrcode";
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
 
 export default function AdminValentinePage() {
     const [cards, setCards] = useState<any[]>([]);
@@ -137,17 +137,20 @@ export default function AdminValentinePage() {
             // Wait a bit for images to be fully ready
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            const canvas = await html2canvas(cardRef.current, {
-                useCORS: true,
-                scale: 3, // Higher resolution
-                backgroundColor: null,
-                logging: false,
+            const dataUrl = await toPng(cardRef.current, {
+                quality: 1.0,
+                pixelRatio: 3, // Higher resolution
+                backgroundColor: '#ffffff',
+                cacheBust: true,
+                style: {
+                    margin: '0',
+                    transform: 'none',
+                }
             });
 
-            const image = canvas.toDataURL("image/png", 1.0);
             const link = document.createElement("a");
             link.download = `hanflower-card-${qrTitle.replace(/\s+/g, '-').toLowerCase()}.png`;
-            link.href = image;
+            link.href = dataUrl;
             link.click();
         } catch (error) {
             console.error("Failed to download card", error);

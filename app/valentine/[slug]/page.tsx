@@ -10,6 +10,8 @@ import { Heart, Music, Play, Star } from "iconsax-react";
 import { Button, Typography, Box, Paper, CircularProgress } from "@mui/material";
 import JigsawPuzzle from "./JigsawPuzzle";
 import HeartCatcher from "./HeartCatcher";
+import { toPng } from "html-to-image";
+import { DocumentDownload } from "iconsax-react";
 
 // ==========================================
 // 🚀 EXTREME PERFORMANCE COMPONENTS (MEMOIZED)
@@ -242,6 +244,71 @@ export default function ValentineSlugPage() {
     const MAX_HEARTS = 6;
     const swiperRef = useRef<any>(null);
     const isInternalUpdateRef = useRef(false);
+    const [isDownloading, setIsDownloading] = useState<number | null>(null);
+    const [downloadProgress, setDownloadProgress] = useState(0);
+
+    const handleDownloadCard = useCallback(async (index: number) => {
+        const cardElements = document.querySelectorAll('.polaroid-card');
+        const cardElement = cardElements[index] as HTMLElement;
+        if (!cardElement) return;
+
+        setIsDownloading(index);
+        setDownloadProgress(10);
+
+        try {
+            // Start simulation of progress for better UX
+            const progressInterval = setInterval(() => {
+                setDownloadProgress(prev => {
+                    if (prev >= 90) {
+                        clearInterval(progressInterval);
+                        return 90;
+                    }
+                    return prev + (90 - prev) * 0.1;
+                });
+            }, 200);
+
+            // First, hide no-capture elements manually before capture
+            const uiElements = cardElement.querySelectorAll('.no-capture');
+            uiElements.forEach(el => (el as HTMLElement).style.opacity = '0');
+
+            // Brief delay to ensure UI is hidden
+            await new Promise(r => setTimeout(r, 100));
+
+            // Capture with html-to-image
+            const dataUrl = await toPng(cardElement, {
+                quality: 1.0,
+                pixelRatio: 3,
+                backgroundColor: '#ffffff',
+                cacheBust: true,
+                filter: (node) => {
+                    const exclusionClasses = ['no-capture'];
+                    return !exclusionClasses.some(cls => (node as HTMLElement).classList?.contains(cls));
+                }
+            });
+
+            clearInterval(progressInterval);
+            setDownloadProgress(100);
+
+            // Restore UI elements
+            uiElements.forEach(el => (el as HTMLElement).style.opacity = '');
+
+            const link = document.createElement('a');
+            link.download = `hanflower-valentine-${index + 1}.png`;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Keep 100% visible for a moment
+            await new Promise(r => setTimeout(r, 500));
+        } catch (error) {
+            console.error('Download failed:', error);
+            alert('ไม่สามารถบันทึกรูปภาพได้ในขณะนี้');
+        } finally {
+            setIsDownloading(null);
+            setDownloadProgress(0);
+        }
+    }, []);
 
     const triggerHeartBurst = useCallback((source: 'interaction' | 'completion' | 'swipe' = 'interaction') => {
         const now = Date.now();
@@ -479,9 +546,13 @@ export default function ValentineSlugPage() {
                 setIsMusicStarted(true);
                 setIsMusicPlaying(true);
                 setIsMusicMuted(false);
+
+                // Direct play attempt
                 if (musicAudioRef.current) {
                     musicAudioRef.current.volume = 0.8;
-                    musicAudioRef.current.play().catch(() => { });
+                    musicAudioRef.current.play().catch(err => {
+                        console.warn("Initial play failed, will retry on isOpen:", err);
+                    });
                 }
             }
 
@@ -491,16 +562,18 @@ export default function ValentineSlugPage() {
                 triggerHeartBurst('completion');
 
                 setTimeout(() => {
-                    // setCountdown(null); // REMOVED: Preventing glitch where numbers reappear
                     setIsOpen(true);
+                    // Backup play call when isOpen becomes true
+                    if (musicAudioRef.current) {
+                        musicAudioRef.current.play().catch(() => { });
+                    }
                     setTimeout(() => {
                         setIsTransitioning(false);
-                        // Optional: Reset countdown after transition is fully hidden
                         setTimeout(() => setCountdown(null), 500);
                     }, 800);
                 }, 400);
             }, 3000);
-        }, 300); // 300ms allows the lid-pop animation to be visible before potentially heavy fullscreen/masking
+        }, 300);
     };
 
     useEffect(() => {
@@ -876,6 +949,13 @@ export default function ValentineSlugPage() {
                     0%, 100% { transform: scale(1); }
                     10%, 43%, 76% { transform: scale(1.1); }
                 }
+                @keyframes heartbeat-loading {
+                    0% { transform: scale(1); opacity: 0.8; }
+                    15% { transform: scale(1.3); opacity: 1; }
+                    30% { transform: scale(1.1); opacity: 0.9; }
+                    45% { transform: scale(1.4); opacity: 1; }
+                    100% { transform: scale(1); opacity: 0.8; }
+                }
                 .curtain-heart {
                     animation: heart-grow-curtain 3s ease-in-out forwards;
                     opacity: 0.1;
@@ -1057,9 +1137,14 @@ export default function ValentineSlugPage() {
 
 
             {/* Audio */}
-            {displayContent.backgroundMusicUrl && (
-                <audio ref={musicAudioRef} src={displayContent.backgroundMusicUrl} loop playsInline preload="auto" style={{ position: 'fixed', opacity: 0, pointerEvents: 'none' }} />
-            )}
+            <audio
+                ref={musicAudioRef}
+                src={displayContent.backgroundMusicUrl || undefined}
+                loop
+                playsInline
+                preload="auto"
+                style={{ position: 'fixed', opacity: 0, pointerEvents: 'none', zIndex: -1 }}
+            />
             {displayContent.backgroundMusicYoutubeId && !displayContent.backgroundMusicUrl && (
                 <iframe ref={musicPlayerRef} src={isMusicStarted ? `https://www.youtube.com/embed/${displayContent.backgroundMusicYoutubeId}?autoplay=1&mute=${isMusicMuted ? 1 : 0}&loop=1&playlist=${displayContent.backgroundMusicYoutubeId}&controls=0` : ''} style={{ position: 'fixed', opacity: 0, pointerEvents: 'none' }} allow="autoplay; encrypted-media" title="bg-music" />
             )}
@@ -1300,7 +1385,28 @@ export default function ValentineSlugPage() {
                         >
                             {memories.map((memory, index) => (
                                 <SwiperSlide key={index} className="!overflow-visible">
-                                    <div className="w-full h-full relative bg-white rounded-[4px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] flex flex-col overflow-hidden border-[10px] border-white ring-1 ring-black/5">
+                                    <div className="polaroid-card group w-full h-full relative bg-white rounded-[4px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] flex flex-col overflow-hidden border-[10px] border-white ring-1 ring-black/5">
+
+                                        {/* Save Button Overlay */}
+                                        <div
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDownloadCard(index);
+                                            }}
+                                            className="no-capture absolute top-2 right-2 z-[50] p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm cursor-pointer hover:scale-110 active:scale-95 transition-all"
+                                            style={{
+                                                opacity: (revealedSlides.has(index) || index === 0) ? 0.9 : 0,
+                                                pointerEvents: (revealedSlides.has(index) || index === 0) ? 'auto' : 'none',
+                                                visibility: isDownloading === index ? 'hidden' : 'visible',
+                                                transform: (revealedSlides.has(index) || index === 0) ? 'scale(1)' : 'scale(0.8)'
+                                            }}
+                                        >
+                                            {isDownloading === index ? (
+                                                <CircularProgress size={16} sx={{ color: '#FF3366' }} />
+                                            ) : (
+                                                <DocumentDownload size={18} variant="Bold" color="#FF3366" />
+                                            )}
+                                        </div>
 
                                         {/* Photo/Video Container - 82% of height */}
                                         <div className="relative w-full h-[82%] overflow-hidden bg-slate-100 group shadow-inner">
@@ -1678,6 +1784,60 @@ export default function ValentineSlugPage() {
                                     setShowFinalReveal(true);
                                 }
                             }}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Premium Download Overlay */}
+            {isDownloading !== null && (
+                <div
+                    className="fixed inset-0 z-[200] flex flex-col items-center justify-center transition-all duration-500 overflow-hidden"
+                    style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        backdropFilter: 'blur(10px)',
+                        WebkitBackdropFilter: 'blur(10px)',
+                    }}
+                >
+                    <div className="relative mb-10">
+                        <div
+                            className="absolute inset-0 bg-pink-200/50 rounded-full blur-3xl animate-pulse"
+                            style={{ transform: 'scale(1.5)' }}
+                        />
+                        <div style={{ animation: 'heartbeat-loading 1.5s infinite ease-in-out' }}>
+                            <Heart size={80} variant="Bold" color="#FF3366" />
+                        </div>
+                    </div>
+
+                    <Typography
+                        sx={{
+                            fontFamily: 'var(--font-mali)',
+                            fontSize: '1.4rem',
+                            fontWeight: 700,
+                            color: '#4A151B',
+                            mb: 1
+                        }}
+                    >
+                        {downloadProgress === 100 ? "บันทึกเรียบร้อย!" : "กำลังบันทึกความทรงจำ..."}
+                    </Typography>
+
+                    <Typography
+                        sx={{
+                            fontFamily: 'var(--font-prompt)',
+                            fontSize: '0.9rem',
+                            color: '#D41442',
+                            opacity: 0.6,
+                            mb: 5
+                        }}
+                    >
+                        {downloadProgress === 100 ? "เก็บไว้ในภาพถ่ายของคุณ" : "กรุณารอสักครู่เพื่อภาพที่คมชัดที่สุด"}
+                    </Typography>
+
+                    {/* Minimal Progress Bar */}
+                    <div className="w-64 h-1.5 bg-pink-100 rounded-full overflow-hidden relative">
+                        <div
+                            className="h-full bg-gradient-to-r from-[#FF3366] to-[#FF99AA] transition-all duration-300 ease-out rounded-full"
+                            style={{ width: `${downloadProgress}%` }}
                         />
                     </div>
                 </div>

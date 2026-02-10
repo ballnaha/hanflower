@@ -39,7 +39,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import OrderReceipt from '@/components/order/OrderReceipt';
-import html2canvas from 'html2canvas';
+import { toPng } from "html-to-image";
 import { useRef } from 'react';
 import { useNotification } from '@/context/NotificationContext';
 
@@ -131,14 +131,19 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const handleSaveReceipt = async () => {
         if (!receiptRef.current) return;
         try {
-            const canvas = await html2canvas(receiptRef.current, {
+            const dataUrl = await toPng(receiptRef.current, {
                 backgroundColor: '#FFFFFF',
-                scale: 2,
-                useCORS: true
+                pixelRatio: 3,
+                cacheBust: true,
+                style: {
+                    margin: '0',
+                    transform: 'none',
+                    width: '380px',
+                }
             });
             const link = document.createElement('a');
             link.download = `receipt-${order?.id.slice(-8)}.png`;
-            link.href = canvas.toDataURL('image/png');
+            link.href = dataUrl;
             link.click();
         } catch (err) {
             console.error(err);
@@ -224,7 +229,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         <Link href="/admin/orders" style={{ textDecoration: 'none', color: '#888', fontSize: '0.85rem' }}>รายการคำสั่งซื้อ</Link>
                         <Typography color="text.primary" sx={{ fontSize: '0.85rem' }}>#{order.id.slice(-9).toUpperCase()}</Typography>
                     </Breadcrumbs>
-                    <Typography variant="h4" sx={{ fontWeight: 800, fontFamily: 'Playfair Display', color: '#1A1A1A' }}>
+                    <Typography variant="h4" sx={{ fontWeight: 800, fontFamily: 'Prompt', color: '#1A1A1A' }}>
                         รายละเอียดออเดอร์
                     </Typography>
                 </Box>
@@ -293,15 +298,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             <Box sx={{
                                 p: 1.5,
                                 borderRadius: '16px',
-                                bgcolor: statusColors[order.status].bg,
-                                color: statusColors[order.status].color
+                                bgcolor: statusColors[order.status]?.bg || '#F5F5F5',
+                                color: statusColors[order.status]?.color || '#666'
                             }}>
-                                <ClipboardText size={28} variant="Bulk" color="#8E6D3F" />
+                                <ClipboardText size={28} variant="Bulk" color={statusColors[order.status]?.color || "#8E6D3F"} />
                             </Box>
                             <Box>
                                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.1em' }}>สถานะปัจจุบัน</Typography>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                    <Typography variant="h6" sx={{ fontWeight: 800 }}>{statusColors[order.status].label}</Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 800 }}>{statusColors[order.status]?.label || order.status}</Typography>
                                     <Chip
                                         label={new Date(order.createdAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
                                         size="small"
@@ -526,7 +531,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6" fontWeight={700}>ตัวอย่างใบเสร็จ</Typography>
                     <IconButton onClick={() => setReceiptOpen(false)} size="small">
-                        <ArrowLeft size={20} />
+                        <ArrowLeft size={20} variant="Bold" color="#B76E79" />
                     </IconButton>
                 </Box>
                 <DialogContent sx={{ p: 1, bgcolor: '#F5F5F5' }}>
@@ -538,7 +543,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     <Button
                         variant="outlined"
                         onClick={() => window.print()}
-                        startIcon={<Printer size={20} />}
+                        startIcon={<Printer size={20} variant="Bold" color="#B76E79" />}
                         sx={{ borderRadius: '10px', textTransform: 'none', flex: 1 }}
                     >
                         พิมพ์
@@ -546,7 +551,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     <Button
                         variant="contained"
                         onClick={handleSaveReceipt}
-                        startIcon={<DocumentDownload size={20} />}
+                        startIcon={<DocumentDownload size={20} variant="Bold" color="#F5F5F5" />}
                         sx={{ borderRadius: '10px', textTransform: 'none', bgcolor: '#B76E79', flex: 1, '&:hover': { bgcolor: '#A45D68' } }}
                     >
                         บันทึกรูป
