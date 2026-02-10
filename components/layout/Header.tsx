@@ -164,10 +164,10 @@ export default function Header() {
                                     onClick={handleDrawerToggle}
                                     sx={{
                                         display: { xs: 'flex', md: 'none' }, // Show only on mobile
-                                        color: ((pathname === '/' || pathname === '/events') && !isScrolled) ? '#FFF' : '#5D4037'
+                                        color: (pathname === '/' && !isScrolled) ? '#FFF' : '#5D4037'
                                     }}
                                 >
-                                    <HambergerMenu size={24} variant="Outline" color={((pathname === '/' || pathname === '/events') && !isScrolled) ? '#FFF' : '#5D4037'} />
+                                    <HambergerMenu size={24} variant="Outline" color={(pathname === '/' && !isScrolled) ? '#FFF' : '#5D4037'} />
                                 </IconButton>
 
                                 <Box sx={{ display: { xs: 'none', md: 'block' } }}>
@@ -179,7 +179,7 @@ export default function Header() {
                                                 fill
                                                 style={{
                                                     objectFit: 'contain',
-                                                    filter: isScrolled ? 'none' : ((pathname === '/' || pathname === '/events') && !isScrolled ? 'brightness(0) invert(1)' : 'none'),
+                                                    filter: isScrolled ? 'none' : (pathname === '/' && !isScrolled ? 'brightness(0) invert(1)' : 'none'),
                                                     transition: 'filter 0.5s ease'
                                                 }}
                                                 priority
@@ -200,7 +200,7 @@ export default function Header() {
                                                 fill
                                                 style={{
                                                     objectFit: 'contain',
-                                                    filter: isScrolled ? 'none' : ((pathname === '/' || pathname === '/events') && !isScrolled ? 'brightness(0) invert(1)' : 'none'),
+                                                    filter: isScrolled ? 'none' : (pathname === '/' && !isScrolled ? 'brightness(0) invert(1)' : 'none'),
                                                     transition: 'filter 0.5s ease'
                                                 }}
                                                 priority
@@ -215,7 +215,7 @@ export default function Header() {
                                         { label: 'FLOWERS', href: '/products?category=bouquet' },
                                         { label: 'EVENTS', href: '/events' },
                                         { label: 'ABOUT US', href: '/about' },
-                                        { label: 'OUR CUSTOMERS', href: '/coming-soon' },
+                                        { label: 'OUR CUSTOMERS', href: '/our-customer' },
 
                                     ].map((link) => {
                                         const isExternal = false;
@@ -229,7 +229,7 @@ export default function Header() {
                                                         fontSize: '0.85rem',
                                                         textTransform: 'uppercase',
                                                         letterSpacing: '0.25em',
-                                                        color: isScrolled ? '#5D4037' : ((pathname === '/' || pathname === '/events') && !isScrolled ? '#FFFFFF' : '#5D4037'),
+                                                        color: isScrolled ? '#5D4037' : (pathname === '/' && !isScrolled ? '#FFFFFF' : '#5D4037'),
                                                         textDecoration: 'none',
                                                         fontWeight: 600,
                                                         display: 'block',
@@ -265,7 +265,7 @@ export default function Header() {
                                     aria-label="shopping cart"
                                     onClick={() => toggleCart(true)}
                                     sx={{
-                                        color: isScrolled ? '#5D4037' : ((pathname === '/' || pathname === '/events') && !isScrolled ? '#FFFFFF' : '#5D4037'),
+                                        color: isScrolled ? '#5D4037' : (pathname === '/' && !isScrolled ? '#FFFFFF' : '#5D4037'),
                                         transition: 'transform 0.2s',
                                         '&:hover': { transform: 'scale(1.1)' }
                                     }}
@@ -280,7 +280,7 @@ export default function Header() {
                                             }
                                         }}
                                     >
-                                        <ShoppingBag size="22" variant="Outline" color={isScrolled ? '#5D4037' : ((pathname === '/' || pathname === '/events') && !isScrolled ? '#FFFFFF' : '#B76E79')} />
+                                        <ShoppingBag size="22" variant="Outline" color={isScrolled ? '#5D4037' : (pathname === '/' && !isScrolled ? '#FFFFFF' : '#B76E79')} />
                                     </Badge>
                                 </IconButton>
 
@@ -291,7 +291,7 @@ export default function Header() {
                                     href="https://line.me/ti/p/~fonms2"
                                     target="_blank"
                                     sx={{
-                                        bgcolor: isScrolled || (pathname !== '/' && pathname !== '/events') ? '#06C755' : 'rgba(255, 255, 255, 0.15)',
+                                        bgcolor: isScrolled || (pathname !== '/' && pathname !== '/our-customer') ? '#06C755' : 'rgba(255, 255, 255, 0.15)',
                                         backdropFilter: 'blur(10px)',
                                         borderRadius: '100px', // Tablet style pill
                                         px: { xs: 1.5, md: 3 },
@@ -303,7 +303,7 @@ export default function Header() {
                                         fontWeight: 600,
                                         letterSpacing: '0.02em',
                                         border: '1px solid',
-                                        borderColor: isScrolled || (pathname !== '/' && pathname !== '/events') ? '#06C755' : 'rgba(255, 255, 255, 0.4)',
+                                        borderColor: isScrolled || (pathname !== '/' && pathname !== '/our-customer') ? '#06C755' : 'rgba(255, 255, 255, 0.4)',
                                         transition: 'all 0.3s ease',
                                         '&:hover': {
                                             bgcolor: '#05B54C',
@@ -355,7 +355,7 @@ export default function Header() {
                                 { label: 'FLOWERS', href: '/products?category=bouquet' },
                                 { label: 'EVENTS', href: '/events' },
                                 { label: 'ABOUT US', href: '/about' },
-                                { label: 'OUR CUSTOMERS', href: '/customers' },
+                                { label: 'OUR CUSTOMERS', href: '/our-customer' },
                             ].map((item) => (
                                 <ListItem key={item.label} disablePadding>
                                     <ListItemButton sx={{ textAlign: 'center', py: 2 }} component={Link} href={item.href}>

@@ -39,7 +39,7 @@ import Link from 'next/link';
 import { useNotification } from '@/context/NotificationContext';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 
-interface EventAlbum {
+interface CustomerAlbum {
     id: string;
     title: string;
     category: string;
@@ -53,12 +53,12 @@ interface EventAlbum {
     };
 }
 
-export default function AdminEventsPage() {
-    const [albums, setAlbums] = useState<EventAlbum[]>([]);
+export default function AdminOurCustomerPage() {
+    const [albums, setAlbums] = useState<CustomerAlbum[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const [selectedAlbum, setSelectedAlbum] = useState<EventAlbum | null>(null);
+    const [selectedAlbum, setSelectedAlbum] = useState<CustomerAlbum | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -67,7 +67,8 @@ export default function AdminEventsPage() {
     const fetchAlbums = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/admin/events?excludeCategory=Customer');
+            // Note: Filtered for "Customer" related categories
+            const res = await fetch('/api/admin/events?category=Customer');
             if (res.ok) {
                 const data = await res.json();
                 setAlbums(data);
@@ -84,14 +85,13 @@ export default function AdminEventsPage() {
         fetchAlbums();
     }, []);
 
-    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, album: EventAlbum) => {
+    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, album: CustomerAlbum) => {
         setAnchorEl(event.currentTarget);
         setSelectedAlbum(album);
     };
 
     const handleMenuClose = () => {
         setAnchorEl(null);
-        // Do not clear selectedAlbum here, as it's needed for the Delete dialog
     };
 
     const handleDeleteClick = () => {
@@ -124,7 +124,7 @@ export default function AdminEventsPage() {
         }
     };
 
-    const toggleActive = async (album: EventAlbum) => {
+    const toggleActive = async (album: CustomerAlbum) => {
         setTogglingId(album.id);
         try {
             const res = await fetch(`/api/admin/events/${album.id}`, {
@@ -147,23 +147,22 @@ export default function AdminEventsPage() {
 
     const filteredAlbums = albums.filter(a =>
         a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.location.toLowerCase().includes(searchTerm.toLowerCase())
+        a.category?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
-        <AdminLayout title="จัดการอัลบั้มผลงาน (Events)">
+        <AdminLayout title="จัดการรูปลูกค้า (Our Customers)">
             <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
                     <Typography variant="body2" sx={{ color: '#666' }}>
-                        มีอัลบั้มทั้งหมด {albums.length} รายการในระบบ
+                        จัดการอัลบั้มรูปลูกค้าและรีวิวจากผู้ซื้อจริง
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
                     <Button
                         variant="contained"
                         component={Link}
-                        href="/admin/events/new"
+                        href="/admin/our-customer/new"
                         startIcon={<Add size={20} color="#FFFFFF" variant="Linear" />}
                         sx={{
                             bgcolor: '#B76E79',
@@ -174,7 +173,7 @@ export default function AdminEventsPage() {
                             '&:hover': { bgcolor: '#A45D68', boxShadow: '0 12px 24px rgba(183, 110, 121, 0.3)' }
                         }}
                     >
-                        เพิ่มอัลบั้มใหม่
+                        เพิ่มอัลบั้มลูกค้า
                     </Button>
                 </Box>
             </Box>
@@ -182,7 +181,7 @@ export default function AdminEventsPage() {
             {/* Filters and Search */}
             <Paper elevation={0} sx={{ p: 2, mb: 4, borderRadius: '16px', border: '1px solid rgba(0,0,0,0.03)', display: 'flex', gap: 2, alignItems: 'center' }}>
                 <TextField
-                    placeholder="ค้นหาจากชื่อ, หมวดหมู่, สถานที่..."
+                    placeholder="ค้นหาจากชื่อ หรือหมวดหมู่..."
                     size="small"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -209,10 +208,9 @@ export default function AdminEventsPage() {
                 <Table sx={{ minWidth: 650 }}>
                     <TableHead>
                         <TableRow sx={{ bgcolor: '#FAFAFA' }}>
-                            <TableCell sx={{ fontWeight: 700, color: '#1A1A1A', py: 2.5 }}>อัลบั้ม</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: '#1A1A1A', py: 2.5 }}>อัลบั้มลูกค้า</TableCell>
                             <TableCell sx={{ fontWeight: 700, color: '#1A1A1A' }}>ข้อมูลทั่วไป</TableCell>
                             <TableCell sx={{ fontWeight: 700, color: '#1A1A1A' }}>รูปภาพ</TableCell>
-                            <TableCell sx={{ fontWeight: 700, color: '#1A1A1A' }}>ลำดับ</TableCell>
                             <TableCell sx={{ fontWeight: 700, color: '#1A1A1A' }}>สถานะ</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 700, color: '#1A1A1A' }}>จัดการ</TableCell>
                         </TableRow>
@@ -220,18 +218,18 @@ export default function AdminEventsPage() {
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                                <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
                                     <CircularProgress size={30} sx={{ color: '#B76E79' }} />
                                     <Typography sx={{ mt: 2, color: '#888' }}>กำลังโหลดข้อมูล...</Typography>
                                 </TableCell>
                             </TableRow>
                         ) : filteredAlbums.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 12 }}>
+                                <TableCell colSpan={5} align="center" sx={{ py: 12 }}>
                                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                                         <Gallery size={80} variant="Bulk" color="#E0E0E0" />
                                         <Typography sx={{ mt: 2, color: '#888', fontWeight: 500 }}>
-                                            ไม่พบข้อมูลอัลบั้ม
+                                            ไม่พบข้อมูลอัลบั้มลูกค้า
                                         </Typography>
                                     </Box>
                                 </TableCell>
@@ -251,7 +249,7 @@ export default function AdminEventsPage() {
                                                     {album.title}
                                                 </Typography>
                                                 <Chip
-                                                    label={album.category || 'Uncategorized'}
+                                                    label={album.category || 'Our Customer'}
                                                     size="small"
                                                     sx={{
                                                         height: 20,
@@ -284,9 +282,6 @@ export default function AdminEventsPage() {
                                                 {album._count?.photos || 0}
                                             </Typography>
                                         </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography sx={{ fontSize: '0.85rem' }}>{album.priority}</Typography>
                                     </TableCell>
                                     <TableCell>
                                         <Chip
@@ -335,10 +330,10 @@ export default function AdminEventsPage() {
                 <MenuItem
                     onClick={handleMenuClose}
                     component={Link}
-                    href={`/admin/events/${selectedAlbum?.id}`}
+                    href={`/admin/our-customer/${selectedAlbum?.id}`}
                     sx={{ gap: 1.5, py: 1.2, color: '#5D4037', fontSize: '0.85rem' }}
                 >
-                    <Edit2 size={18} color="#B76E79" variant="Bulk" /> แก้ไขข้อมูล
+                    <Edit2 size={18} color="#B76E79" variant="Bulk" /> แก้ไขอัลบั้ม
                 </MenuItem>
                 <MenuItem
                     onClick={handleDeleteClick}
@@ -357,7 +352,7 @@ export default function AdminEventsPage() {
                 }}
                 onConfirm={handleConfirmDelete}
                 title="ยืนยันการลบอัลบั้ม"
-                message="คุณแน่ใจหรือไม่ว่าต้องการลบอัลบั้มนี้? ข้อมูลรูปภาพทั้งหมดภายในอัลบั้มจะถูกลบไปด้วย และไม่สามารถย้อนกลับได้"
+                message="คุณแน่ใจหรือไม่ว่าต้องการลบอัลบั้มลูกค้านี้?"
                 isLoading={deleting}
             />
         </AdminLayout>

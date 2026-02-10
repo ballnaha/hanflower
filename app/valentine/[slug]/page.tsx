@@ -82,20 +82,181 @@ const BorderHearts = React.memo(({ hearts }: { hearts: any[] }) => (
         {hearts.map((h) => (
             <FastHeart
                 key={h.id}
-                color={h.color}
+                color={h.color || "#FF3366"}
                 size={h.size}
                 style={{
                     position: 'absolute',
                     top: `${h.top}%`,
                     left: `${h.left}%`,
-                    transform: `rotate(${h.rotation}deg) translate3d(0,0,0)`,
-                    opacity: 0.9
+                    transform: `translate3d(0,0,0) rotate(${h.rotation}deg)`,
+                    willChange: 'transform'
                 }}
             />
         ))}
     </div>
 ));
 BorderHearts.displayName = 'BorderHearts';
+
+const PolaroidCard = React.memo(({
+    memory,
+    index,
+    isRevealed,
+    isDownloading,
+    currentSlideIndex,
+    totalCount,
+    handleDownloadCard,
+    handleOpenVideoModal,
+    handleImageLoaded
+}: any) => {
+    const isActive = index === currentSlideIndex;
+    const isAdjacent = Math.abs(index - currentSlideIndex) <= 1;
+    const isVisible = isRevealed; // Unified visibility with reveal state
+
+    return (
+        <div className="polaroid-card group w-full h-full relative bg-white rounded-[4px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] flex flex-col overflow-hidden border-[10px] border-white ring-1 ring-black/5">
+            {/* Save Button Overlay */}
+            <div
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownloadCard(index);
+                }}
+                className="no-capture absolute top-2 right-2 z-[50] p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm cursor-pointer hover:scale-110 active:scale-95 transition-all"
+                style={{
+                    opacity: (isRevealed && !isDownloading) ? 0.9 : 0,
+                    pointerEvents: isRevealed ? 'auto' : 'none',
+                    visibility: isDownloading === index ? 'hidden' : 'visible',
+                    transform: isRevealed ? 'scale(1)' : 'scale(0.8)'
+                }}
+            >
+                {isDownloading === index ? (
+                    <CircularProgress size={16} sx={{ color: '#FF3366' }} />
+                ) : (
+                    <DocumentDownload size={18} variant="Bold" color="#FF3366" />
+                )}
+            </div>
+
+            {/* Photo/Video Container - 82% of height */}
+            <div className="relative w-full h-[82%] overflow-hidden bg-slate-100 group shadow-inner">
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#FF336610] via-transparent to-[#FFD1DC15] z-10 pointer-events-none" />
+                <div className="photo-gloss-dynamic" />
+
+                {/* Optimized Sparkles: Only for active/adjacent cards */}
+                {isAdjacent && (
+                    <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+                        {[...Array(3)].map((_, i) => {
+                            const left = ((i * 19) + (index * 23)) % 85 + 7;
+                            const top = ((i * 29) + (index * 17)) % 85 + 7;
+                            const delay = (i * 0.9) % 4;
+                            const duration = 2.8 + ((i * 0.6) % 2.2);
+                            const size = 9 + ((i * 3) % 5);
+                            return (
+                                <div
+                                    key={`ps-${index}-${i}`}
+                                    className="sparkle-shape"
+                                    style={{
+                                        left: `${left}%`,
+                                        top: `${top}%`,
+                                        width: `${size}px`,
+                                        height: `${size}px`,
+                                        animation: `photo-sparkle ${duration}s ease-in-out infinite`,
+                                        animationDelay: `${delay}s`,
+                                    }}
+                                >
+                                    <div className="sparkle-glow" />
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {memory.type === 'video' || memory.type === 'youtube' || memory.type === 'tiktok' ? (
+                    <div className="w-full h-full relative flex items-center justify-center overflow-hidden cursor-pointer" onClick={() => handleOpenVideoModal(memory)}>
+                        {memory.type === 'youtube' ? (
+                            <div className="w-full h-full relative">
+                                <img src={`https://img.youtube.com/vi/${memory.url}/maxresdefault.jpg`} className="w-full h-full object-cover" alt="Video thumbnail" loading={index === 0 ? "eager" : "lazy"} />
+                                <div className="absolute inset-0 bg-black/10" />
+                            </div>
+                        ) : (
+                            <div className="w-full h-full video-pattern relative flex flex-col items-center justify-center p-6 text-center">
+                                <Heart size={32} variant="Bold" color="#FF3366" className="opacity-20 mb-4" />
+                                <Typography sx={{ fontFamily: 'var(--font-mali)', fontSize: '0.8rem', color: '#FF3366', opacity: 0.6, fontWeight: 700 }}>OUR SPECIAL MOMENT</Typography>
+                            </div>
+                        )}
+
+                        <div className="absolute inset-0 flex flex-col items-center justify-center z-30 group-hover:scale-110 transition-transform duration-500">
+                            <div className="relative w-20 h-20 flex items-center justify-center">
+                                <div className="absolute inset-0 bg-white/30 rounded-full animate-ping" />
+                                <div className="absolute inset-2 bg-white/40 rounded-full animate-pulse" />
+                                <div className="relative z-10 w-14 h-14 bg-gradient-to-br from-[#FF3366] to-[#FF99AA] rounded-full flex items-center justify-center shadow-[0_10px_25px_rgba(255,51,102,0.4)] play-pulse">
+                                    <Play size={24} variant="Bold" color="white" style={{ marginLeft: '4px' }} />
+                                </div>
+                            </div>
+                            <Typography sx={{ fontFamily: 'var(--font-mali)', fontSize: '0.75rem', color: 'white', fontWeight: 800, mt: 2, textShadow: '0 2px 4px rgba(0,0,0,0.3)', letterSpacing: '0.1em' }}>TAP TO PLAY ❤️</Typography>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="w-full h-full relative">
+                        {memory.url.toLowerCase().includes('.gif') ? (
+                            <img
+                                key={`gif-${index}`}
+                                src={memory.url}
+                                alt={memory.caption}
+                                className="w-full h-full object-cover"
+                                loading="eager"
+                            />
+                        ) : (
+                            <img
+                                src={memory.url}
+                                alt={memory.caption}
+                                className="w-full h-full object-cover"
+                                loading={index === 0 ? "eager" : "lazy"}
+                                onLoad={() => handleImageLoaded(index)}
+                            />
+                        )}
+                    </div>
+                )}
+
+                <div
+                    className="absolute inset-0 z-40 pointer-events-none flex flex-col items-center justify-center transition-all duration-1000 ease-in-out"
+                    style={{
+                        backgroundColor: '#FFFFFF',
+                        opacity: isRevealed ? 0 : 1,
+                        transform: isRevealed ? 'scale(1.1)' : 'scale(1)',
+                        visibility: (index === 0 || isRevealed) ? 'hidden' : 'visible',
+                        display: index === 0 ? 'none' : 'flex', // Slide 0 has NO white overlay
+                        transition: 'opacity 0.8s ease-out, transform 0.8s ease-out'
+                    }}
+                >
+                    <FastHeart size={50} color="#FFD1DC" style={{ opacity: 0.6 }} />
+                    <div className="mt-4 w-12 h-[2px] bg-pink-50 rounded-full overflow-hidden">
+                        <div className="w-full h-full bg-pink-200 origin-left animate-[loading-bar_1.5s_infinite]" />
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex-1 bg-white flex flex-col items-center justify-center px-4 py-2 relative">
+                <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-black/[0.03] to-transparent pointer-events-none" />
+                {memory.caption ? (
+                    <Typography sx={{ color: '#4A151B', fontFamily: 'var(--font-mali)', fontSize: '1rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.3, opacity: 0.85 }}>
+                        {memory.caption}
+                    </Typography>
+                ) : (
+                    <div className="flex gap-1">
+                        <Heart size={12} variant="Bold" color="#FFD1DC" />
+                        <Heart size={12} variant="Bold" color="#FFD1DC" />
+                        <Heart size={12} variant="Bold" color="#FFD1DC" />
+                    </div>
+                )}
+                <div className="absolute bottom-2 right-3 opacity-20">
+                    <Typography sx={{ fontSize: '0.6rem', color: '#4A151B', fontWeight: 800 }}>
+                        {String(index + 1).padStart(2, '0')} / {String(totalCount).padStart(2, '0')}
+                    </Typography>
+                </div>
+            </div>
+        </div>
+    );
+});
+PolaroidCard.displayName = 'PolaroidCard';
 
 // ==========================================
 // 💖 DEFAULT CONFIGURATION (FALLBACK)
@@ -156,7 +317,7 @@ export default function ValentineSlugPage() {
     const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
     const [hasSwiped, setHasSwiped] = useState(false);
     const [seenSlides, setSeenSlides] = useState<Set<number>>(new Set([0]));
-    const [revealedSlides, setRevealedSlides] = useState<Set<number>>(new Set([0]));
+    const [revealedSlides, setRevealedSlides] = useState<Set<number>>(new Set());
     const [showMessage, setShowMessage] = useState(false);
     const [fontsLoaded, setFontsLoaded] = useState(false);
     const [isPuzzleComplete, setIsPuzzleComplete] = useState(false);
@@ -475,9 +636,21 @@ export default function ValentineSlugPage() {
         });
         preloadImagesRef.current = [];
 
+        // OPTIMIZED: Only preload the first 5 images/thumbnails immediately
+        // The rest will lazy load when the swiper approaches them
+        const preloadLimit = 5;
+
         const nonImageIndexes: number[] = [];
 
         memories.forEach((memory, index) => {
+            if (index >= preloadLimit) {
+                // For non-preloaded images, ensure they are marked as "loaded" eventually if not image/youtube
+                if (memory.type !== 'image' && memory.type !== 'youtube') {
+                    nonImageIndexes.push(index);
+                }
+                return;
+            }
+
             if (memory.type === 'image') {
                 const img = new Image();
                 img.onload = () => handleImageLoaded(index);
@@ -495,11 +668,12 @@ export default function ValentineSlugPage() {
             }
         });
 
-        if (nonImageIndexes.length > 0) {
+        // After a small delay, mark everything as loaded to be safe
+        const safeTimeout = setTimeout(() => {
             setLoadedImages(prev => {
                 const updated = new Set(prev);
                 let changed = false;
-                nonImageIndexes.forEach(idx => {
+                memories.forEach((_, idx) => {
                     if (!updated.has(idx)) {
                         updated.add(idx);
                         changed = true;
@@ -507,7 +681,7 @@ export default function ValentineSlugPage() {
                 });
                 return changed ? updated : prev;
             });
-        }
+        }, 3000);
 
         return () => {
             preloadImagesRef.current.forEach(img => {
@@ -563,14 +737,22 @@ export default function ValentineSlugPage() {
 
                 setTimeout(() => {
                     setIsOpen(true);
-                    // Backup play call when isOpen becomes true
+                    setIsSwiperReady(true);
+
+                    // Explicitly reveal Slide 0 when box opens
+                    setRevealedSlides(prev => {
+                        const next = new Set(prev);
+                        next.add(0);
+                        return next;
+                    });
+
                     if (musicAudioRef.current) {
                         musicAudioRef.current.play().catch(() => { });
                     }
-                    setTimeout(() => {
-                        setIsTransitioning(false);
-                        setTimeout(() => setCountdown(null), 500);
-                    }, 800);
+
+                    // Immediate interaction availability
+                    setIsTransitioning(false);
+                    setTimeout(() => setCountdown(null), 300);
                 }, 400);
             }, 3000);
         }, 300);
@@ -637,6 +819,7 @@ export default function ValentineSlugPage() {
     }, [isOpen, isTransitioning]);
 
     const handleSlideChange = useCallback((swiper: any) => {
+        if (!isOpen) return; // Prevent reveal logic before box is open
         const activeIndex = swiper.activeIndex;
         const previousIndex = swiper.previousIndex;
 
@@ -1006,9 +1189,10 @@ export default function ValentineSlugPage() {
                 @keyframes swipeHint { 0% { transform: translateX(60px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateX(-60px); opacity: 0; } }
                 @keyframes ring-spread { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(2.5); opacity: 0; } }
                 @keyframes float-heart-up {
-                    0% { transform: translateY(120vh) rotate(0deg) translateZ(0); opacity: 0; }
-                    10% { opacity: 0.6; }
-                    90% { opacity: 0.4; }
+                    0% { transform: translateY(110vh) rotate(0deg) translateZ(0); opacity: 0; }
+                    15% { opacity: 0.8; }
+                    40% { opacity: 0.6; }
+                    75% { opacity: 0.3; }
                     100% { transform: translateY(-20vh) rotate(360deg) translateZ(0); opacity: 0; }
                 }
                 @keyframes heartbeat-cute {
@@ -1342,12 +1526,12 @@ export default function ValentineSlugPage() {
                 className={`absolute inset-0 z-10 transition-opacity duration-400 ease-out stable-container ${isOpen ? 'opacity-100' : 'opacity-0'}`}
                 style={{ visibility: isTransitioning || isOpen ? 'visible' : 'hidden', willChange: 'opacity' }}
             >
-                {/* Decorative Hearts Flowing in background (Optimized) */}
-                {!showHeartGame && <AmbientHearts hearts={ambientHearts} />}
-                {!showHeartGame && <BorderHearts hearts={borderHearts} />}
+                {/* Decorative Hearts Flowing in background (Optimized: Render only when nearly open) */}
+                {isOpen && !showHeartGame && <AmbientHearts hearts={ambientHearts} />}
+                {isOpen && !showHeartGame && <BorderHearts hearts={borderHearts} />}
 
                 {/* Burst Hearts Layer - Main View */}
-                {!showHeartGame && <BurstHearts hearts={burstHearts} source={heartBurstSource} />}
+                {isOpen && !showHeartGame && <BurstHearts hearts={burstHearts} source={heartBurstSource} />}
 
                 {/* Main Layout - Balanced */}
                 <div className={`w-full h-full flex flex-col items-center justify-between py-4 relative z-10 uppercase-none ${isOpen && !isTransitioning ? 'reveal-container' : ''}`}>
@@ -1369,15 +1553,15 @@ export default function ValentineSlugPage() {
                             className="valentine-swiper w-[88vw] max-w-[340px] aspect-[9/16] sm:max-w-[360px] md:max-w-[420px]"
                             initialSlide={0}
                             followFinger={true}
-                            touchRatio={1}
-                            threshold={10}
+                            touchRatio={1.2}
+                            threshold={5}
                             resistance={true}
-                            resistanceRatio={0.85}
-                            speed={400}
+                            resistanceRatio={0.7}
+                            speed={300}
                             roundLengths={true}
                             onSwiper={(swiper) => {
                                 swiperRef.current = swiper;
-                                setTimeout(() => setIsSwiperReady(true), 400);
+                                setTimeout(() => setIsSwiperReady(true), 150);
                             }}
                             onSlideChange={handleSlideChange}
                             creativeEffect={swiperCreativeConfig}
@@ -1385,182 +1569,17 @@ export default function ValentineSlugPage() {
                         >
                             {memories.map((memory, index) => (
                                 <SwiperSlide key={index} className="!overflow-visible">
-                                    <div className="polaroid-card group w-full h-full relative bg-white rounded-[4px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] flex flex-col overflow-hidden border-[10px] border-white ring-1 ring-black/5">
-
-                                        {/* Save Button Overlay */}
-                                        <div
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDownloadCard(index);
-                                            }}
-                                            className="no-capture absolute top-2 right-2 z-[50] p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm cursor-pointer hover:scale-110 active:scale-95 transition-all"
-                                            style={{
-                                                opacity: (revealedSlides.has(index) || index === 0) ? 0.9 : 0,
-                                                pointerEvents: (revealedSlides.has(index) || index === 0) ? 'auto' : 'none',
-                                                visibility: isDownloading === index ? 'hidden' : 'visible',
-                                                transform: (revealedSlides.has(index) || index === 0) ? 'scale(1)' : 'scale(0.8)'
-                                            }}
-                                        >
-                                            {isDownloading === index ? (
-                                                <CircularProgress size={16} sx={{ color: '#FF3366' }} />
-                                            ) : (
-                                                <DocumentDownload size={18} variant="Bold" color="#FF3366" />
-                                            )}
-                                        </div>
-
-                                        {/* Photo/Video Container - 82% of height */}
-                                        <div className="relative w-full h-[82%] overflow-hidden bg-slate-100 group shadow-inner">
-                                            {/* Premium Overlays */}
-                                            <div className="absolute inset-0 bg-gradient-to-tr from-[#FF336610] via-transparent to-[#FFD1DC15] z-10 pointer-events-none" />
-                                            <div className="photo-gloss-dynamic" />
-
-                                            {/* Advanced Micro-Sparkles Area - Reduced count (5 -> 3) for performance */}
-                                            <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
-                                                {[...Array(3)].map((_, i) => {
-                                                    // Stable positions based on index to prevent jump on re-render
-                                                    const left = ((i * 19) + (index * 23)) % 85 + 7;
-                                                    const top = ((i * 29) + (index * 17)) % 85 + 7;
-                                                    const delay = (i * 0.9) % 4;
-                                                    const duration = 2.8 + ((i * 0.6) % 2.2);
-                                                    const size = 9 + ((i * 3) % 5);
-
-                                                    return (
-                                                        <div
-                                                            key={`ps-${index}-${i}`}
-                                                            className="sparkle-shape"
-                                                            style={{
-                                                                left: `${left}%`,
-                                                                top: `${top}%`,
-                                                                width: `${size}px`,
-                                                                height: `${size}px`,
-                                                                animation: `photo-sparkle ${duration}s ease-in-out infinite`,
-                                                                animationDelay: `${delay}s`,
-                                                            }}
-                                                        >
-                                                            <div className="sparkle-glow" />
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                            {memory.type === 'video' || memory.type === 'youtube' || memory.type === 'tiktok' ? (
-                                                <div className="w-full h-full relative flex items-center justify-center overflow-hidden cursor-pointer" onClick={() => handleOpenVideoModal(memory)}>
-                                                    {memory.type === 'youtube' ? (
-                                                        <div className="w-full h-full relative">
-                                                            <img src={`https://img.youtube.com/vi/${memory.url}/maxresdefault.jpg`} className="w-full h-full object-cover" alt="Video thumbnail" loading={index === 0 ? "eager" : "lazy"} />
-                                                            <div className="absolute inset-0 bg-black/10" />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="w-full h-full video-pattern relative flex flex-col items-center justify-center p-6 text-center">
-                                                            <Heart size={32} variant="Bold" color="#FF3366" className="opacity-20 mb-4" />
-                                                            <Typography sx={{ fontFamily: 'var(--font-mali)', fontSize: '0.8rem', color: '#FF3366', opacity: 0.6, fontWeight: 700 }}>OUR SPECIAL MOMENT</Typography>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Cute Central Play Button */}
-                                                    <div className="absolute inset-0 flex flex-col items-center justify-center z-30 group-hover:scale-110 transition-transform duration-500">
-                                                        <div className="relative w-20 h-20 flex items-center justify-center">
-                                                            {/* Animated Rings */}
-                                                            <div className="absolute inset-0 bg-white/30 rounded-full animate-ping" />
-                                                            <div className="absolute inset-2 bg-white/40 rounded-full animate-pulse" />
-
-                                                            {/* Heart-Shaped Play Container */}
-                                                            <div className="relative z-10 w-14 h-14 bg-gradient-to-br from-[#FF3366] to-[#FF99AA] rounded-full flex items-center justify-center shadow-[0_10px_25px_rgba(255,51,102,0.4)] play-pulse">
-                                                                <Play size={24} variant="Bold" color="white" style={{ marginLeft: '4px' }} />
-                                                            </div>
-                                                        </div>
-                                                        <Typography sx={{
-                                                            fontFamily: 'var(--font-mali)',
-                                                            fontSize: '0.75rem',
-                                                            color: 'white',
-                                                            fontWeight: 800,
-                                                            mt: 2,
-                                                            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                                                            letterSpacing: '0.1em'
-                                                        }}>TAP TO PLAY ❤️</Typography>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="w-full h-full relative">
-                                                    {memory.url.toLowerCase().includes('.gif') ? (
-                                                        // GIF Logic: Only play/load when active to ensure it starts from beginning
-                                                        <React.Fragment key={`gif-${index}-${index === currentSlideIndex}`}>
-                                                            {index === currentSlideIndex ? (
-                                                                <img
-                                                                    src={memory.url}
-                                                                    alt={memory.caption}
-                                                                    className="w-full h-full object-cover animate-in fade-in duration-300"
-                                                                    loading="eager"
-                                                                />
-                                                            ) : (
-                                                                <div className="w-full h-full flex items-center justify-center bg-gray-50/50">
-                                                                    {memory.thumbnail ? (
-                                                                        <img src={memory.thumbnail} alt="thumbnail" className="w-full h-full object-cover opacity-80 blur-sm" />
-                                                                    ) : (
-                                                                        <div className="flex flex-col items-center justify-center h-full w-full">
-                                                                            <CircularProgress size={24} sx={{ color: '#FF99AA' }} />
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </React.Fragment>
-                                                    ) : (
-                                                        <img src={memory.url} alt={memory.caption} className="w-full h-full object-cover" loading={index === 0 ? "eager" : "lazy"} />
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {/* Reveal Overlay - Clean white cover for excitement */}
-                                            <div
-                                                className="absolute inset-0 z-40 pointer-events-none flex flex-col items-center justify-center transition-all duration-1000 ease-in-out"
-                                                style={{
-                                                    backgroundColor: '#FFFFFF',
-                                                    opacity: (index === 0 ? (isSwiperReady ? 0 : 1) : (revealedSlides.has(index) ? 0 : 1)),
-                                                    transform: (index === 0 ? (isSwiperReady ? 'scale(1.1)' : 'scale(1)') : (revealedSlides.has(index) ? 'scale(1.1)' : 'scale(1)')),
-                                                }}
-                                            >
-                                                <FastHeart size={50} color="#FFD1DC" style={{ opacity: 0.6 }} />
-                                                <div className="mt-4 w-12 h-[2px] bg-pink-50 rounded-full overflow-hidden">
-                                                    <div className="w-full h-full bg-pink-200 origin-left animate-[loading-bar_1.5s_infinite]" />
-                                                </div>
-                                            </div>
-
-
-                                        </div>
-
-                                        {/* Polaroid Bottom Margin - Caption Area */}
-                                        <div className="flex-1 bg-white flex flex-col items-center justify-center px-4 py-2 relative">
-                                            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-black/[0.03] to-transparent pointer-events-none" />
-
-                                            {memory.caption ? (
-                                                <Typography
-                                                    sx={{
-                                                        color: '#4A151B',
-                                                        fontFamily: 'var(--font-mali)',
-                                                        fontSize: '1rem',
-                                                        fontWeight: 600,
-                                                        textAlign: 'center',
-                                                        lineHeight: 1.3,
-                                                        opacity: 0.85
-                                                    }}
-                                                >
-                                                    {memory.caption}
-                                                </Typography>
-                                            ) : (
-                                                <div className="flex gap-1">
-                                                    <Heart size={12} variant="Bold" color="#FFD1DC" />
-                                                    <Heart size={12} variant="Bold" color="#FFD1DC" />
-                                                    <Heart size={12} variant="Bold" color="#FFD1DC" />
-                                                </div>
-                                            )}
-
-                                            {/* Card Numbering */}
-                                            <div className="absolute bottom-2 right-3 opacity-20">
-                                                <Typography sx={{ fontSize: '0.6rem', color: '#4A151B', fontWeight: 800 }}>
-                                                    {String(index + 1).padStart(2, '0')} / {String(memories.length).padStart(2, '0')}
-                                                </Typography>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <PolaroidCard
+                                        memory={memory}
+                                        index={index}
+                                        isRevealed={revealedSlides.has(index)}
+                                        isDownloading={isDownloading}
+                                        currentSlideIndex={currentSlideIndex}
+                                        totalCount={memories.length}
+                                        handleDownloadCard={handleDownloadCard}
+                                        handleOpenVideoModal={handleOpenVideoModal}
+                                        handleImageLoaded={handleImageLoaded}
+                                    />
                                 </SwiperSlide>
                             ))}
 

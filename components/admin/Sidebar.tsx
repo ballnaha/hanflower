@@ -43,6 +43,7 @@ const menuGroups = [
             { text: 'จัดการสินค้า', icon: BoxIcon, path: '/admin/products' },
             { text: 'จัดการหมวดหมู่', icon: Category, path: '/admin/categories' },
             { text: 'จัดการ Events', icon: Gallery, path: '/admin/events' },
+            { text: 'ลูกค้า (Our Customer)', icon: People, path: '/admin/our-customer' },
         ]
     },
     {

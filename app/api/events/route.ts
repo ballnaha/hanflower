@@ -6,11 +6,23 @@ export async function GET(request: Request) {
     const category = searchParams.get('category');
 
     try {
+        const where: any = {
+            isActive: true,
+        };
+
+        if (category && category !== 'All') {
+            where.category = category;
+        } else {
+            // By default, exclude "Customer" albums from Events page
+            where.category = {
+                not: {
+                    contains: 'Customer'
+                }
+            };
+        }
+
         const albums = await (prisma as any).eventAlbum.findMany({
-            where: {
-                isActive: true,
-                ...(category && category !== 'All' ? { category } : {}),
-            },
+            where,
             orderBy: {
                 priority: 'desc',
             },

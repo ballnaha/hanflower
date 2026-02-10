@@ -548,15 +548,15 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
 
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                                     <TextField
-                                        label="วันที่/เดือน (Date)"
+                                        label="วันที่ (Date)"
                                         name="date"
                                         value={formData.date}
                                         onChange={handleChange}
                                         fullWidth
-                                        placeholder="เช่น Jan 2024"
+                                        placeholder="เช่น 14 Feb 2024"
                                     />
                                     <NumberStepper
-                                        label="ลำดับการแสดงผล (Priority)"
+                                        label="ลำดับความสำคัญ (Priority)"
                                         value={Number(formData.priority)}
                                         onChange={(val) => setFormData(prev => ({ ...prev, priority: val }))}
                                         min={0}

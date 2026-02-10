@@ -14,7 +14,6 @@ import {
     Divider,
     Stack,
     CircularProgress,
-    Tooltip,
     Autocomplete,
     createFilterOptions
 } from '@mui/material';
@@ -38,7 +37,7 @@ interface PhotoItem {
     caption: string;
 }
 
-export default function NewEventPage() {
+export default function NewCustomerPage() {
     const router = useRouter();
     const { showSuccess, showError } = useNotification();
     const [loading, setLoading] = useState(false);
@@ -47,17 +46,21 @@ export default function NewEventPage() {
     const filter = createFilterOptions<string>();
 
     useState(() => {
-        fetch('/api/admin/events/categories?excludeCategory=Customer')
+        fetch('/api/admin/events/categories?category=Customer')
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data)) setCategories(data);
+                if (Array.isArray(data)) {
+                    // Filter or highlight customer-related categories if needed
+                    setCategories(data);
+                }
             })
             .catch(err => console.error('Error fetching categories:', err));
     });
 
     const [formData, setFormData] = useState({
         title: '',
-        category: '',
+        category: 'Our Customer',
+        subCategory: '', // For the suffix
         location: '',
         date: '',
         coverImage: '',
@@ -160,7 +163,7 @@ export default function NewEventPage() {
 
             if (photos.length > 0) {
                 const formDataUpload = new FormData();
-                formDataUpload.append('folder', 'events');
+                formDataUpload.append('folder', 'our-customer');
                 photos.forEach(p => {
                     if (p.file) formDataUpload.append('files', p.file);
                 });
@@ -184,114 +187,70 @@ export default function NewEventPage() {
 
             // 2. Prepare final form data
             const firstImageUrl = uploadedPhotos.length > 0 ? uploadedPhotos[0].url : '';
+            const finalCategory = formData.subCategory
+                ? `Our Customer: ${formData.subCategory}`
+                : 'Our Customer';
 
             const res = await fetch('/api/admin/events', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...formData,
+                    category: finalCategory,
                     coverImage: firstImageUrl,
                     photos: uploadedPhotos
                 }),
             });
 
             if (res.ok) {
-                showSuccess('สร้างอัลบั้มเรียบร้อยแล้ว');
-                router.push('/admin/events');
+                showSuccess('บันทึกรูปภาพลูกค้าเรียบร้อยแล้ว');
+                router.push('/admin/our-customer');
             } else {
                 const err = await res.json();
                 showError(err.error || 'เกิดข้อผิดพลาด');
             }
         } catch (error) {
-            console.error('Error creating album:', error);
-            showError('ไม่สามารถสร้างอัลบั้มได้');
+            console.error('Error creating customer entry:', error);
+            showError('ไม่สามารถบันทึกข้อมูลได้');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <AdminLayout title="เพิ่มอัลบั้มพอร์ตโฟลิโอใหม่">
+        <AdminLayout title="เพิ่มอัลบั้มลูกค้าใหม่">
+
+
             <form onSubmit={handleSubmit}>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(12, 1fr)' }, gap: 4, alignItems: 'start' }}>
-                    {/* Left Column: Basic Info */}
+                    {/* Left Column: Info & Photos */}
                     <Box sx={{ gridColumn: { xs: 'span 12', lg: 'span 8' } }}>
                         <Paper elevation={0} sx={{ p: 4, borderRadius: '20px', border: '1px solid rgba(0,0,0,0.03)' }}>
-                            <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>ข้อมูลอัลบั้ม</Typography>
+                            <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>รายละเอียดอัลบั้ม</Typography>
 
                             <Stack spacing={3}>
                                 <TextField
-                                    label="ชื่ออัลบั้ม (Title)"
+                                    label="ชื่ออัลบั้มลูกค้า (Title)"
                                     name="title"
                                     value={formData.title}
                                     onChange={handleChange}
                                     fullWidth
                                     required
-                                    placeholder="เช่น The Grand Heritage Wedding"
+                                    placeholder="เช่น คุณแพรว - Wedding Day"
                                 />
 
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                                    <Autocomplete
-                                        value={formData.category}
-                                        onChange={(event, newValue) => {
-                                            if (typeof newValue === 'string') {
-                                                setFormData({ ...formData, category: newValue });
-                                            } else if (newValue && (newValue as any).inputValue) {
-                                                // Create a new value from the user input
-                                                setFormData({ ...formData, category: (newValue as any).inputValue });
-                                            } else {
-                                                setFormData({ ...formData, category: newValue || '' });
-                                            }
-                                        }}
-                                        filterOptions={(options, params) => {
-                                            const filtered = filter(options, params);
-
-                                            const { inputValue } = params;
-                                            // Suggest the creation of a new value
-                                            const isExisting = options.some((option) => inputValue === option);
-                                            if (inputValue !== '' && !isExisting) {
-                                                (filtered as any).push({
-                                                    inputValue,
-                                                    title: `เพิ่มหมวดหมู่ใหม่: "${inputValue}"`,
-                                                });
-                                            }
-
-                                            return filtered;
-                                        }}
-                                        selectOnFocus
-                                        clearOnBlur
-                                        handleHomeEndKeys
-                                        id="category-autocomplete"
-                                        options={categories}
-                                        getOptionLabel={(option) => {
-                                            // Value selected with enter, right from the input
-                                            if (typeof option === 'string') {
-                                                return option;
-                                            }
-                                            // Add "xxx" option created dynamically
-                                            if ((option as any).inputValue) {
-                                                return (option as any).inputValue;
-                                            }
-                                            // Regular option
-                                            return (option as any).title || option;
-                                        }}
-                                        renderOption={(props, option) => {
-                                            const { key, ...optionProps } = props as any;
-                                            return (
-                                                <li key={key} {...optionProps}>
-                                                    {typeof option === 'string' ? option : (option as any).title}
-                                                </li>
-                                            );
-                                        }}
-                                        freeSolo
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                label="หมวดหมู่ (Category)"
-                                                placeholder="เลือกหรือพิมพ์เพื่อสร้างใหม่"
-                                            />
-                                        )}
+                                    <TextField
+                                        label="หมวดหมู่ย่อย (Sub-category)"
+                                        name="subCategory"
+                                        value={formData.subCategory}
+                                        onChange={handleChange}
                                         fullWidth
+                                        placeholder="เช่น Wedding, Reviews"
+                                        InputProps={{
+                                            startAdornment: <Typography variant="body2" sx={{ color: 'text.secondary', mr: 1, whiteSpace: 'nowrap' }}>Our Customer: </Typography>,
+                                        }}
+                                        helperText="ระบบจะเติม Our Customer: ให้ข้างหน้าอัตโนมัติ"
                                     />
                                     <TextField
                                         label="สถานที่ (Location)"
@@ -299,7 +258,7 @@ export default function NewEventPage() {
                                         value={formData.location}
                                         onChange={handleChange}
                                         fullWidth
-                                        placeholder="เช่น Capella Bangkok"
+                                        placeholder="เช่น โรงแรมแมนดาริน โอเรียนเต็ล"
                                     />
                                 </Box>
 
@@ -324,7 +283,7 @@ export default function NewEventPage() {
 
                                 <Box sx={{ p: 2, bgcolor: 'rgba(183, 110, 121, 0.03)', borderRadius: '12px', border: '1px dashed #B76E79' }}>
                                     <Typography variant="body2" sx={{ color: '#B76E79', mb: 0, fontWeight: 600 }}>
-                                        * รูปภาพแรกในรายการด้านล่างจะถูกใช้เป็นภาพหน้าปกโดยอัตโนมัติ
+                                        * แนะนำให้ใช้หมวดหมู่ที่ขึ้นต้นด้วย "Our Customer" หรือ "Customer:" เพื่อการจัดกลุ่มที่ถูกต้อง
                                     </Typography>
                                 </Box>
                             </Stack>
@@ -334,21 +293,19 @@ export default function NewEventPage() {
                         <Paper elevation={0} sx={{ p: 4, mt: 4, borderRadius: '20px', border: '1px solid rgba(0,0,0,0.03)' }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                                 <Box>
-                                    <Typography variant="h6" sx={{ fontWeight: 700 }}>รูปภาพในอัลบั้ม ({photos.length})</Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 700 }}>รูปภาพลูกค้า ({photos.length})</Typography>
                                     <Typography variant="caption" color="text.secondary">รูปแรกจะถูกใช้เป็นหน้าปก</Typography>
                                 </Box>
-                                <Box sx={{ display: 'flex', gap: 2 }}>
-                                    <Button
-                                        variant="contained"
-                                        component="label"
-                                        disabled={uploading}
-                                        startIcon={uploading ? <CircularProgress size={18} color="inherit" /> : <Add size={18} />}
-                                        sx={{ borderRadius: '10px', textTransform: 'none', bgcolor: '#B76E79', '&:hover': { bgcolor: '#A45D68' } }}
-                                    >
-                                        เพิ่มรูปภาพ (Multiple)
-                                        <input type="file" hidden multiple accept="image/*" onChange={handleFileSelect} />
-                                    </Button>
-                                </Box>
+                                <Button
+                                    variant="contained"
+                                    component="label"
+                                    disabled={uploading}
+                                    startIcon={uploading ? <CircularProgress size={18} color="inherit" /> : <Add size={18} />}
+                                    sx={{ borderRadius: '10px', textTransform: 'none', bgcolor: '#B76E79', '&:hover': { bgcolor: '#A45D68' } }}
+                                >
+                                    เลือกรูปภาพ
+                                    <input type="file" hidden multiple accept="image/*" onChange={handleFileSelect} />
+                                </Button>
                             </Box>
 
                             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
@@ -359,30 +316,28 @@ export default function NewEventPage() {
                                         sx={{
                                             borderRadius: '16px',
                                             overflow: 'hidden',
-                                            border: index === 0 ? '2px solid #B76E79' : '1px solid rgba(0,0,0,0.05)',
+                                            border: '1px solid rgba(0,0,0,0.05)',
                                             position: 'relative',
                                             transition: 'transform 0.2s',
                                             '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 10px 20px rgba(0,0,0,0.05)' }
                                         }}
                                     >
-                                        <Box sx={{ position: 'relative', pt: '75%', bgcolor: '#f0f0f0' }}>
+                                        <Box sx={{ position: 'relative', pt: '100%', bgcolor: '#f0f0f0' }}>
                                             <img
                                                 src={photo.preview}
                                                 alt={`Preview ${index}`}
                                                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                                             />
-                                            <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handleRemovePhoto(index)}
-                                                    sx={{ bgcolor: 'rgba(255,255,255,0.9)', color: '#d32f2f', '&:hover': { bgcolor: '#fff' } }}
-                                                >
-                                                    <Trash size={16} variant="Bold" color="#d32f2f" />
-                                                </IconButton>
-                                            </Box>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleRemovePhoto(index)}
+                                                sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'rgba(255,255,255,0.9)', color: '#d32f2f', '&:hover': { bgcolor: '#fff' } }}
+                                            >
+                                                <Trash size={16} variant="Bold" color="#d32f2f" />
+                                            </IconButton>
                                             {index === 0 && (
                                                 <Box sx={{ position: 'absolute', top: 8, left: 8, bgcolor: '#B76E79', color: 'white', px: 1, py: 0.5, borderRadius: '6px', fontSize: '10px', fontWeight: 700 }}>
-                                                    COVER PHOTO
+                                                    COVER
                                                 </Box>
                                             )}
                                         </Box>
@@ -390,7 +345,7 @@ export default function NewEventPage() {
                                             <TextField
                                                 fullWidth
                                                 size="small"
-                                                placeholder="ใส่คำอธิบายภาพ..."
+                                                placeholder="คำบรรยายภาพ..."
                                                 variant="standard"
                                                 value={photo.caption}
                                                 onChange={(e) => handleCaptionChange(index, e.target.value)}
@@ -416,8 +371,7 @@ export default function NewEventPage() {
                                     }} component="label">
                                         <input type="file" hidden multiple accept="image/*" onChange={handleFileSelect} />
                                         <ImageIcon size={48} variant="Outline" color="#B76E79" style={{ opacity: 0.5, marginBottom: 16 }} />
-                                        <Typography variant="body1" fontWeight={500}>คลิกเพื่อเลือกรูปภาพ</Typography>
-                                        <Typography variant="caption">แนะนำสัดส่วน 4:3 หรือ 16:9</Typography>
+                                        <Typography variant="body1" fontWeight={500}>คลิกเพื่อเลือกรูปภาพลูกค้า</Typography>
                                     </Box>
                                 )}
                             </Box>
@@ -427,7 +381,7 @@ export default function NewEventPage() {
                     {/* Right Column: Status & Publish */}
                     <Box sx={{ gridColumn: { xs: 'span 12', lg: 'span 4' }, position: 'sticky', top: 100 }}>
                         <Paper elevation={0} sx={{ p: 4, borderRadius: '20px', border: '1px solid rgba(0,0,0,0.03)' }}>
-                            <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>สถานะการแสดงผล</Typography>
+                            <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>การแสดงผล</Typography>
 
                             <FormControlLabel
                                 control={
@@ -438,28 +392,11 @@ export default function NewEventPage() {
                                         color="warning"
                                     />
                                 }
-                                label={formData.isActive ? "แสดงในหน้าเว็บ" : "ซ่อนจากหน้าเว็บ"}
+                                label={formData.isActive ? "แสดงในหน้าเว็บทันที" : "ยังไม่แสดงผล"}
                                 sx={{ mb: 3, display: 'block' }}
                             />
 
                             <Divider sx={{ my: 3 }} />
-
-                            <Box sx={{ p: 2, bgcolor: '#FFF9F8', borderRadius: '12px', mb: 3, textAlign: 'center' }}>
-                                <Typography variant="caption" sx={{ color: '#B76E79', fontWeight: 600, display: 'block', mb: 1, textAlign: 'left' }}>
-                                    PREVIEW COVER
-                                </Typography>
-                                {photos.length > 0 ? (
-                                    <Avatar
-                                        src={photos[0].preview}
-                                        variant="rounded"
-                                        sx={{ width: '100%', height: 200, bgcolor: '#F5F5F5' }}
-                                    />
-                                ) : (
-                                    <Box sx={{ width: '100%', height: 200, bgcolor: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
-                                        <Gallery size={40} color="#B76E79" style={{ opacity: 0.4 }} />
-                                    </Box>
-                                )}
-                            </Box>
 
                             <Button
                                 type="submit"
@@ -479,11 +416,6 @@ export default function NewEventPage() {
                             >
                                 {loading ? 'กำลังบันทึก...' : 'บันทึกอัลบั้ม'}
                             </Button>
-                            {photos.length === 0 && (
-                                <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1, textAlign: 'center' }}>
-                                    * โปรดเพิ่มรูปภาพอย่างน้อย 1 รูป
-                                </Typography>
-                            )}
                         </Paper>
                     </Box>
                 </Box>

@@ -30,7 +30,7 @@ export default function EventsPage() {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await fetch('/api/admin/events/categories');
+                const response = await fetch('/api/admin/events/categories?excludeCategory=Customer');
                 const data = await response.json();
                 if (Array.isArray(data)) {
                     setFilters(['All', ...data]);
@@ -62,160 +62,59 @@ export default function EventsPage() {
 
     return (
         <Box sx={{ bgcolor: theme.palette.background.default, minHeight: '100vh' }}>
-            {/* Hero Section - Refined for Album Showcase */}
+            {/* Refined Minimalist Hero Section - Matches Our Customer style */}
             <Box component="section" sx={{
                 position: 'relative',
-                height: '100vh',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: '#000',
+                pt: { xs: '120px', md: '160px' },
+                pb: { xs: 6, md: 8 },
+                background: 'linear-gradient(to bottom, #FFF9F8 0%, #FFFFFF 100%)',
+                textAlign: 'center',
                 overflow: 'hidden'
             }}>
-                {/* Full Screen Cinematic Image with Ken Burns */}
-                <Box sx={{
-                    position: 'absolute',
-                    inset: 0,
-                    zIndex: 0,
-                    animation: 'kenBurnsSlow 30s linear infinite alternate',
-                    '@keyframes kenBurnsSlow': {
-                        '0%': { transform: 'scale(1.1)' },
-                        '100%': { transform: 'scale(1)' },
-                    }
-                }}>
-                    <Image
-                        src="/images/event_cover.webp"
-                        alt="Event Portfolio"
-                        fill
-                        style={{
-                            objectFit: 'cover',
-                            filter: 'brightness(0.7) contrast(1.1)'
-                        }}
-                        priority
-                    />
-                </Box>
-
-                {/* Elegant Vignette Overlay */}
-                <Box sx={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'radial-gradient(circle, transparent 20%, rgba(0,0,0,0.4) 100%)',
-                    zIndex: 1
-                }} />
-
-                <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 10, textAlign: { xs: 'center', md: 'left' }, px: { xs: 3, md: 10 } }}>
+                <Container maxWidth="md">
                     <Box sx={{
-                        maxWidth: '800px',
-                        mt: { md: 10 },
-                        opacity: 0,
-                        animation: 'fadeInUp 2s ease forwards',
-                        '@keyframes fadeInUp': {
-                            'from': { opacity: 0, transform: 'translateY(40px)' },
-                            'to': { opacity: 1, transform: 'translateY(0)' }
-                        }
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 1.5,
+                        mb: 3,
+                        px: 2,
+                        py: 0.5,
+                        borderRadius: '100px',
+                        bgcolor: alpha('#D4AF37', 0.1),
                     }}>
-                        <Typography variant="overline" sx={{ color: '#D4AF37', letterSpacing: { xs: '0.3em', md: '0.6em' }, fontWeight: 600, display: 'block', mb: { xs: 2, md: 1 } }}>
-                            Portfolio
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#D4AF37' }} />
+                        <Typography variant="overline" sx={{ color: '#D4AF37', letterSpacing: '0.2em', fontWeight: 700 }}>
+                            Event Portfolio & Collections
                         </Typography>
-                        <Typography variant="h1" sx={{
-                            fontSize: { xs: '2.2rem', sm: '4rem', md: '5rem' },
-                            color: '#FFFFFF',
-                            lineHeight: 1.1,
-                            mb: { xs: 2, md: 4 },
-                            textShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                        }}>
-                            <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#FFFFFF' }}>เนรมิตบรรยากาศ ...</span> <br />
-                            <span style={{ fontStyle: 'italic', fontWeight: 400, color: '#D4AF37' }}>ในวันสำคัญ</span>
-                        </Typography>
-                        <Typography variant="h6" sx={{
-                            color: 'rgba(255,255,255,0.8)',
-                            fontWeight: 300,
-                            letterSpacing: '0.1em',
-                            mb: 2,
-                            fontSize: { xs: '0.9rem', md: '1.1rem' }
-                        }}>
-                            Event Portfolio & Memory Collection
-                        </Typography>
-
-                        <Box sx={{ width: '60px', height: '1px', bgcolor: '#D4AF37', mb: { xs: 3, md: 5 }, mx: { xs: 'auto', md: 0 } }} />
-
-                        <Typography variant="body1" sx={{
-                            color: 'rgba(255,255,255,0.9)',
-                            fontSize: { xs: '1.1rem', md: '1.4rem' },
-                            mb: { xs: 4, md: 6 },
-                            lineHeight: 1.6,
-                            fontWeight: 400,
-                            maxWidth: '650px',
-                        }}>
-                            "เพราะวันสำคัญมีเพียงครั้งเดียว เราจึงถักทอความสวยงามด้วยหัวใจ เพื่อบันทึกความประทับใจที่จะคงอยู่ตลอดไป"
-                        </Typography>
-
-                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 3, md: 5 }, justifyContent: { xs: 'center', md: 'flex-start' }, alignItems: 'center' }}>
-                            <Button
-                                variant="outlined"
-                                component="a"
-                                href="https://line.me/ti/p/~fonms2"
-                                target="_blank"
-                                sx={{
-                                    px: { xs: 8, md: 10 },
-                                    py: 2.5,
-                                    borderColor: '#FFFFFF',
-                                    color: '#FFFFFF',
-                                    borderRadius: '0',
-                                    letterSpacing: '0.3em',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 700,
-                                    transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                                    width: { xs: '100%', sm: 'auto' },
-                                    '&:hover': {
-                                        bgcolor: '#FFFFFF',
-                                        color: '#000000',
-                                        borderColor: '#FFFFFF',
-                                        transform: 'scale(1.05)',
-                                        boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-                                    }
-                                }}
-                            >
-                                TALK TO US
-                            </Button>
-                        </Box>
                     </Box>
-                </Container>
 
-                {/* Scroll Down Indicator */}
-                <Box sx={{
-                    position: 'absolute',
-                    bottom: '20px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    zIndex: 10,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 2
-                }}>
-                    <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', letterSpacing: '0.3em', textTransform: 'uppercase' }}>
-                        Explore
+                    <Typography variant="h1" sx={{
+                        fontSize: { xs: '2.5rem', md: '4rem' },
+                        color: '#1A1A1A',
+                        fontFamily: 'var(--font-playfair)',
+                        fontWeight: 400,
+                        lineHeight: 1.2,
+                        mb: 3
+                    }}>
+                        Capture Your <span style={{ fontStyle: 'italic', fontWeight: 500, color: '#D4AF37' }}>Memories</span>
                     </Typography>
-                    <Box sx={{
-                        width: '1px',
-                        height: { xs: '30px', md: '60px' },
-                        bgcolor: 'rgba(255,255,255,0.2)',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        '&::after': {
-                            content: '""',
-                            position: 'absolute',
-                            top: 0, left: 0, width: '100%', height: '100%',
-                            bgcolor: '#D4AF37',
-                            animation: 'scrollLine 2s ease-in-out infinite',
-                            '@keyframes scrollLine': {
-                                '0%': { transform: 'translateY(-100%)' },
-                                '100%': { transform: 'translateY(100%)' }
-                            }
-                        }
-                    }} />
-                </Box>
+
+                    <Box sx={{ width: '40px', height: '1px', bgcolor: '#D4AF37', mx: 'auto', mb: 3 }} />
+
+                    <Typography variant="body1" sx={{
+                        color: '#666',
+                        fontSize: { xs: '1rem', md: '1.15rem' },
+                        maxWidth: '600px',
+                        mx: 'auto',
+                        lineHeight: 1.8,
+                        fontWeight: 300,
+                        letterSpacing: '0.01em',
+                        mb: 4
+                    }}>
+                        "เพราะวันสำคัญมีเพียงครั้งเดียว เราจึงถักทอความสวยงามด้วยหัวใจ เพื่อบันทึกความประทับใจที่จะคงอยู่ตลอดไป"
+                    </Typography>
+
+                </Container>
             </Box>
 
             {/* Main Content */}

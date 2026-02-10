@@ -2,6 +2,7 @@
 
 import { Box, Typography, Paper, Button } from '@mui/material';
 import { ShoppingBag, Box as BoxIcon, Category, People, Setting2 } from 'iconsax-react';
+import Link from 'next/link';
 import AdminLayout from '@/components/admin/AdminLayout';
 
 export default function AdminDashboard() {
@@ -96,11 +97,13 @@ export default function AdminDashboard() {
                 }}>
                     <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>เมนูด่วน</Typography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        {['จัดการสินค้า', 'จัดการหมวดหมู่', 'ดูรายการคำสั่งซื้อ', 'ตั้งค่าร้านค้า'].map((item) => (
+                        {['จัดการสินค้า', 'จัดการหมวดหมู่', 'ดูรายการคำสั่งซื้อ', 'จัดการ Our Customer', 'ตั้งค่าร้านค้า'].map((item) => (
                             <Button
                                 key={item}
                                 fullWidth
                                 variant="text"
+                                component={item === 'จัดการ Our Customer' ? Link : 'button'}
+                                href={item === 'จัดการ Our Customer' ? '/admin/our-customer' : undefined}
                                 sx={{
                                     justifyContent: 'flex-start',
                                     color: '#5D4037',
