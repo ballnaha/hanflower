@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Typography } from "@mui/material";
-import { Home, Shop, Heart, User, ScanBarcode } from "iconsax-react";
+import { Home, Shop, Heart, User, Money, Coin, Location } from "iconsax-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -14,8 +14,8 @@ export default function MobileNav() {
     const navItems = [
         { label: 'HOME', icon: Home, href: '/' },
         { label: 'PRODUCTS', icon: Shop, href: '/products' },
-        { label: 'PAYMENT', icon: ScanBarcode, href: '/payment-notification' },
-        { label: 'CONTACT', icon: User, href: '/contact' },
+        { label: 'PAYMENT', icon: Coin, href: '/payment-notification' },
+        { label: 'CONTACT', icon: Location, href: '/contact' },
     ];
 
     return (

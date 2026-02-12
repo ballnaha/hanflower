@@ -52,10 +52,11 @@ export default function AboutContent() {
                                 variant="h1"
                                 sx={{
                                     fontSize: { xs: '3.5rem', md: '5rem' },
-                                    fontWeight: 700,
+                                    fontWeight: 500,
                                     color: '#2C1A1D',
                                     lineHeight: 1,
-                                    mb: 2
+                                    mb: 2,
+                                    fontFamily: 'var(--font-playfair)',
                                 }}
                             >
                                 Han <br /> Flower

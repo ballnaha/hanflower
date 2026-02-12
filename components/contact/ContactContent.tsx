@@ -19,19 +19,25 @@ import {
 } from 'iconsax-react';
 import Image from 'next/image';
 
+const TiktokIcon = ({ size = 32, color = 'currentColor' }: { size?: number | string, color?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19.5809 6.69083C18.2909 6.61083 17.1409 6.05083 16.2809 5.14083C16.1109 4.96083 15.9609 4.76083 15.8209 4.56083C15.8109 4.55083 15.8109 4.55083 15.8009 4.54083C15.4209 3.96083 15.1709 3.30083 15.1209 2.60083C15.1209 2.53083 15.1209 2.46083 15.1209 2.39083H12.6309V15.3108C12.6309 16.0108 12.3509 16.6508 11.8909 17.1308C11.4409 17.6008 10.8209 17.8908 10.1309 17.8908C8.80093 17.8908 7.72093 16.8108 7.72093 15.4808C7.72093 14.1508 8.80093 13.0708 10.1309 13.0708C10.3609 13.0708 10.5909 13.1008 10.8109 13.1608V10.6408C10.5909 10.6108 10.3609 10.5908 10.1309 10.5908C7.43093 10.5908 5.23093 12.7808 5.23093 15.4808C5.23093 18.1808 7.43093 20.3808 10.1309 20.3808C12.8309 20.3808 15.0309 18.1808 15.0309 15.4808V7.55083C16.2009 8.40083 17.6309 8.90083 19.1809 8.90083C19.3309 8.90083 19.4709 8.89083 19.6109 8.88083V6.69083H19.5809Z" fill={color} />
+    </svg>
+);
+
 const CONTACT_INFO = [
     {
         icon: Call,
         title: 'Phone',
-        value: '081-234-5678',
+        value: '093-726-5055',
         description: 'คุยกับทีมงานได้โดยตรง',
-        link: 'tel:0812345678',
+        link: 'tel:0937265055',
         color: '#B76E79'
     },
     {
         image: '/images/line-icon.png',
         title: 'LINE Official',
-        value: '@fonms2',
+        value: 'fonms2',
         description: 'สอบถามข้อมูลและสั่งซื้อ',
         link: 'https://line.me/ti/p/~fonms2',
         color: '#06C755'
@@ -39,18 +45,18 @@ const CONTACT_INFO = [
     {
         icon: Instagram,
         title: 'Instagram',
-        value: '@hanflower.studio',
+        value: 'han.flower22',
         description: 'ชมผลงานและอัปเดตใหม่ๆ',
-        link: 'https://instagram.com/',
+        link: 'https://instagram.com/han.flower22',
         color: '#E1306C'
     },
     {
-        icon: Facebook,
-        title: 'Facebook',
-        value: 'Han Flower',
+        icon: TiktokIcon,
+        title: 'Tiktok',
+        value: 'hanflower.fon',
         description: 'ติดตามข่าวสารและรีวิว',
-        link: 'https://facebook.com/',
-        color: '#1877F2'
+        link: 'https://tiktok.com/@hanflower.fon',
+        color: '#000000'
     }
 ];
 
@@ -122,11 +128,10 @@ export default function ContactContent() {
                 <Box sx={{
                     display: 'grid',
                     gridTemplateColumns: {
-                        xs: '1fr',
-                        sm: 'repeat(2, 1fr)',
+                        xs: 'repeat(2, 1fr)',
                         md: 'repeat(4, 1fr)'
                     },
-                    gap: 3,
+                    gap: { xs: 2, md: 3 },
                     mb: 8
                 }}>
                     {CONTACT_INFO.map((item, index) => (
@@ -137,9 +142,9 @@ export default function ContactContent() {
                             href={item.link}
                             target="_blank"
                             sx={{
-                                p: 4,
+                                p: { xs: 2.5, md: 4 },
                                 height: '100%',
-                                borderRadius: '32px',
+                                borderRadius: { xs: '24px', md: '32px' },
                                 border: '1px solid rgba(0,0,0,0.05)',
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -153,15 +158,15 @@ export default function ContactContent() {
                             <Box
                                 className="icon-box"
                                 sx={{
-                                    width: 72,
-                                    height: 72,
-                                    borderRadius: '24px',
+                                    width: { xs: 56, md: 72 },
+                                    height: { xs: 56, md: 72 },
+                                    borderRadius: { xs: '16px', md: '24px' },
                                     bgcolor: alpha(item.color, 0.08),
                                     color: item.color,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    mb: 3,
+                                    mb: { xs: 2, md: 3 },
                                     transition: 'all 0.4s ease',
                                     '& svg, & path, & img': {
                                         transition: 'all 0.4s ease'
@@ -169,7 +174,7 @@ export default function ContactContent() {
                                 }}
                             >
                                 {item.image ? (
-                                    <Box sx={{ position: 'relative', width: 32, height: 32 }}>
+                                    <Box sx={{ position: 'relative', width: { xs: 24, md: 32 }, height: { xs: 24, md: 32 } }}>
                                         <Image
                                             src={item.image}
                                             alt={item.title}
@@ -180,17 +185,17 @@ export default function ContactContent() {
                                 ) : (
                                     (() => {
                                         const Icon = item.icon;
-                                        return Icon ? <Icon size={32} color={item.color} /> : null;
+                                        return Icon ? <Icon size={24} color={item.color} /> : null;
                                     })()
                                 )}
                             </Box>
-                            <Typography variant="caption" sx={{ color: '#999', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.15em', mb: 1 }}>
+                            <Typography variant="caption" sx={{ color: '#999', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', mb: 0.5, fontSize: { xs: '0.65rem', md: '0.75rem' } }}>
                                 {item.title}
                             </Typography>
-                            <Typography variant="h6" sx={{ color: '#1A1A1A', fontWeight: 700, mb: 1 }}>
+                            <Typography variant="subtitle1" sx={{ color: '#1A1A1A', fontWeight: 700, mb: 0.5, fontSize: { xs: '0.85rem', md: '1.1rem' } }}>
                                 {item.value}
                             </Typography>
-                            <Typography variant="body2" sx={{ color: '#666', mb: 3, fontSize: '0.85rem' }}>
+                            <Typography variant="body2" sx={{ color: '#666', mb: { xs: 2, md: 3 }, fontSize: { xs: '0.7rem', md: '0.85rem' }, display: { xs: 'none', md: 'block' } }}>
                                 {item.description}
                             </Typography>
 
