@@ -7,7 +7,7 @@ import { EffectCreative, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/effect-creative";
 import { Heart, Music, Play, Star } from "iconsax-react";
-import { Button, Typography, Box, Paper, CircularProgress } from "@mui/material";
+import { Button, Typography, Box, CircularProgress } from "@mui/material";
 import JigsawPuzzle from "./JigsawPuzzle";
 import HeartCatcher from "./HeartCatcher";
 import { toPng } from "html-to-image";
@@ -97,6 +97,18 @@ const BorderHearts = React.memo(({ hearts }: { hearts: any[] }) => (
 ));
 BorderHearts.displayName = 'BorderHearts';
 
+const drawImageCover = (ctx: CanvasRenderingContext2D, img: HTMLImageElement, cw: number, ch: number) => {
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const ir = iw / ih, cr = cw / ch;
+    let sx: number, sy: number, sw: number, sh: number;
+    if (ir > cr) {
+        sh = ih; sw = Math.round(ih * cr); sx = Math.round((iw - sw) / 2); sy = 0;
+    } else {
+        sw = iw; sh = Math.round(iw / cr); sx = 0; sy = Math.round((ih - sh) / 2);
+    }
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch);
+};
+
 const PolaroidCard = React.memo(({
     memory,
     index,
@@ -106,14 +118,81 @@ const PolaroidCard = React.memo(({
     totalCount,
     handleDownloadCard,
     handleOpenVideoModal,
-    handleImageLoaded
+    onImageReady,
+    blobUrl
 }: any) => {
-    const isActive = index === currentSlideIndex;
     const isAdjacent = Math.abs(index - currentSlideIndex) <= 1;
-    const isVisible = isRevealed; // Unified visibility with reveal state
+
+    // Determine actual image src - prefer blob URL (in-memory)
+    const originalSrc = useMemo(() => {
+        if (memory.type === 'youtube') return `https://img.youtube.com/vi/${memory.url}/maxresdefault.jpg`;
+        if (memory.type === 'video' || memory.type === 'tiktok') return null;
+        return memory.url;
+    }, [memory.url, memory.type]);
+    const imageSrc = blobUrl || originalSrc;
+
+    const [canvasReady, setCanvasReady] = useState(false);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const drawnSrcRef = useRef<string | null>(null);
+    const loadedImgRef = useRef<HTMLImageElement | null>(null);
+
+    // No image needed for video/tiktok (non-youtube)
+    useEffect(() => {
+        if (!originalSrc) {
+            setCanvasReady(true);
+            onImageReady?.(index);
+        }
+    }, [originalSrc, index, onImageReady]);
+
+    // Draw image onto canvas - pixels persist FOREVER, browser cannot discard
+    useEffect(() => {
+        if (!imageSrc) return;
+        if (drawnSrcRef.current === imageSrc) return;
+
+        const img = new window.Image();
+        img.onload = () => {
+            loadedImgRef.current = img;
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+
+            // Use clientWidth/clientHeight (transform-independent)
+            const parent = canvas.parentElement;
+            const w = parent?.clientWidth || 300;
+            const h = parent?.clientHeight || 400;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.round(w * dpr);
+            canvas.height = Math.round(h * dpr);
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            drawImageCover(ctx, img, canvas.width, canvas.height);
+            drawnSrcRef.current = imageSrc;
+            setCanvasReady(true);
+            onImageReady?.(index);
+        };
+        img.onerror = () => {
+            setCanvasReady(true);
+            onImageReady?.(index);
+        };
+        img.src = imageSrc;
+    }, [imageSrc, index, onImageReady]);
+
+    // Overlay fades only when BOTH revealed AND canvas is drawn
+    const showImage = isRevealed && canvasReady;
 
     return (
-        <div className="polaroid-card group w-full h-full relative bg-white rounded-[4px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] flex flex-col overflow-hidden border-[10px] border-white ring-1 ring-black/5">
+        <div
+            className="polaroid-card group w-full h-full relative bg-white rounded-[4px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] flex flex-col overflow-hidden border-[10px] border-white ring-1 ring-black/5"
+            style={{
+                transform: 'translate3d(0,0,0)',
+                WebkitTransform: 'translate3d(0,0,0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                isolation: 'isolate',
+                contain: 'paint',
+            }}
+        >
             {/* Save Button Overlay */}
             <div
                 onClick={(e) => {
@@ -122,10 +201,10 @@ const PolaroidCard = React.memo(({
                 }}
                 className="no-capture absolute top-2 right-2 z-[50] p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm cursor-pointer hover:scale-110 active:scale-95 transition-all"
                 style={{
-                    opacity: (isRevealed && !isDownloading) ? 0.9 : 0,
-                    pointerEvents: isRevealed ? 'auto' : 'none',
+                    opacity: (showImage && !isDownloading) ? 0.9 : 0,
+                    pointerEvents: showImage ? 'auto' : 'none',
                     visibility: isDownloading === index ? 'hidden' : 'visible',
-                    transform: isRevealed ? 'scale(1)' : 'scale(0.8)'
+                    transform: showImage ? 'scale(1)' : 'scale(0.8)'
                 }}
             >
                 {isDownloading === index ? (
@@ -136,7 +215,15 @@ const PolaroidCard = React.memo(({
             </div>
 
             {/* Photo/Video Container - 82% of height */}
-            <div className="relative w-full h-[82%] overflow-hidden bg-slate-100 group shadow-inner">
+            <div
+                className="relative w-full h-[82%] overflow-hidden bg-slate-100 group shadow-inner"
+                style={{
+                    transform: 'translateZ(0)',
+                    WebkitTransform: 'translateZ(0)',
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                }}
+            >
                 <div className="absolute inset-0 bg-gradient-to-tr from-[#FF336610] via-transparent to-[#FFD1DC15] z-10 pointer-events-none" />
                 <div className="photo-gloss-dynamic" />
 
@@ -171,9 +258,19 @@ const PolaroidCard = React.memo(({
 
                 {memory.type === 'video' || memory.type === 'youtube' || memory.type === 'tiktok' ? (
                     <div className="w-full h-full relative flex items-center justify-center overflow-hidden cursor-pointer" onClick={() => handleOpenVideoModal(memory)}>
-                        {memory.type === 'youtube' ? (
+                        {memory.type === 'youtube' && imageSrc ? (
                             <div className="w-full h-full relative">
-                                <img src={`https://img.youtube.com/vi/${memory.url}/maxresdefault.jpg`} className="w-full h-full object-cover" alt="Video thumbnail" loading={index === 0 ? "eager" : "lazy"} />
+                                <canvas
+                                    ref={canvasRef}
+                                    className="absolute inset-0 w-full h-full"
+                                    style={{
+                                        display: 'block',
+                                        transform: 'translateZ(0)',
+                                        WebkitTransform: 'translateZ(0)',
+                                        backfaceVisibility: 'hidden',
+                                        WebkitBackfaceVisibility: 'hidden',
+                                    }}
+                                />
                                 <div className="absolute inset-0 bg-black/10" />
                             </div>
                         ) : (
@@ -196,35 +293,28 @@ const PolaroidCard = React.memo(({
                     </div>
                 ) : (
                     <div className="w-full h-full relative">
-                        {memory.url.toLowerCase().includes('.gif') ? (
-                            <img
-                                key={`gif-${index}`}
-                                src={memory.url}
-                                alt={memory.caption}
-                                className="w-full h-full object-cover"
-                                loading="eager"
-                            />
-                        ) : (
-                            <img
-                                src={memory.url}
-                                alt={memory.caption}
-                                className="w-full h-full object-cover"
-                                loading={index === 0 ? "eager" : "lazy"}
-                                onLoad={() => handleImageLoaded(index)}
-                            />
-                        )}
+                        <canvas
+                            ref={canvasRef}
+                            className="absolute inset-0 w-full h-full"
+                            style={{
+                                display: 'block',
+                                transform: 'translateZ(0)',
+                                WebkitTransform: 'translateZ(0)',
+                                backfaceVisibility: 'hidden',
+                                WebkitBackfaceVisibility: 'hidden',
+                            }}
+                        />
                     </div>
                 )}
 
                 <div
-                    className="absolute inset-0 z-40 pointer-events-none flex flex-col items-center justify-center transition-all duration-1000 ease-in-out"
+                    className="absolute inset-0 z-40 pointer-events-none flex flex-col items-center justify-center"
                     style={{
                         backgroundColor: '#FFFFFF',
-                        opacity: isRevealed ? 0 : 1,
-                        transform: isRevealed ? 'scale(1.1)' : 'scale(1)',
-                        visibility: (index === 0 || isRevealed) ? 'hidden' : 'visible',
+                        opacity: showImage ? 0 : 1,
+                        visibility: (index === 0 || showImage) ? 'hidden' : 'visible',
                         display: index === 0 ? 'none' : 'flex', // Slide 0 has NO white overlay
-                        transition: 'opacity 0.8s ease-out, transform 0.8s ease-out'
+                        transition: 'opacity 0.4s ease-out'
                     }}
                 >
                     <FastHeart size={50} color="#FFD1DC" style={{ opacity: 0.6 }} />
@@ -234,7 +324,15 @@ const PolaroidCard = React.memo(({
                 </div>
             </div>
 
-            <div className="flex-1 bg-white flex flex-col items-center justify-center px-4 py-2 relative">
+            <div
+                className="flex-1 bg-white flex flex-col items-center justify-center px-4 py-2 relative"
+                style={{
+                    transform: 'translateZ(0)',
+                    WebkitTransform: 'translateZ(0)',
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                }}
+            >
                 <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-black/[0.03] to-transparent pointer-events-none" />
                 {memory.caption ? (
                     <Typography sx={{ color: '#4A151B', fontFamily: 'var(--font-mali)', fontSize: '1rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.3, opacity: 0.85 }}>
@@ -318,7 +416,6 @@ export default function ValentineSlugPage() {
     const [hasSwiped, setHasSwiped] = useState(false);
     const [seenSlides, setSeenSlides] = useState<Set<number>>(new Set([0]));
     const [revealedSlides, setRevealedSlides] = useState<Set<number>>(new Set());
-    const [showMessage, setShowMessage] = useState(false);
     const [fontsLoaded, setFontsLoaded] = useState(false);
     const [isPuzzleComplete, setIsPuzzleComplete] = useState(false);
     const [showFinalReveal, setShowFinalReveal] = useState(false);
@@ -618,8 +715,6 @@ export default function ValentineSlugPage() {
     }, []);
 
 
-    const preloadImagesRef = useRef<HTMLImageElement[]>([]);
-
     const handleImageLoaded = useCallback((index: number) => {
         setLoadedImages(prev => {
             if (prev.has(index)) return prev;
@@ -629,67 +724,46 @@ export default function ValentineSlugPage() {
         });
     }, []);
 
+    // Blob prefetch: keep image DATA in JS memory (not just HTTP cache)
+    // Mobile browsers evict HTTP cache aggressively → slow re-decode
+    // Blob URLs point to in-memory data → re-decode in ~5ms vs 100-500ms
+    const blobUrlsRef = useRef<Map<number, string>>(new Map());
+    const [blobUrlsReady, setBlobUrlsReady] = useState<Map<number, string>>(new Map());
+
     useEffect(() => {
-        preloadImagesRef.current.forEach(img => {
-            img.onload = null;
-            img.onerror = null;
-        });
-        preloadImagesRef.current = [];
+        if (!memories.length) return;
+        let cancelled = false;
 
-        // OPTIMIZED: Only preload the first 5 images/thumbnails immediately
-        // The rest will lazy load when the swiper approaches them
-        const preloadLimit = 5;
+        memories.forEach((memory: any, idx: number) => {
+            if (blobUrlsRef.current.has(idx)) return; // already cached
 
-        const nonImageIndexes: number[] = [];
-
-        memories.forEach((memory, index) => {
-            if (index >= preloadLimit) {
-                // For non-preloaded images, ensure they are marked as "loaded" eventually if not image/youtube
-                if (memory.type !== 'image' && memory.type !== 'youtube') {
-                    nonImageIndexes.push(index);
-                }
-                return;
-            }
-
-            if (memory.type === 'image') {
-                const img = new Image();
-                img.onload = () => handleImageLoaded(index);
-                img.onerror = () => handleImageLoaded(index);
-                img.src = memory.url;
-                preloadImagesRef.current.push(img);
+            let url: string | null = null;
+            if (memory.type === 'image' || memory.url?.toLowerCase().includes('.gif')) {
+                url = memory.url;
             } else if (memory.type === 'youtube') {
-                const img = new Image();
-                img.onload = () => handleImageLoaded(index);
-                img.onerror = () => handleImageLoaded(index);
-                img.src = `https://img.youtube.com/vi/${memory.url}/hqdefault.jpg`;
-                preloadImagesRef.current.push(img);
+                url = `https://img.youtube.com/vi/${memory.url}/maxresdefault.jpg`;
             } else {
-                nonImageIndexes.push(index);
+                return; // video/tiktok - no image
             }
+
+            fetch(url!, { cache: 'force-cache' })
+                .then(r => r.ok ? r.blob() : Promise.reject())
+                .then(blob => {
+                    if (cancelled) return;
+                    const blobUrl = URL.createObjectURL(blob);
+                    blobUrlsRef.current.set(idx, blobUrl);
+                    setBlobUrlsReady(prev => new Map(prev).set(idx, blobUrl));
+                })
+                .catch(() => {
+                    // Fallback: use original URL (HTTP cache)
+                    if (cancelled) return;
+                    blobUrlsRef.current.set(idx, url!);
+                    setBlobUrlsReady(prev => new Map(prev).set(idx, url!));
+                });
         });
 
-        // After a small delay, mark everything as loaded to be safe
-        const safeTimeout = setTimeout(() => {
-            setLoadedImages(prev => {
-                const updated = new Set(prev);
-                let changed = false;
-                memories.forEach((_, idx) => {
-                    if (!updated.has(idx)) {
-                        updated.add(idx);
-                        changed = true;
-                    }
-                });
-                return changed ? updated : prev;
-            });
-        }, 3000);
-
-        return () => {
-            preloadImagesRef.current.forEach(img => {
-                img.onload = null;
-                img.onerror = null;
-            });
-        };
-    }, [memories, handleImageLoaded]);
+        return () => { cancelled = true; };
+    }, [memories]);
 
     const displayContent = content || DEFAULT_CONTENT;
 
@@ -808,15 +882,6 @@ export default function ValentineSlugPage() {
     const handleCloseVideoModal = () => {
         setActiveVideo(null);
     };
-
-    useEffect(() => {
-        if (isOpen && !isTransitioning) {
-            const timeout = setTimeout(() => {
-                setShowMessage(true);
-            }, 1200); // Delayed footer for smoother sequence
-            return () => clearTimeout(timeout);
-        }
-    }, [isOpen, isTransitioning]);
 
     const handleSlideChange = useCallback((swiper: any) => {
         if (!isOpen) return; // Prevent reveal logic before box is open
@@ -1500,7 +1565,7 @@ export default function ValentineSlugPage() {
                             </div>
                         </div>
 
-                        {/* Luxury Footer Card */}
+                        {/* Intro Footer Card */}
                         <div className="w-[85%] max-w-sm h-32 bg-white/70 rounded-[40px] flex flex-col items-center justify-center p-4 shadow-[0_15px_30px_rgba(0,0,0,0.08)] border border-white/60 relative mb-4">
                             <div className="w-10 h-1 bg-gray-300/40 rounded-full mb-3 mt-2" />
                             <div className="flex flex-col items-center">
@@ -1578,7 +1643,8 @@ export default function ValentineSlugPage() {
                                         totalCount={memories.length}
                                         handleDownloadCard={handleDownloadCard}
                                         handleOpenVideoModal={handleOpenVideoModal}
-                                        handleImageLoaded={handleImageLoaded}
+                                        onImageReady={handleImageLoaded}
+                                        blobUrl={blobUrlsReady.get(index)}
                                     />
                                 </SwiperSlide>
                             ))}
@@ -1714,50 +1780,12 @@ export default function ValentineSlugPage() {
                         {/* Old Button Container Removed for Balance */}
                     </div>
 
-                    {/* Footer Message - Stable & Smooth Entrance */}
-                    <div className="w-full max-w-xs px-4 pt-2 pb-2 text-center" style={{ minHeight: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                bgcolor: (showMessage && isSwiperReady) ? 'rgba(255,255,255,0.7)' : 'transparent',
-                                opacity: (showMessage && isSwiperReady) ? 1 : 0,
-                                py: 1.5,
-                                px: 2,
-                                borderRadius: '16px',
-                                border: (showMessage && isSwiperReady) ? '1px solid rgba(255,255,255,0.6)' : '1px solid transparent',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: 0.5,
-                                transition: 'opacity 1.2s ease-out',
-                                willChange: 'opacity',
-                                pointerEvents: (showMessage && isSwiperReady) ? 'auto' : 'none'
-                            }}
-                        >
-                            <Typography
-                                sx={{
-                                    fontFamily: 'var(--font-prompt)',
-                                    fontSize: '0.85rem',
-                                    lineHeight: 1.4,
-                                    color: '#4A151B',
-                                    textAlign: 'center',
-                                    fontWeight: 500
-                                }}
-                            >
-                                {displayContent.message ? `"${displayContent.message}"` : ''}
-                            </Typography>
-                            <Typography
-                                sx={{
-                                    fontFamily: 'var(--font-dancing), cursive',
-                                    fontSize: '1rem',
-                                    color: '#FF3366',
-                                    fontWeight: 600,
-                                }}
-                            >
-                                - {displayContent.signer} -
-                            </Typography>
-                        </Paper>
-                    </div>
+                    {/* Layout spacer: keeps original vertical positions after footer removal */}
+                    <div
+                        aria-hidden="true"
+                        className="w-full max-w-xs px-4 pt-2 pb-2 pointer-events-none"
+                        style={{ minHeight: '90px', opacity: 0 }}
+                    />
                 </div>
             </div>
 
