@@ -16,7 +16,8 @@ import {
     Fade,
     Backdrop,
     Button,
-    Breadcrumbs
+    Breadcrumbs,
+    Skeleton
 } from "@mui/material";
 import {
     Location,
@@ -38,6 +39,15 @@ export default function OurCustomerPage() {
     const [photos, setPhotos] = useState<Photo[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState<number | null>(null);
+    const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+
+    const handleImageLoad = (id: string) => {
+        setLoadedImages(prev => {
+            const newSet = new Set(prev);
+            newSet.add(id);
+            return newSet;
+        });
+    };
 
     useEffect(() => {
         const fetchPhotos = async () => {
@@ -190,12 +200,21 @@ export default function OurCustomerPage() {
                                     }
                                 }}
                             >
+                                {!loadedImages.has(photo.id) && (
+                                    <Skeleton
+                                        variant="rectangular"
+                                        width="100%"
+                                        height={200}
+                                        sx={{ borderRadius: '12px' }}
+                                    />
+                                )}
                                 <img
                                     src={getImageUrl(photo.url)}
                                     alt={photo.caption}
+                                    onLoad={() => handleImageLoad(photo.id)}
                                     style={{
                                         width: '100%',
-                                        display: 'block',
+                                        display: loadedImages.has(photo.id) ? 'block' : 'none',
                                         borderRadius: '12px',
                                     }}
                                 />
@@ -263,10 +282,10 @@ export default function OurCustomerPage() {
                         {/* Image & Nav */}
                         <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                             <IconButton onClick={handlePrev} sx={{ position: 'absolute', left: 20, color: '#FFF', display: { xs: 'none', lg: 'flex' } }}>
-                                <ArrowLeft2 size={40} />
+                                <ArrowLeft2 size={40} variant="Outline" color="#FFF" />
                             </IconButton>
                             <IconButton onClick={handleNext} sx={{ position: 'absolute', right: 20, color: '#FFF', display: { xs: 'none', lg: 'flex' } }}>
-                                <ArrowRight2 size={40} />
+                                <ArrowRight2 size={40} variant="Outline" color="#FFF" />
                             </IconButton>
 
                             {selectedImage !== null && (

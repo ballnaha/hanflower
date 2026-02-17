@@ -15,7 +15,8 @@ import {
     Modal,
     Fade,
     Backdrop,
-    Button
+    Button,
+    Skeleton
 } from "@mui/material";
 import {
     ArrowLeft,
@@ -53,6 +54,15 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [album, setAlbum] = useState<Album | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState<number | null>(null);
+    const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+
+    const handleImageLoad = (id: string) => {
+        setLoadedImages(prev => {
+            const newSet = new Set(prev);
+            newSet.add(id);
+            return newSet;
+        });
+    };
 
     useEffect(() => {
         const fetchAlbum = async () => {
@@ -190,12 +200,21 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                                 }
                             }}
                         >
+                            {!loadedImages.has(photo.id) && (
+                                <Skeleton
+                                    variant="rectangular"
+                                    width="100%"
+                                    height={200}
+                                    sx={{ borderRadius: '8px' }}
+                                />
+                            )}
                             <img
                                 src={getImageUrl(photo.url)}
                                 alt={photo.caption || album.title}
+                                onLoad={() => handleImageLoad(photo.id)}
                                 style={{
                                     width: '100%',
-                                    display: 'block',
+                                    display: loadedImages.has(photo.id) ? 'block' : 'none',
                                     borderRadius: '8px',
                                 }}
                             />

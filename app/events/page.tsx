@@ -13,7 +13,8 @@ import {
     alpha,
     Chip,
     Stack,
-    CircularProgress
+    CircularProgress,
+    Skeleton
 } from "@mui/material";
 import { ArrowRight, Gallery, Location, Calendar } from "iconsax-react";
 
@@ -24,6 +25,15 @@ export default function EventsPage() {
     const [filter, setFilter] = useState('All');
     const [albums, setAlbums] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+
+    const handleImageLoad = (id: string) => {
+        setLoadedImages(prev => {
+            const newSet = new Set(prev);
+            newSet.add(id);
+            return newSet;
+        });
+    };
 
     const [filters, setFilters] = useState<string[]>(['All']);
 
@@ -213,14 +223,24 @@ export default function EventsPage() {
                                         mb: 3,
                                         bgcolor: '#F0EBE9'
                                     }}>
+                                        {!loadedImages.has(album.id) && (
+                                            <Skeleton
+                                                variant="rectangular"
+                                                width="100%"
+                                                height="100%"
+                                                sx={{ position: 'absolute', inset: 0, zIndex: 1 }}
+                                            />
+                                        )}
                                         <Image
                                             src={getImageUrl(album.image)}
                                             alt={album.title}
                                             fill
                                             className="album-image"
+                                            onLoad={() => handleImageLoad(album.id)}
                                             style={{
                                                 objectFit: 'cover',
-                                                transition: 'transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1)'
+                                                transition: 'transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                                                opacity: loadedImages.has(album.id) ? 1 : 0
                                             }}
                                         />
 

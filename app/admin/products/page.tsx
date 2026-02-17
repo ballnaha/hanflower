@@ -37,6 +37,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import Link from 'next/link';
 import { useNotification } from '@/context/NotificationContext';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
+import { getImageUrl } from '@/lib/utils';
 
 interface Product {
     id: string;
@@ -265,7 +266,7 @@ export default function AdminProductsPage() {
                                     <TableCell component="th" scope="row">
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                             <Avatar
-                                                src={product.image.startsWith('http') || product.image.startsWith('/') ? product.image : `/${product.image}`}
+                                                src={getImageUrl(product.image)}
                                                 variant="rounded"
                                                 sx={{ width: 48, height: 48, bgcolor: '#F5F5F5' }}
                                             />

@@ -38,6 +38,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import Link from 'next/link';
 import { useNotification } from '@/context/NotificationContext';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
+import { getImageUrl } from '@/lib/utils';
 
 interface EventAlbum {
     id: string;
@@ -242,7 +243,7 @@ export default function AdminEventsPage() {
                                     <TableCell>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                             <Avatar
-                                                src={album.coverImage}
+                                                src={getImageUrl(album.coverImage)}
                                                 variant="rounded"
                                                 sx={{ width: 60, height: 60, bgcolor: '#F5F5F5', border: '1px solid rgba(0,0,0,0.05)' }}
                                             />
