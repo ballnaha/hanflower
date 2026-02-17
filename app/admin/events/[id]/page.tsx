@@ -51,6 +51,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useNotification } from '@/context/NotificationContext';
 import { useDropzone } from 'react-dropzone';
+import { getImageUrl } from '@/lib/utils';
 
 interface PhotoItem {
     id?: string; // Prisma ID if existing
@@ -248,7 +249,7 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
                         id: p.id,
                         uniqueId: p.id,
                         url: p.url,
-                        preview: p.url,
+                        preview: getImageUrl(p.url),
                         caption: p.caption || ''
                     }));
                     setPhotos(existingPhotos);
@@ -732,7 +733,7 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
                                 </Typography>
                                 {photos.length > 0 ? (
                                     <Avatar
-                                        src={photos[0].preview}
+                                        src={photos.length > 0 ? getImageUrl(photos[0].url || photos[0].preview) : ''}
                                         variant="rounded"
                                         sx={{ width: '100%', height: 200, bgcolor: '#F5F5F5' }}
                                     />

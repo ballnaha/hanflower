@@ -13,24 +13,19 @@ export const getImageUrl = (src: string | null | undefined): string => {
         return src;
     }
 
-    // If it already starts with /
-    if (src.startsWith('/')) {
-        // If it starts with /uploads, return as is (Next.js serves from public/)
-        if (src.startsWith('/uploads/')) {
-            return src;
-        }
-        return src;
+    // Handle images in /uploads directory
+    if (src.includes('uploads/')) {
+        // Extract the path after /uploads/ or uploads/
+        const parts = src.split('uploads/');
+        const pathAfterUploads = parts[parts.length - 1];
+
+        // Route through the API image server
+        return `/api/images/${pathAfterUploads}`;
     }
 
-    // If it's an uploaded file (contains 'uploads/') but not starting with /
-    if (src.includes('uploads/')) {
-        // If it has more than one segment after uploads/ (i.e. subfolders), return with leading /
-        if (src.split('uploads/')[1].includes('/')) {
-            return src.startsWith('/') ? src : `/${src}`;
-        }
-        // Legacy: route simple upload filenames through the API
-        const filename = src.split('/').pop();
-        return filename ? `/api/images/${filename}` : FALLBACK_IMAGE;
+    // If it already starts with /
+    if (src.startsWith('/')) {
+        return src;
     }
 
     // If it's just a raw filename (no slashes), assume legacy upload served via API

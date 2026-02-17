@@ -49,6 +49,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useNotification } from '@/context/NotificationContext';
 import { useDropzone } from 'react-dropzone';
+import { getImageUrl } from '@/lib/utils';
 
 interface PhotoItem {
     id?: string;
@@ -233,7 +234,7 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                         id: p.id,
                         uniqueId: p.id,
                         url: p.url,
-                        preview: p.url,
+                        preview: getImageUrl(p.url),
                         caption: p.caption || ''
                     }));
                     setPhotos(existingPhotos);
