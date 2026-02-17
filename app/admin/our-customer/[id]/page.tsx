@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useCallback } from 'react';
 import {
     Box,
     Typography,
@@ -48,6 +48,7 @@ import { NumberStepper } from '@/components/ui';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useNotification } from '@/context/NotificationContext';
+import { useDropzone } from 'react-dropzone';
 
 interface PhotoItem {
     id?: string;
@@ -319,6 +320,35 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
         }
     };
 
+    const onDrop = useCallback(async (acceptedFiles: File[]) => {
+        if (acceptedFiles.length === 0) return;
+        setUploading(true);
+        try {
+            const newPhotoItems: PhotoItem[] = [];
+            for (let i = 0; i < acceptedFiles.length; i++) {
+                const resized = await resizeImage(acceptedFiles[i]);
+                newPhotoItems.push({
+                    uniqueId: `new-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`,
+                    file: resized,
+                    preview: URL.createObjectURL(resized),
+                    caption: ''
+                });
+            }
+            setPhotos(prev => [...prev, ...newPhotoItems]);
+        } catch (error) {
+            console.error('Drop error:', error);
+            showError('เกิดข้อผิดพลาดในการประมวลผลรูปภาพ');
+        } finally {
+            setUploading(false);
+        }
+    }, [showError]);
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        onDrop,
+        accept: { 'image/*': [] },
+        noClick: true
+    });
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
@@ -441,7 +471,43 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
                             </Stack>
                         </Paper>
 
-                        <Paper elevation={0} sx={{ p: 4, mt: 4, borderRadius: '20px', border: '1px solid rgba(0,0,0,0.03)' }}>
+                        <Paper
+                            elevation={0}
+                            {...getRootProps()}
+                            sx={{
+                                p: 4,
+                                mt: 4,
+                                borderRadius: '20px',
+                                border: '1px solid rgba(0,0,0,0.03)',
+                                position: 'relative',
+                                transition: 'all 0.2s',
+                                ...(isDragActive && {
+                                    borderColor: '#B76E79',
+                                    bgcolor: 'rgba(183, 110, 121, 0.02)',
+                                    transform: 'scale(1.01)'
+                                })
+                            }}
+                        >
+                            <input {...getInputProps()} />
+                            {isDragActive && (
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        zIndex: 10,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        bgcolor: 'rgba(183, 110, 121, 0.1)',
+                                        borderRadius: '20px',
+                                        backdropFilter: 'blur(2px)'
+                                    }}
+                                >
+                                    <Box sx={{ p: 3, bgcolor: '#fff', borderRadius: '50%', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+                                        <Add size={48} variant='Bold' color='#B76E79' />
+                                    </Box>
+                                </Box>
+                            )}
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                                 <Typography variant="h6" sx={{ fontWeight: 700 }}>รูปภาพในอัลบั้ม ({photos.length})</Typography>
                                 <Button variant="contained" component="label" disabled={uploading} startIcon={<Add size={18} />} sx={{ borderRadius: '10px', bgcolor: '#B76E79', '&:hover': { bgcolor: '#A45D68' } }}>

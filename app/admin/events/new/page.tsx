@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Box,
     Typography,
@@ -24,18 +24,147 @@ import {
     Gallery,
     Trash,
     TickCircle,
-    Image as ImageIcon
+    Image as ImageIcon,
+    RowVertical
 } from 'iconsax-react';
+
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    rectSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useNotification } from '@/context/NotificationContext';
 import { NumberStepper } from '@/components/ui';
+import { useDropzone } from 'react-dropzone';
 
 interface PhotoItem {
+    uniqueId: string;
     file?: File;
     preview: string;
     caption: string;
+}
+
+function SortablePhoto({
+    photo,
+    index,
+    onRemove,
+    onCaptionChange
+}: {
+    photo: PhotoItem;
+    index: number;
+    onRemove: (id: string) => void;
+    onCaptionChange: (id: string, value: string) => void
+}) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: photo.uniqueId });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 100 : 1,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <Paper
+            ref={setNodeRef}
+            style={style}
+            elevation={0}
+            sx={{
+                borderRadius: '16px',
+                overflow: 'hidden',
+                border: index === 0 ? '2px solid #B76E79' : '1px solid rgba(0,0,0,0.05)',
+                position: 'relative',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': {
+                    boxShadow: '0 10px 20px rgba(0,0,0,0.05)',
+                    '& .drag-handle': { opacity: 1 }
+                }
+            }}
+        >
+            <Box sx={{ position: 'relative', pt: '75%', bgcolor: '#f0f0f0' }}>
+                <img
+                    src={photo.preview}
+                    alt={`Preview ${index}`}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+
+                {/* Drag Handle Overlay */}
+                <Box
+                    className="drag-handle"
+                    {...attributes}
+                    {...listeners}
+                    sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'rgba(0,0,0,0.2)',
+                        opacity: 0,
+                        transition: 'opacity 0.2s',
+                        cursor: 'grab',
+                        '&:active': { cursor: 'grabbing' },
+                        zIndex: 2
+                    }}
+                >
+                    <RowVertical color="#FFF" size={32} />
+                </Box>
+
+                <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1, zIndex: 5 }}>
+                    <IconButton
+                        size="small"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRemove(photo.uniqueId);
+                        }}
+                        sx={{ bgcolor: 'rgba(255,255,255,0.9)', color: '#d32f2f', '&:hover': { bgcolor: '#fff' } }}
+                    >
+                        <Trash size={16} variant='Bold' color='#d32f2f' />
+                    </IconButton>
+                </Box>
+
+                {index === 0 && (
+                    <Box sx={{ position: 'absolute', top: 8, left: 8, bgcolor: '#B76E79', color: 'white', px: 1, py: 0.5, borderRadius: '6px', fontSize: '10px', fontWeight: 700, zIndex: 5 }}>
+                        COVER PHOTO
+                    </Box>
+                )}
+            </Box>
+            <Box sx={{ p: 1.5 }}>
+                <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="ใส่คำอธิบายภาพ..."
+                    variant="standard"
+                    value={photo.caption}
+                    onChange={(e) => onCaptionChange(photo.uniqueId, e.target.value)}
+                    InputProps={{ disableUnderline: true, sx: { fontSize: '0.85rem' } }}
+                />
+            </Box>
+        </Paper>
+    );
 }
 
 export default function NewEventPage() {
@@ -67,6 +196,29 @@ export default function NewEventPage() {
 
     const [photos, setPhotos] = useState<PhotoItem[]>([]);
 
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
+            setPhotos((items) => {
+                const oldIndex = items.findIndex((item) => item.uniqueId === active.id);
+                const newIndex = items.findIndex((item) => item.uniqueId === over.id);
+                return arrayMove(items, oldIndex, newIndex);
+            });
+        }
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({
@@ -75,12 +227,12 @@ export default function NewEventPage() {
         }));
     };
 
-    const handleRemovePhoto = (index: number) => {
-        setPhotos(prev => prev.filter((_, i) => i !== index));
+    const handleRemovePhoto = (uniqueId: string) => {
+        setPhotos(prev => prev.filter((p) => p.uniqueId !== uniqueId));
     };
 
-    const handleCaptionChange = (index: number, value: string) => {
-        setPhotos(prev => prev.map((p, i) => i === index ? { ...p, caption: value } : p));
+    const handleCaptionChange = (uniqueId: string, value: string) => {
+        setPhotos(prev => prev.map((p) => p.uniqueId === uniqueId ? { ...p, caption: value } : p));
     };
 
     const resizeImage = (file: File): Promise<File> => {
@@ -135,6 +287,7 @@ export default function NewEventPage() {
             for (let i = 0; i < files.length; i++) {
                 const resized = await resizeImage(files[i]);
                 newPhotoItems.push({
+                    uniqueId: `new-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`,
                     file: resized,
                     preview: URL.createObjectURL(resized),
                     caption: ''
@@ -149,6 +302,35 @@ export default function NewEventPage() {
             e.target.value = '';
         }
     };
+
+    const onDrop = useCallback(async (acceptedFiles: File[]) => {
+        if (acceptedFiles.length === 0) return;
+        setUploading(true);
+        try {
+            const newPhotoItems: PhotoItem[] = [];
+            for (let i = 0; i < acceptedFiles.length; i++) {
+                const resized = await resizeImage(acceptedFiles[i]);
+                newPhotoItems.push({
+                    uniqueId: `new-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`,
+                    file: resized,
+                    preview: URL.createObjectURL(resized),
+                    caption: ''
+                });
+            }
+            setPhotos(prev => [...prev, ...newPhotoItems]);
+        } catch (error) {
+            console.error('Drop error:', error);
+            showError('เกิดข้อผิดพลาดในการประมวลผลรูปภาพ');
+        } finally {
+            setUploading(false);
+        }
+    }, [showError]);
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        onDrop,
+        accept: { 'image/*': [] },
+        noClick: true // We already have buttons and a specific click area
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -331,7 +513,43 @@ export default function NewEventPage() {
                         </Paper>
 
                         {/* Photo Gallery Section */}
-                        <Paper elevation={0} sx={{ p: 4, mt: 4, borderRadius: '20px', border: '1px solid rgba(0,0,0,0.03)' }}>
+                        <Paper
+                            elevation={0}
+                            {...getRootProps()}
+                            sx={{
+                                p: 4,
+                                mt: 4,
+                                borderRadius: '20px',
+                                border: '1px solid rgba(0,0,0,0.03)',
+                                position: 'relative',
+                                transition: 'all 0.2s',
+                                ...(isDragActive && {
+                                    borderColor: '#B76E79',
+                                    bgcolor: 'rgba(183, 110, 121, 0.02)',
+                                    transform: 'scale(1.01)'
+                                })
+                            }}
+                        >
+                            <input {...getInputProps()} />
+                            {isDragActive && (
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        zIndex: 10,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        bgcolor: 'rgba(183, 110, 121, 0.1)',
+                                        borderRadius: '20px',
+                                        backdropFilter: 'blur(2px)'
+                                    }}
+                                >
+                                    <Box sx={{ p: 3, bgcolor: '#fff', borderRadius: '50%', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+                                        <Add size={48} variant='Bold' color='#B76E79' />
+                                    </Box>
+                                </Box>
+                            )}
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                                 <Box>
                                     <Typography variant="h6" sx={{ fontWeight: 700 }}>รูปภาพในอัลบั้ม ({photos.length})</Typography>
@@ -351,76 +569,49 @@ export default function NewEventPage() {
                                 </Box>
                             </Box>
 
-                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
-                                {photos.map((photo, index) => (
-                                    <Paper
-                                        key={index}
-                                        elevation={0}
-                                        sx={{
-                                            borderRadius: '16px',
-                                            overflow: 'hidden',
-                                            border: index === 0 ? '2px solid #B76E79' : '1px solid rgba(0,0,0,0.05)',
-                                            position: 'relative',
-                                            transition: 'transform 0.2s',
-                                            '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 10px 20px rgba(0,0,0,0.05)' }
-                                        }}
-                                    >
-                                        <Box sx={{ position: 'relative', pt: '75%', bgcolor: '#f0f0f0' }}>
-                                            <img
-                                                src={photo.preview}
-                                                alt={`Preview ${index}`}
-                                                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <SortableContext
+                                    items={photos.map(p => p.uniqueId)}
+                                    strategy={rectSortingStrategy}
+                                >
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
+                                        {photos.map((photo, index) => (
+                                            <SortablePhoto
+                                                key={photo.uniqueId}
+                                                photo={photo}
+                                                index={index}
+                                                onRemove={handleRemovePhoto}
+                                                onCaptionChange={handleCaptionChange}
                                             />
-                                            <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handleRemovePhoto(index)}
-                                                    sx={{ bgcolor: 'rgba(255,255,255,0.9)', color: '#d32f2f', '&:hover': { bgcolor: '#fff' } }}
-                                                >
-                                                    <Trash size={16} variant="Bold" color="#d32f2f" />
-                                                </IconButton>
-                                            </Box>
-                                            {index === 0 && (
-                                                <Box sx={{ position: 'absolute', top: 8, left: 8, bgcolor: '#B76E79', color: 'white', px: 1, py: 0.5, borderRadius: '6px', fontSize: '10px', fontWeight: 700 }}>
-                                                    COVER PHOTO
-                                                </Box>
-                                            )}
-                                        </Box>
-                                        <Box sx={{ p: 1.5 }}>
-                                            <TextField
-                                                fullWidth
-                                                size="small"
-                                                placeholder="ใส่คำอธิบายภาพ..."
-                                                variant="standard"
-                                                value={photo.caption}
-                                                onChange={(e) => handleCaptionChange(index, e.target.value)}
-                                                InputProps={{ disableUnderline: true, sx: { fontSize: '0.85rem' } }}
-                                            />
-                                        </Box>
-                                    </Paper>
-                                ))}
+                                        ))}
 
-                                {photos.length === 0 && (
-                                    <Box sx={{
-                                        gridColumn: '1 / -1',
-                                        py: 8,
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        border: '2px dashed #ddd',
-                                        borderRadius: '20px',
-                                        color: '#aaa',
-                                        cursor: 'pointer',
-                                        '&:hover': { bgcolor: 'rgba(0,0,0,0.01)', borderColor: '#B76E79' }
-                                    }} component="label">
-                                        <input type="file" hidden multiple accept="image/*" onChange={handleFileSelect} />
-                                        <ImageIcon size={48} variant="Outline" color="#B76E79" style={{ opacity: 0.5, marginBottom: 16 }} />
-                                        <Typography variant="body1" fontWeight={500}>คลิกเพื่อเลือกรูปภาพ</Typography>
-                                        <Typography variant="caption">แนะนำสัดส่วน 4:3 หรือ 16:9</Typography>
+                                        {photos.length === 0 && (
+                                            <Box sx={{
+                                                gridColumn: '1 / -1',
+                                                py: 8,
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                border: '2px dashed #ddd',
+                                                borderRadius: '20px',
+                                                color: '#aaa',
+                                                cursor: 'pointer',
+                                                '&:hover': { bgcolor: 'rgba(0,0,0,0.01)', borderColor: '#B76E79' }
+                                            }} component="label">
+                                                <input type="file" hidden multiple accept="image/*" onChange={handleFileSelect} />
+                                                <ImageIcon size={48} variant="Outline" color="#B76E79" style={{ opacity: 0.5, marginBottom: 16 }} />
+                                                <Typography variant="body1" fontWeight={500}>คลิกเพื่อเลือกรูปภาพ</Typography>
+                                                <Typography variant="caption">แนะนำสัดส่วน 4:3 หรือ 16:9</Typography>
+                                            </Box>
+                                        )}
                                     </Box>
-                                )}
-                            </Box>
+                                </SortableContext>
+                            </DndContext>
                         </Paper>
                     </Box>
 
