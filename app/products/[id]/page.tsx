@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 
     const price = product.price.toString();
-    const title = `${product.title} | ฿${price} | Hanflower`;
+    const title = `${product.title} | Hanflower`;
     const description = product.description.substring(0, 160);
     const imageUrl = product.image.startsWith('http')
         ? product.image
