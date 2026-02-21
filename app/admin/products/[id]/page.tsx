@@ -24,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import NextImage from 'next/image';
 import { useNotification } from '@/context/NotificationContext';
 import { NumberStepper } from '@/components/ui';
+import { getImageUrl } from '@/lib/utils';
 
 // Wrapper component that provides the AdminLayout with SnackbarProvider
 export default function ProductEditorPage({ params }: { params: Promise<{ id: string }> }) {
@@ -66,9 +67,10 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
         features: [''],
         shipping: [''],
         categoryId: '',
-        hasQrCode: true,
+        hasQrCode: false,
         qrCodePrice: '150',
         isNew: false,
+        isActive: true,
         isBestSeller: false
     });
 
@@ -102,6 +104,7 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                             categoryId: data.categoryId || '',
                             hasQrCode: data.hasQrCode !== undefined ? data.hasQrCode : true,
                             isNew: !!data.isNew,
+                            isActive: data.isActive !== undefined ? !!data.isActive : true,
                             isBestSeller: !!data.isBestSeller,
                             qrCodePrice: data.qrCodePrice?.toString() || '150'
                         });
@@ -134,8 +137,8 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        if (name === 'hasQrCode' || name === 'isNew' || name === 'isBestSeller') {
-            setForm(prev => ({ ...prev, [name]: !prev[name as 'hasQrCode' | 'isNew' | 'isBestSeller'] }));
+        if (name === 'hasQrCode' || name === 'isNew' || name === 'isBestSeller' || name === 'isActive') {
+            setForm(prev => ({ ...prev, [name]: !prev[name as 'hasQrCode' | 'isNew' | 'isBestSeller' | 'isActive'] }));
             return;
         }
 
@@ -552,7 +555,7 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                     <Box key={`existing-${idx}`} sx={{ flex: { xs: '0 0 calc(50% - 8px)', sm: '0 0 calc(33.33% - 10.66px)', md: '0 0 calc(25% - 12px)' } }}>
                                         <Box sx={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid #EEE', paddingTop: '100%' }}>
                                             <NextImage
-                                                src={url.startsWith('http') || url.startsWith('/') ? url : `/${url}`}
+                                                src={getImageUrl(url)}
                                                 alt={`Extra ${idx}`}
                                                 fill
                                                 style={{ objectFit: 'cover' }}
@@ -830,8 +833,28 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                 )}
 
                                 <Divider sx={{ my: 2 }}>
-                                    <Chip label="🏷️ ป้ายสัญลักษณ์ (Badges)" size="small" sx={{ fontWeight: 600 }} />
+                                    <Chip label="🏷️ ป้ายสัญลักษณ์ & สถานะ (Badges & Status)" size="small" sx={{ fontWeight: 600 }} />
                                 </Divider>
+
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Box>
+                                        <Typography variant="body2" sx={{ color: '#666', fontWeight: 600 }}>สถานะการแสดงผล</Typography>
+                                        <Typography variant="caption" sx={{ color: '#999' }}>เปิดเพื่อให้แสดงที่หน้าเว็บ</Typography>
+                                    </Box>
+                                    <Button
+                                        onClick={() => handleChange({ target: { name: 'isActive' } } as any)}
+                                        sx={{
+                                            color: form.isActive ? '#FFF' : '#666',
+                                            bgcolor: form.isActive ? '#2E7D32' : '#EEE',
+                                            borderRadius: '20px',
+                                            px: 2,
+                                            height: 32,
+                                            '&:hover': { bgcolor: form.isActive ? '#1B5E20' : '#DDD' }
+                                        }}
+                                    >
+                                        {form.isActive ? 'เปิดอยู่' : 'ซ่อนไว้'}
+                                    </Button>
+                                </Box>
 
                                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <Typography variant="body2" sx={{ color: '#666' }}>สินค้าใหม่ (New)</Typography>
@@ -903,8 +926,7 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                         <NextImage
                                             src={
                                                 pendingImage ? pendingImage.preview :
-                                                    form.image ? (form.image.startsWith('http') || form.image.startsWith('/') ? form.image : `/${form.image}`) :
-                                                        ''
+                                                    getImageUrl(form.image)
                                             }
                                             alt="Cover Preview"
                                             fill

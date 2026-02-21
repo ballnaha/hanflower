@@ -53,6 +53,7 @@ interface Product {
     priority: number;
     categoryId?: string;
     isNew?: boolean;
+    isActive?: boolean;
     isBestSeller?: boolean;
 }
 
@@ -83,7 +84,7 @@ export default function AdminProductsPage() {
     const fetchProducts = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/products');
+            const res = await fetch('/api/products?all=true');
             if (res.ok) {
                 const data = await res.json();
                 setProducts(data);
@@ -96,7 +97,7 @@ export default function AdminProductsPage() {
     };
 
     const handleDeleteClick = () => {
-        handleMenuClose();
+        setAnchorEl(null); // Just close the menu, keep selectedProduct
         setOpenDeleteDialog(true);
     };
 
@@ -109,16 +110,29 @@ export default function AdminProductsPage() {
                 method: 'DELETE',
             });
 
+            const data = await res.json().catch(() => ({}));
+
             if (res.ok) {
-                setProducts(prev => prev.filter(p => p.id !== selectedProduct));
-                showSuccess('ลบสินค้าเรียบร้อยแล้ว');
+                if (data.action === 'deactivated') {
+                    // Update the product in the list instead of removing it
+                    setProducts(prev => prev.map(p =>
+                        p.id === selectedProduct ? { ...p, isActive: false } : p
+                    ));
+                    showSuccess('เนื่องจากสินค้านี้มีออเดอร์ในระบบ จึงทำการซ่อนสินค้าแทนการลบ');
+                } else {
+                    setProducts(prev => prev.filter(p => p.id !== selectedProduct));
+                    showSuccess('ลบสินค้าเรียบร้อยแล้ว');
+                }
                 setOpenDeleteDialog(false);
+                setSelectedProduct(null);
             } else {
-                showError('เกิดข้อผิดพลาดในการลบสินค้า');
+                showError(data.error || 'เกิดข้อผิดพลาดในการลบสินค้า');
+                setOpenDeleteDialog(false);
             }
         } catch (error) {
             console.error('Error deleting product:', error);
             showError('ไม่สามารถลบสินค้าได้');
+            setOpenDeleteDialog(false);
         } finally {
             setDeleting(false);
         }
@@ -136,7 +150,7 @@ export default function AdminProductsPage() {
 
     const handleMenuClose = () => {
         setAnchorEl(null);
-        setSelectedProduct(null);
+        // Don't clear selectedProduct here if dialog is opening
     };
 
     const filteredProducts = products.filter(p => {
@@ -232,6 +246,7 @@ export default function AdminProductsPage() {
                         <TableRow sx={{ bgcolor: '#FAFAFA' }}>
                             <TableCell sx={{ fontWeight: 700, color: '#1A1A1A', py: 2.5 }}>สินค้า</TableCell>
                             <TableCell sx={{ fontWeight: 700, color: '#1A1A1A' }}>หมวดหมู่</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: '#1A1A1A' }}>สถานะ</TableCell>
                             <TableCell sx={{ fontWeight: 700, color: '#1A1A1A' }}>ราคา</TableCell>
                             <TableCell sx={{ fontWeight: 700, color: '#1A1A1A' }}>สต็อก</TableCell>
                             <TableCell sx={{ fontWeight: 700, color: '#1A1A1A' }}>ลำดับ</TableCell>
@@ -241,14 +256,14 @@ export default function AdminProductsPage() {
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                                <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
                                     <CircularProgress size={30} sx={{ color: '#B76E79' }} />
                                     <Typography sx={{ mt: 2, color: '#888' }}>กำลังโหลดข้อมูลสินค้า...</Typography>
                                 </TableCell>
                             </TableRow>
                         ) : filteredProducts.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 12 }}>
+                                <TableCell colSpan={7} align="center" sx={{ py: 12 }}>
                                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                                         <BoxIcon size={80} variant="Bulk" color="#E0E0E0" />
                                         <Typography sx={{ mt: 2, color: '#888', fontWeight: 500 }}>
@@ -262,7 +277,11 @@ export default function AdminProductsPage() {
                             </TableRow>
                         ) : (
                             filteredProducts.map((product) => (
-                                <TableRow key={product.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                <TableRow key={product.id} hover sx={{
+                                    '&:last-child td, &:last-child th': { border: 0 },
+                                    opacity: product.isActive === false ? 0.6 : 1,
+                                    bgcolor: product.isActive === false ? '#F9F9F9' : 'transparent'
+                                }}>
                                     <TableCell component="th" scope="row">
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                             <Avatar
@@ -275,13 +294,14 @@ export default function AdminProductsPage() {
                                                     <Typography sx={{ fontWeight: 600, color: '#1A1A1A', fontSize: '0.9rem' }}>
                                                         {product.title}
                                                     </Typography>
-                                                    {product.isNew && (
+                                                    {product.isActive === false && (
                                                         <Chip
-                                                            label="สินค้าใหม่"
+                                                            label="ถูกซ่อนอยู่"
                                                             size="small"
+                                                            variant="outlined"
                                                             sx={{
-                                                                bgcolor: '#B76E79',
-                                                                color: '#FFFFFF',
+                                                                borderColor: '#CCC',
+                                                                color: '#888',
                                                                 fontWeight: 700,
                                                                 fontSize: '0.6rem',
                                                                 height: 20,
@@ -317,6 +337,18 @@ export default function AdminProductsPage() {
                                             sx={{
                                                 bgcolor: '#FFF9F8',
                                                 color: '#B76E79',
+                                                fontWeight: 600,
+                                                fontSize: '0.7rem'
+                                            }}
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip
+                                            label={product.isActive === false ? 'Hidden' : 'Active'}
+                                            size="small"
+                                            sx={{
+                                                bgcolor: product.isActive === false ? '#EEEEEE' : '#E8F5E9',
+                                                color: product.isActive === false ? '#888888' : '#2E7D32',
                                                 fontWeight: 600,
                                                 fontSize: '0.7rem'
                                             }}
@@ -422,7 +454,10 @@ export default function AdminProductsPage() {
 
             <AdminConfirmDialog
                 open={openDeleteDialog}
-                onClose={() => setOpenDeleteDialog(false)}
+                onClose={() => {
+                    setOpenDeleteDialog(false);
+                    setSelectedProduct(null);
+                }}
                 onConfirm={handleConfirmDelete}
                 title="ยืนยันการลบสินค้า"
                 message="คุณแน่ใจหรือไม่ว่าต้องการลบสินค้านี้? การกระทำนี้ไม่สามารถย้อนกลับได้"

@@ -8,9 +8,11 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const limitParam = searchParams.get('limit');
+        const showAll = searchParams.get('all') === 'true';
         const limit = limitParam ? parseInt(limitParam, 10) : undefined;
 
         const products = await (prisma as any).product.findMany({
+            where: showAll ? {} : { isActive: true },
             include: {
                 productimages: true,
                 productdetails: true,
@@ -55,6 +57,7 @@ export async function GET(request: NextRequest) {
                     hasQrCode: product.hasQrCode,
                     qrCodePrice: product.qrCodePrice?.toString() || "0",
                     isNew: product.isNew,
+                    isActive: product.isActive,
                     isBestSeller: product.isBestSeller,
                     category: product.category?.title || "General"
                 };
@@ -79,7 +82,7 @@ export async function POST(request: NextRequest) {
             discount, priceVelvet, originalPriceVelvet, discountVelvet,
             description, image, images,
             details, features, shipping, stock, stockVelvet, priority,
-            categoryId, hasQrCode, qrCodePrice, isNew, isBestSeller
+            categoryId, hasQrCode, qrCodePrice, isNew, isBestSeller, isActive
         } = body;
 
         const newProduct = await (prisma as any).product.create({
@@ -100,10 +103,11 @@ export async function POST(request: NextRequest) {
                 stockVelvet: parseInt(stockVelvet?.toString() || '0'),
                 priority: parseInt(priority.toString() || '0'),
                 categoryId: categoryId || null,
-                hasQrCode: hasQrCode !== undefined ? hasQrCode : true,
+                hasQrCode: hasQrCode !== undefined ? hasQrCode : false,
                 qrCodePrice: qrCodePrice ? parseFloat(qrCodePrice.toString().replace(/,/g, '')) : 0,
                 isNew: !!isNew,
                 isBestSeller: !!isBestSeller,
+                isActive: isActive !== undefined ? !!isActive : true,
                 productimages: {
                     create: images?.map((url: string) => ({ url })) || []
                 },

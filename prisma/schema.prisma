@@ -41,9 +41,10 @@ model Product {
   sku                    String                   @unique(map: "Product_sku_key")
   categoryId             String?
   discountVelvet         Int?
-  hasQrCode              Boolean                  @default(true)
+  hasQrCode              Boolean                  @default(false)
   isBestSeller           Boolean                  @default(false)
   isNew                  Boolean                  @default(false)
+  isActive               Boolean                  @default(true)
   originalPriceVelvet    Decimal?                 @db.Decimal(10, 2)
   priceVelvet            Decimal?                 @db.Decimal(10, 2)
   qrCodePrice            Decimal?                 @default(150.00) @db.Decimal(10, 2)

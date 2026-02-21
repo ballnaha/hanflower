@@ -1,6 +1,8 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { unlink } from 'fs/promises';
+import { join } from 'path';
 
 export async function GET(
     request: Request,
@@ -87,7 +89,7 @@ export async function PUT(
             discount, priceVelvet, originalPriceVelvet, discountVelvet,
             description, image, images,
             details, features, shipping, stock, stockVelvet, priority,
-            categoryId, hasQrCode, qrCodePrice, isNew, isBestSeller
+            categoryId, hasQrCode, qrCodePrice, isNew, isBestSeller, isActive
         } = body;
 
         if (!id) {
@@ -119,10 +121,11 @@ export async function PUT(
                 stockVelvet: parseInt(stockVelvet?.toString() || '0'),
                 priority: parseInt(priority.toString()),
                 categoryId: categoryId || null,
-                hasQrCode: hasQrCode !== undefined ? hasQrCode : true,
+                hasQrCode: hasQrCode !== undefined ? hasQrCode : false,
                 qrCodePrice: qrCodePrice ? parseFloat(qrCodePrice.toString().replace(/,/g, '')) : 0,
                 isNew: !!isNew,
                 isBestSeller: !!isBestSeller,
+                isActive: isActive !== undefined ? !!isActive : true,
                 productimages: {
                     create: images.filter((url: string) => url && url.trim() !== '').map((url: string) => ({ url }))
                 },
@@ -156,11 +159,81 @@ export async function DELETE(
 ) {
     try {
         const id = (await params).id;
+
+        // Fetch product to get images and check order items before deletion
+        const product = await (prisma as any).product.findUnique({
+            where: { id },
+            include: {
+                productimages: true,
+                orderitems: true
+            }
+        });
+
+        if (!product) {
+            return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+        }
+
+        // Professional approach:
+        // If product has been ordered, we just deactivate it (isActive: false)
+        // If it has NEVER been ordered, we can safely hard delete it and its images.
+        if (product.orderitems && product.orderitems.length > 0) {
+            await (prisma as any).product.update({
+                where: { id },
+                data: { isActive: false }
+            });
+            return NextResponse.json({
+                message: 'Product deactivated (kept in system because it has orders)',
+                action: 'deactivated'
+            });
+        }
+
+        // NO orders found - proceed with hard delete
+        if (product) {
+            // Collect all image URLs
+            const imagesToDelete: string[] = [];
+            if (product.image) imagesToDelete.push(product.image);
+            if (product.productimages && product.productimages.length > 0) {
+                product.productimages.forEach((img: any) => {
+                    if (img.url) imagesToDelete.push(img.url);
+                });
+            }
+
+            for (const imgUrl of imagesToDelete) {
+                if (typeof imgUrl === 'string' && imgUrl.trim() !== '' && !imgUrl.startsWith('http')) {
+                    try {
+                        let filePath = '';
+                        if (imgUrl.includes('/uploads/')) {
+                            const pathParts = imgUrl.split('/').filter(Boolean);
+                            filePath = join(process.cwd(), 'public', ...pathParts);
+                        } else if (!imgUrl.includes('/')) {
+                            filePath = join(process.cwd(), 'public', 'uploads', imgUrl);
+                        } else {
+                            // Assume it starts with / and it's inside public
+                            const pathParts = imgUrl.split('/').filter(Boolean);
+                            filePath = join(process.cwd(), 'public', ...pathParts);
+                        }
+
+                        if (filePath) {
+                            await unlink(filePath);
+                            console.log(`Deleted file: ${filePath}`);
+                        }
+                    } catch (err: any) {
+                        console.warn(`Failed to delete file ${imgUrl}:`, err.message);
+                    }
+                }
+            }
+        }
+
         await (prisma as any).product.delete({
             where: { id }
         });
-        return NextResponse.json({ message: 'Product deleted' });
+
+        return NextResponse.json({
+            message: 'Product deleted successfully',
+            action: 'deleted'
+        });
     } catch (error: any) {
+        console.error('Delete Error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
