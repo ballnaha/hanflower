@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
         const categories = await prisma.category.findMany({
             where: activeOnly ? { isActive: true } : undefined,
             orderBy: [
-                { priority: 'desc' },
+                { priority: 'asc' },
                 { createdAt: 'desc' }
             ]
         });
