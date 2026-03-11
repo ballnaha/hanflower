@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShoppingBag, HambergerMenu, SearchNormal1, Heart, Profile, ArrowDown2 } from "iconsax-react";
@@ -31,6 +31,7 @@ export default function Header() {
     const [categories, setCategories] = useState<{ id: string; title: string; subtitle: string; slug: string }[]>([]);
     const [productsAnchorEl, setProductsAnchorEl] = useState<null | HTMLElement>(null);
     const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const { cartCount, toggleCart } = useCart();
     const pathname = usePathname();
@@ -59,12 +60,25 @@ export default function Header() {
         setMobileOpen(!mobileOpen);
     };
 
-    const handleProductsClick = (event: React.MouseEvent<HTMLElement>) => {
+    const handleProductsEnter = (event: React.MouseEvent<HTMLElement>) => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
         setProductsAnchorEl(event.currentTarget);
     };
 
-    const handleProductsClose = () => {
-        setProductsAnchorEl(null);
+    const handleProductsLeave = () => {
+        timeoutRef.current = setTimeout(() => {
+            setProductsAnchorEl(null);
+        }, 150);
+    };
+
+    const handleMenuEnter = () => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+
+    const handleMenuLeave = () => {
+        timeoutRef.current = setTimeout(() => {
+            setProductsAnchorEl(null);
+        }, 150);
     };
 
     useEffect(() => {
@@ -244,8 +258,8 @@ export default function Header() {
                                 <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: { md: 4, lg: 6 }, alignItems: 'center' }}>
                                     <Box
                                         sx={{ position: 'relative' }}
-                                        onMouseEnter={(e) => setProductsAnchorEl(e.currentTarget)}
-                                        onMouseLeave={() => setProductsAnchorEl(null)}
+                                        onMouseEnter={handleProductsEnter}
+                                        onMouseLeave={handleProductsLeave}
                                     >
                                         <Box
                                             component="span"
@@ -287,12 +301,11 @@ export default function Header() {
                                             open={Boolean(productsAnchorEl)}
                                             onClose={() => setProductsAnchorEl(null)}
                                             disableScrollLock
-                                            disablePortal
                                             anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                                             transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                                             MenuListProps={{
-                                                onMouseEnter: () => { }, // Keep open
-                                                onMouseLeave: () => setProductsAnchorEl(null),
+                                                onMouseEnter: handleMenuEnter,
+                                                onMouseLeave: handleMenuLeave,
                                                 sx: { py: 0.5 }
                                             }}
                                             PaperProps={{
