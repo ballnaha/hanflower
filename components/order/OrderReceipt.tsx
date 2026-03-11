@@ -131,7 +131,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(({ order }, r
                                     flexShrink: 0,
                                     position: 'relative'
                                 }}>
-                                    {item.image && <Image src={getImageUrl(item.image)} alt={item.title} fill style={{ objectFit: 'cover' }} />}
+                                    <Image src={getImageUrl(item.image)} alt={item.title} fill style={{ objectFit: 'cover' }} />
                                 </Box>
                                 <Box sx={{ flex: 1 }}>
                                     <Typography variant="body2" sx={{

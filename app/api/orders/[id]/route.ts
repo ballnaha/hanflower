@@ -28,7 +28,11 @@ export async function GET(
             include: {
                 items: {
                     include: {
-                        product: true
+                        product: {
+                            include: {
+                                productimages: true
+                            }
+                        }
                     }
                 }
             }
@@ -39,11 +43,21 @@ export async function GET(
         }
 
         // Format items to include product details directly
-        const formattedItems = order.items.map((item: any) => ({
-            ...item,
-            title: item.product?.title || 'Unknown Product',
-            image: item.product?.image || null,
-        }));
+        const formattedItems = order.items.map((item: any) => {
+            const product = item.product;
+            let image = product?.image;
+
+            // Fallback to first image in productimages if main image is empty
+            if (!image && product?.productimages && product.productimages.length > 0) {
+                image = product.productimages[0].url;
+            }
+
+            return {
+                ...item,
+                title: product?.title || 'Unknown Product',
+                image: image || null,
+            };
+        });
 
         // Map order for consistency with both frontend pages
         const formattedOrder = {

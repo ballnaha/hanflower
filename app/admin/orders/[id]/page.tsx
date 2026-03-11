@@ -42,6 +42,7 @@ import OrderReceipt from '@/components/order/OrderReceipt';
 import { toPng } from "html-to-image";
 import { useRef } from 'react';
 import { useNotification } from '@/context/NotificationContext';
+import { getImageUrl } from '@/lib/utils';
 
 interface OrderItem {
     id: string;
@@ -334,7 +335,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     '&:hover': { bgcolor: '#FCFCFC' }
                                 }}>
                                     <Avatar
-                                        src={item.image || '/images/placeholder.webp'}
+                                        src={getImageUrl(item.image)}
                                         variant="rounded"
                                         sx={{ width: 64, height: 64, bgcolor: '#F5F5F5', border: '1px solid #F0F0F0' }}
                                     />

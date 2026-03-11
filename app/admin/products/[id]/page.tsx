@@ -15,9 +15,12 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
-    Chip
+    Tooltip,
+    Chip,
+    InputAdornment,
+    Autocomplete
 } from '@mui/material';
-import { ArrowLeft, Trash, Add, Save2, Image as ImageIcon } from 'iconsax-react';
+import { ArrowLeft, Trash, Add, Save2, Image as ImageIcon, Magicpen } from 'iconsax-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -43,6 +46,7 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
     const router = useRouter();
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
+    const [generating, setGenerating] = useState(false);
     const { showSuccess, showError } = useNotification();
 
     const [form, setForm] = useState({
@@ -135,6 +139,13 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
         fetchCategories();
     }, []);
 
+    // Auto-generate SKU for new products on mount
+    useEffect(() => {
+        if (isNew && form.sku === '') {
+            generateSKU();
+        }
+    }, [isNew, form.sku === '']); // Run if isNew or if sku becomes empty
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         if (name === 'hasQrCode' || name === 'isNew' || name === 'isBestSeller' || name === 'isActive') {
@@ -196,15 +207,76 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
             return updated;
         });
 
-        // Auto-generate slug from title for new products
         if (name === 'title' && isNew) {
             const generatedSlug = value
                 .toLowerCase()
-                .replace(/[^\w\s-]/g, '')
+                .trim()
                 .replace(/\s+/g, '-')
+                .replace(/[^\u0E00-\u0E7F\w\s-]/g, '')
                 .replace(/-+/g, '-');
             setForm(prev => ({ ...prev, slug: generatedSlug }));
         }
+    };
+
+    const generateSKU = async () => {
+        setGenerating(true);
+        try {
+            const res = await fetch('/api/products?all=true');
+            if (res.ok) {
+                const products = await res.json();
+                const productList = Array.isArray(products) ? products : [];
+
+                const skus = productList
+                    .map((p: any) => p.sku)
+                    .filter((s: string) => s && typeof s === 'string' && s.toUpperCase().startsWith('HAN-'));
+
+                let nextNumber = 1;
+                if (skus.length > 0) {
+                    const numbers = skus.map((s: string) => {
+                        const match = s.match(/HAN-(\d+)/i);
+                        return match ? parseInt(match[1], 10) : 0;
+                    }).filter((n: number) => !isNaN(n));
+
+                    if (numbers.length > 0) {
+                        nextNumber = Math.max(...numbers) + 1;
+                    }
+                }
+
+                const newSku = `HAN-${nextNumber.toString().padStart(3, '0')}`;
+                setForm(prev => {
+                    const updated = { ...prev, sku: newSku };
+                    // If slug is currently empty or still matches the old title-only pattern, 
+                    // we could optionally append or refresh it, but let's at least ensure 
+                    // Thai characters work now.
+                    return updated;
+                });
+            } else {
+                const timestamp = new Date().getTime().toString().slice(-4);
+                setForm(prev => ({ ...prev, sku: `HAN-${timestamp}` }));
+            }
+        } catch (err) {
+            console.error('Failed to generate SKU:', err);
+            const random = Math.floor(100 + Math.random() * 899);
+            setForm(prev => ({ ...prev, sku: `HAN-${random}` }));
+        } finally {
+            setGenerating(false);
+        }
+    };
+
+    const getTypeSuggestions = (categoryId: string) => {
+        if (categoryId === 'bouquet') {
+            return ['Signature Bouquet', 'Rose Bouquet', 'Lilly Bouquet', 'Daisy Bouquet', 'Tulip Bouquet', 'Hydrangea Bouquet'];
+        }
+        if (categoryId === 'succulent') {
+            return ['Premium Succulent', 'Cactus', 'Haworthia', 'Houseplant'];
+        }
+        if (categoryId === 'fruit-basket') {
+            return ['Fruit Basket', 'Healthy Hamper', 'Gift Basket'];
+        }
+        if (categoryId === 'souvenir') {
+            return ['Wedding Souvenir', 'Company Gift', 'Event Souvenir'];
+        }
+        return [];
     };
 
     const handleArrayChange = (index: number, value: string, field: 'images' | 'details' | 'features' | 'shipping') => {
@@ -404,6 +476,11 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
             const url = isNew ? '/api/products' : `/api/products/${id}`;
             const method = isNew ? 'POST' : 'PUT';
 
+            // Ensure we have a main image if only additional images were uploaded
+            if (!finalMainImage && finalAdditionalImages.length > 0) {
+                finalMainImage = finalAdditionalImages[0];
+            }
+
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
@@ -417,7 +494,10 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                 }),
             });
 
-            if (!res.ok) throw new Error('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+            }
 
             // Update form state with the uploaded images so they display immediately
             setForm(prev => ({
@@ -475,6 +555,34 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                             onChange={handleChange}
                                             required
                                             placeholder="เช่น HAN-001"
+                                            InputProps={{
+                                                endAdornment: (
+                                                    <InputAdornment position="end">
+                                                        <Tooltip title="สร้างรหัสสินค้าอัตโนมัติ">
+                                                            <span>
+                                                                <IconButton
+                                                                    onClick={generateSKU}
+                                                                    disabled={generating}
+                                                                    size="small"
+                                                                    sx={{
+                                                                        color: '#B76E79',
+                                                                        bgcolor: 'rgba(183, 110, 121, 0.05)',
+                                                                        '&:hover': { bgcolor: 'rgba(183, 110, 121, 0.1)' },
+                                                                        borderRadius: '8px',
+                                                                        p: 1
+                                                                    }}
+                                                                >
+                                                                    {generating ? (
+                                                                        <CircularProgress size={16} color="inherit" />
+                                                                    ) : (
+                                                                        <Magicpen size={20} variant="TwoTone" color="#B76E79" />
+                                                                    )}
+                                                                </IconButton>
+                                                            </span>
+                                                        </Tooltip>
+                                                    </InputAdornment>
+                                                )
+                                            }}
                                         />
                                     </Box>
                                     <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' } }}>
@@ -508,11 +616,16 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                         onChange={(e) => {
                                             const catId = e.target.value;
                                             const selectedCat = categories.find(c => c.id === catId);
-                                            setForm(prev => ({
-                                                ...prev,
-                                                categoryId: catId,
-                                                type: selectedCat ? selectedCat.subtitle : prev.type // Use English subtitle
-                                            }));
+                                            if (selectedCat) {
+                                                setForm(prev => ({
+                                                    ...prev,
+                                                    categoryId: catId,
+                                                    // Only auto-update type if it's currently empty or belongs to default subtitles
+                                                    type: (!prev.type || categories.some(c => c.subtitle === prev.type))
+                                                        ? selectedCat.subtitle
+                                                        : prev.type
+                                                }));
+                                            }
                                         }}
                                     >
                                         <MenuItem value="">
@@ -525,6 +638,24 @@ function ProductEditorContent({ id, isNew }: { id: string; isNew: boolean }) {
                                         ))}
                                     </Select>
                                 </FormControl>
+
+                                <Autocomplete
+                                    freeSolo
+                                    options={getTypeSuggestions(form.categoryId)}
+                                    value={form.type}
+                                    onInputChange={(event, newValue) => {
+                                        setForm(prev => ({ ...prev, type: newValue }));
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="ชนิดสินค้า (หมวดหมู่ย่อย)"
+                                            name="type"
+                                            required
+                                            helperText="เช่น Rose Bouquet, Lilly Bouquet หรือเว้นเป็นค่าปกติไว้"
+                                        />
+                                    )}
+                                />
                             </Stack>
                         </Paper>
 

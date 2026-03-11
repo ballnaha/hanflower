@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ShoppingBag, HambergerMenu, SearchNormal1, Heart, Profile, ArrowDown2 } from "iconsax-react";
 import {
     Container,
     Typography,
@@ -14,9 +15,11 @@ import {
     List,
     ListItem,
     ListItemButton,
-    ListItemText
+    ListItemText,
+    Menu,
+    MenuItem,
+    Collapse
 } from "@mui/material";
-import { ShoppingBag, HambergerMenu, SearchNormal1, Heart, Profile } from "iconsax-react";
 import Image from "next/image";
 
 import { useCart } from "@/context/CartContext";
@@ -25,8 +28,28 @@ import PromotionBar from "./PromotionBar";
 export default function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [categories, setCategories] = useState<{ id: string; title: string; subtitle: string; slug: string }[]>([]);
+    const [productsAnchorEl, setProductsAnchorEl] = useState<null | HTMLElement>(null);
+    const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
+
     const { cartCount, toggleCart } = useCart();
     const pathname = usePathname();
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch('/api/categories');
+                if (res.ok) {
+                    const data = await res.json();
+                    setCategories(data);
+                }
+            } catch (err) {
+                console.error('Error fetching categories:', err);
+            }
+        };
+        fetchCategories();
+    }, []);
+
     const isProductPage = pathname?.includes('/products/');
     const isAdminPage = pathname?.startsWith('/admin');
 
@@ -34,6 +57,14 @@ export default function Header() {
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
+    };
+
+    const handleProductsClick = (event: React.MouseEvent<HTMLElement>) => {
+        setProductsAnchorEl(event.currentTarget);
+    };
+
+    const handleProductsClose = () => {
+        setProductsAnchorEl(null);
     };
 
     useEffect(() => {
@@ -210,20 +241,117 @@ export default function Header() {
                                 </Box>
 
                                 {/* Desktop Menu */}
-                                <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: { md: 4, lg: 8 } }}>
+                                <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: { md: 4, lg: 6 }, alignItems: 'center' }}>
+                                    <Box
+                                        sx={{ position: 'relative' }}
+                                        onMouseEnter={(e) => setProductsAnchorEl(e.currentTarget)}
+                                        onMouseLeave={() => setProductsAnchorEl(null)}
+                                    >
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                fontSize: '0.85rem',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.25em',
+                                                color: isScrolled ? '#5D4037' : (pathname === '/' && !isScrolled ? '#FFFFFF' : '#5D4037'),
+                                                fontWeight: 600,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 0.5,
+                                                padding: '10px 0',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.4s ease',
+                                                opacity: pathname?.includes('/products') ? 1 : (isScrolled ? 1 : 0.9),
+                                                '&:hover': { opacity: 1 }
+                                            }}
+                                            className="nav-link"
+                                        >
+                                            PRODUCTS
+                                            <ArrowDown2 size={12} variant="Outline" />
+                                        </Box>
+                                        <Box component="span" sx={{
+                                            position: 'absolute',
+                                            bottom: 0,
+                                            left: '50%',
+                                            width: pathname?.includes('/products') ? '100%' : '0%',
+                                            height: '1px',
+                                            bgcolor: '#D4AF37',
+                                            transition: 'all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                                            transform: 'translateX(-50%)',
+                                            '.nav-link:hover ~ &': {
+                                                width: '100%',
+                                            }
+                                        }} />
+                                        <Menu
+                                            anchorEl={productsAnchorEl}
+                                            open={Boolean(productsAnchorEl)}
+                                            onClose={() => setProductsAnchorEl(null)}
+                                            disableScrollLock
+                                            disablePortal
+                                            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                                            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                                            MenuListProps={{
+                                                onMouseEnter: () => { }, // Keep open
+                                                onMouseLeave: () => setProductsAnchorEl(null),
+                                                sx: { py: 0.5 }
+                                            }}
+                                            PaperProps={{
+                                                elevation: 0,
+                                                sx: {
+                                                    mt: '5px',
+                                                    borderRadius: '0px', // Premium sharp look
+                                                    bgcolor: 'rgba(255, 255, 255, 0.98)',
+                                                    backdropFilter: 'blur(20px)',
+                                                    boxShadow: '0 25px 60px rgba(0,0,0,0.12)',
+                                                    border: '1px solid rgba(0,0,0,0.06)',
+                                                    minWidth: '220px',
+                                                    '& .MuiMenuItem-root': {
+                                                        fontSize: '0.75rem',
+                                                        letterSpacing: '0.15em',
+                                                        textTransform: 'uppercase',
+                                                        fontWeight: 500,
+                                                        py: 1.8,
+                                                        px: 3,
+                                                        color: '#5D4037',
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            bgcolor: 'rgba(183, 110, 121, 0.05)',
+                                                            color: '#B76E79',
+                                                            pl: 3.5 // Subtle slide effect
+                                                        }
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            <MenuItem
+                                                component={Link}
+                                                href="/products"
+                                                onClick={() => setProductsAnchorEl(null)}
+                                            >
+                                                สินค้าทั้งหมด
+                                            </MenuItem>
+                                            {categories.map((cat) => (
+                                                <MenuItem
+                                                    key={cat.id}
+                                                    component={Link}
+                                                    href={`/products?category=${cat.subtitle}`}
+                                                    onClick={() => setProductsAnchorEl(null)}
+                                                >
+                                                    {cat.title}
+                                                </MenuItem>
+                                            ))}
+                                        </Menu>
+                                    </Box>
+
                                     {[
-                                        { label: 'FLOWERS', href: '/products?category=bouquet' },
                                         { label: 'EVENTS', href: '/events' },
                                         { label: 'ABOUT US', href: '/about' },
                                         { label: 'OUR CUSTOMERS', href: '/our-customer' },
                                         { label: 'CONTACT', href: '/contact' },
                                     ].map((link) => {
-                                        const isExternal = false;
-                                        const Component = Link;
-
                                         return (
                                             <Box key={link.label} sx={{ position: 'relative' }}>
-                                                <Component
+                                                <Link
                                                     href={link.href}
                                                     style={{
                                                         fontSize: '0.85rem',
@@ -240,7 +368,7 @@ export default function Header() {
                                                     className="nav-link"
                                                 >
                                                     {link.label}
-                                                </Component>
+                                                </Link>
                                                 <Box component="span" sx={{
                                                     position: 'absolute',
                                                     bottom: 0,
@@ -340,26 +468,51 @@ export default function Header() {
                         },
                     }}
                 >
-                    <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center', py: 4 }}>
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
                         <Box sx={{ position: 'relative', width: '120px', height: '40px', mx: 'auto', mb: 4 }}>
-                            <Image
-                                src="/images/logo5.png"
-                                alt="HanFlower Logo"
-                                fill
-                                style={{ objectFit: 'contain' }}
-                            />
+                            <Link href="/" onClick={handleDrawerToggle}>
+                                <Image
+                                    src="/images/logo5.png"
+                                    alt="HanFlower Logo"
+                                    fill
+                                    style={{ objectFit: 'contain' }}
+                                />
+                            </Link>
                         </Box>
-                        <List>
+                        <List sx={{ px: 2 }}>
+                            <ListItem disablePadding>
+                                <ListItemButton sx={{ py: 2 }} component={Link} href="/" onClick={handleDrawerToggle}>
+                                    <ListItemText primary="HOME" primaryTypographyProps={{ sx: { textTransform: 'uppercase', letterSpacing: '0.1em', color: '#5D4037', fontWeight: 600 } }} />
+                                </ListItemButton>
+                            </ListItem>
+
+                            <ListItem disablePadding sx={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                                <ListItemButton sx={{ py: 2 }} onClick={() => setMobileProductsOpen(!mobileProductsOpen)}>
+                                    <ListItemText primary="PRODUCTS" primaryTypographyProps={{ sx: { textTransform: 'uppercase', letterSpacing: '0.1em', color: '#5D4037', fontWeight: 600 } }} />
+                                    <ArrowDown2 size={16} variant="Outline" style={{ transform: mobileProductsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
+                                </ListItemButton>
+                                <Collapse in={mobileProductsOpen} timeout="auto" unmountOnExit>
+                                    <List component="div" disablePadding sx={{ bgcolor: 'rgba(183, 110, 121, 0.05)', borderRadius: '12px', mb: 1 }}>
+                                        <ListItemButton sx={{ pl: 4, py: 1.5 }} component={Link} href="/products" onClick={handleDrawerToggle}>
+                                            <ListItemText primary="สินค้าทั้งหมด" primaryTypographyProps={{ sx: { fontSize: '0.9rem', color: '#B76E79' } }} />
+                                        </ListItemButton>
+                                        {categories.map((cat) => (
+                                            <ListItemButton key={cat.id} sx={{ pl: 4, py: 1.5 }} component={Link} href={`/products?category=${cat.subtitle}`} onClick={handleDrawerToggle}>
+                                                <ListItemText primary={cat.title} primaryTypographyProps={{ sx: { fontSize: '0.9rem', color: '#5D4037' } }} />
+                                            </ListItemButton>
+                                        ))}
+                                    </List>
+                                </Collapse>
+                            </ListItem>
+
                             {[
-                                { label: 'HOME', href: '/' },
-                                { label: 'FLOWERS', href: '/products?category=bouquet' },
                                 { label: 'EVENTS', href: '/events' },
                                 { label: 'ABOUT US', href: '/about' },
                                 { label: 'OUR CUSTOMERS', href: '/our-customer' },
                                 { label: 'CONTACT', href: '/contact' },
                             ].map((item) => (
                                 <ListItem key={item.label} disablePadding>
-                                    <ListItemButton sx={{ textAlign: 'center', py: 2 }} component={Link} href={item.href}>
+                                    <ListItemButton sx={{ py: 2 }} component={Link} href={item.href} onClick={handleDrawerToggle}>
                                         <ListItemText
                                             primary={item.label}
                                             primaryTypographyProps={{
@@ -367,7 +520,7 @@ export default function Header() {
                                                     textTransform: 'uppercase',
                                                     letterSpacing: '0.1em',
                                                     color: '#5D4037',
-                                                    fontWeight: 500
+                                                    fontWeight: 600
                                                 }
                                             }}
                                         />

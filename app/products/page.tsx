@@ -28,6 +28,8 @@ function ProductsContent() {
     const searchParams = useSearchParams();
     const initialCategory = searchParams.get('category');
 
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
     const [products, setProducts] = useState<Product[]>([]);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [filterOptions, setFilterOptions] = useState<FilterOption[]>([{ value: 'all', label: 'ทั้งหมด' }]);
@@ -39,29 +41,45 @@ function ProductsContent() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch products and categories in parallel
                 const [productsRes, categoriesRes] = await Promise.all([
                     fetch('/api/products'),
                     fetch('/api/categories')
                 ]);
 
-                if (!productsRes.ok) {
-                    throw new Error('Failed to fetch products');
-                }
+                if (!productsRes.ok) throw new Error('Failed to fetch products');
 
                 const productsData = await productsRes.json();
+                const categoriesData = categoriesRes.ok ? await categoriesRes.json() : [];
+
                 setProducts(productsData);
-                setFilteredProducts(productsData);
+                setCategories(categoriesData);
 
-                // Build filter options from unique product types
-                const uniqueTypes = [...new Set(productsData.map((p: Product) => p.type))] as string[];
+                // Find if the initial category exists
+                const activeCat = categoriesData.find((c: Category) =>
+                    c.subtitle.toLowerCase() === initialCategory?.toLowerCase()
+                );
+                setCurrentCategory(activeCat);
 
-                if (categoriesRes.ok) {
-                    const categoriesData = await categoriesRes.json();
-                    const options: FilterOption[] = [{ value: 'all', label: 'ทั้งหมด' }];
-                    const seenValues = new Set<string>(['all']);
+                // Build filter options
+                let options: FilterOption[] = [{ value: 'all', label: 'ทั้งหมด' }];
+                const seenValues = new Set<string>(['all']);
 
-                    // 1. Add defined categories first
+                if (activeCat) {
+                    // We are in a specific category (e.g. BOUQUET)
+                    // Show "All [Category Name]" and then sub-types that belong to this category
+                    options = [{ value: activeCat.subtitle, label: `ทั้งหมดใน${activeCat.title}` }];
+
+                    const subTypes = [...new Set(productsData
+                        .filter((p: any) => p.categoryId === activeCat.id)
+                        .map((p: any) => p.type))] as string[];
+
+                    subTypes.forEach(type => {
+                        if (type && type.toLowerCase() !== activeCat.subtitle.toLowerCase()) {
+                            options.push({ value: type, label: type });
+                        }
+                    });
+                } else {
+                    // Global view - show regular categories as chips
                     categoriesData.forEach((c: Category) => {
                         if (!seenValues.has(c.subtitle)) {
                             options.push({ value: c.subtitle, label: c.title });
@@ -69,28 +87,16 @@ function ProductsContent() {
                         }
                     });
 
-                    // 2. Add product types that don't match any category
+                    // Add other unique types that aren't categories
+                    const uniqueTypes = [...new Set(productsData.map((p: any) => p.type))] as string[];
                     uniqueTypes.forEach((type: string) => {
-                        const isAlreadyAdded = Array.from(seenValues).some(
-                            existingVal => existingVal.toLowerCase() === type.toLowerCase()
-                        );
-                        const isMatchLabel = options.some(opt => opt.label.toLowerCase() === type.toLowerCase());
-
-                        if (!isAlreadyAdded && !isMatchLabel) {
+                        if (type && !Array.from(seenValues).some(v => v.toLowerCase() === type.toLowerCase())) {
                             options.push({ value: type, label: type });
-                            seenValues.add(type);
                         }
                     });
-
-                    setFilterOptions(options);
-                } else {
-                    // Fallback
-                    const options: FilterOption[] = [
-                        { value: 'all', label: 'ทั้งหมด' },
-                        ...uniqueTypes.map((type: string) => ({ value: type, label: type }))
-                    ];
-                    setFilterOptions(options);
                 }
+
+                setFilterOptions(options);
             } catch (err) {
                 console.error('Error fetching data:', err);
                 setError('ไม่สามารถโหลดสินค้าได้');
@@ -100,18 +106,27 @@ function ProductsContent() {
         };
 
         fetchData();
-    }, []);
+    }, [initialCategory]);
 
     // Filter and sort products
     useEffect(() => {
         let result = [...products];
 
-        // Filter by type (match substring for flexibility)
-        if (selectedType !== 'all') {
+        // 1. Initial Category Filter (Base)
+        if (initialCategory) {
+            result = result.filter(p => {
+                const catSubtitle = categories.find(c => c.id === (p as any).categoryId)?.subtitle || '';
+                return catSubtitle.toLowerCase() === initialCategory.toLowerCase() ||
+                    p.type.toLowerCase().includes(initialCategory.toLowerCase());
+            });
+        }
+
+        // 2. Sub-type Filter (Drill down)
+        if (selectedType !== 'all' && selectedType.toLowerCase() !== initialCategory?.toLowerCase()) {
             result = result.filter(p => {
                 const selectedLower = selectedType.toLowerCase();
                 const typeLower = p.type.toLowerCase();
-                return typeLower.includes(selectedLower) || selectedLower.includes(typeLower);
+                return typeLower === selectedLower || typeLower.includes(selectedLower);
             });
         }
 
@@ -125,7 +140,7 @@ function ProductsContent() {
         }
 
         setFilteredProducts(result);
-    }, [selectedType, sortBy, products]);
+    }, [selectedType, sortBy, products, initialCategory, categories]);
 
     return (
         <Box sx={{ pt: { xs: '100px', md: '120px' }, pb: { xs: 8, md: 14 }, minHeight: '100vh', bgcolor: '#FAFAFA' }}>
@@ -133,7 +148,14 @@ function ProductsContent() {
                 {/* Breadcrumb */}
                 <Breadcrumbs sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
                     <Link href="/" style={{ textDecoration: 'none', color: '#888', fontSize: '0.9rem' }}>หน้าแรก</Link>
-                    <Typography color="text.primary" sx={{ fontSize: '0.9rem' }}>สินค้าทั้งหมด</Typography>
+                    {currentCategory ? (
+                        <Link href="/products" style={{ textDecoration: 'none', color: '#888', fontSize: '0.9rem' }}>สินค้าทั้งหมด</Link>
+                    ) : (
+                        <Typography color="text.primary" sx={{ fontSize: '0.9rem' }}>สินค้าทั้งหมด</Typography>
+                    )}
+                    {currentCategory && (
+                        <Typography color="text.primary" sx={{ fontSize: '0.9rem' }}>{currentCategory.title}</Typography>
+                    )}
                 </Breadcrumbs>
 
                 {/* Header */}
@@ -144,7 +166,10 @@ function ProductsContent() {
                         letterSpacing: '0.05em',
                         mb: 2
                     }}>
-                        <span style={{ fontStyle: 'normal', fontFamily: 'var(--font-prompt)' }}>สินค้า</span><span style={{ fontStyle: 'italic', fontFamily: 'var(--font-prompt)', color: '#B76E79' }}>ทั้งหมด</span>
+                        <span style={{ fontStyle: 'normal', fontFamily: 'var(--font-prompt)' }}>
+                            {currentCategory ? currentCategory.title : 'สินค้า'}
+                        </span>
+                        {!currentCategory && <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-prompt)', color: '#B76E79' }}>ทั้งหมด</span>}
                     </Typography>
                     <Typography variant="body1" sx={{ color: '#666', maxWidth: '600px', mx: 'auto' }}>
                         เลือกชมคอลเลกชันดอกไม้และของขวัญสุดพิเศษจากเรา ทุกชิ้นจัดทำด้วยความใส่ใจ

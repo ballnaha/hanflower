@@ -48,12 +48,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, [cartItems, isLoaded]);
 
     const addToCart = (product: Product, quantity: number) => {
-        // Ensure product has images array
+        // Ensure product has images array and a fallback for main image
         const productWithImages = {
             ...product,
             images: (product.images && product.images.length > 0)
                 ? product.images
-                : (product.image ? [product.image] : [])
+                : (product.image ? [product.image] : []),
+            image: product.image || (product.images && product.images.length > 0 ? product.images[0] : '')
         };
 
         setCartItems(prev => {

@@ -130,8 +130,19 @@ export async function POST(request: NextRequest) {
         });
 
         return NextResponse.json(newProduct);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating product:', error);
-        return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
+
+        // Handle Prisma uniqueness check specifically
+        if (error.code === 'P2002') {
+            const target = error.meta?.target || '';
+            const field = target.includes('sku') ? 'SKU' : target.includes('slug') ? 'Slug' : 'รหัสสินค้าหรือ URL';
+            return NextResponse.json({
+                error: `เกิดข้อผิดพลาด: ${field} นี้มีอยู่ในระบบแล้ว กรุณาตรวจสอบอีกครั้ง`,
+                code: 'DUPLICATE_ERROR'
+            }, { status: 400 });
+        }
+
+        return NextResponse.json({ error: 'Failed to create product', message: error.message }, { status: 500 });
     }
 }

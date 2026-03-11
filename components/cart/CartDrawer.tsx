@@ -59,7 +59,7 @@ export default function CartDrawer() {
                             <Box key={item.id} sx={{ display: 'flex', gap: 2 }}>
                                 <Box sx={{ position: 'relative', width: 80, height: 80, borderRadius: 2, overflow: 'hidden', bgcolor: '#F5F5F5', flexShrink: 0 }}>
                                     <Image
-                                        src={getImageUrl(item.image)}
+                                        src={getImageUrl(item.image || (item.images && item.images.length > 0 ? item.images[0] : ''))}
                                         alt={item.title}
                                         fill
                                         style={{ objectFit: 'contain' }}
