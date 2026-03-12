@@ -153,6 +153,30 @@ export async function PUT(
     }
 }
 
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const id = (await params).id;
+        const body = await request.json();
+
+        if (!id) {
+            return NextResponse.json({ error: 'Missing product ID' }, { status: 400 });
+        }
+
+        const updatedProduct = await (prisma as any).product.update({
+            where: { id: id },
+            data: body
+        });
+
+        return NextResponse.json(updatedProduct);
+    } catch (error: any) {
+        console.error('Patch Error:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
 export async function DELETE(
     request: Request,
     { params }: { params: Promise<{ id: string }> }

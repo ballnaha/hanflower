@@ -9,10 +9,16 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const limitParam = searchParams.get('limit');
         const showAll = searchParams.get('all') === 'true';
+        const isBestSeller = searchParams.get('bestseller') === 'true';
         const limit = limitParam ? parseInt(limitParam, 10) : undefined;
 
+        const where: any = showAll ? {} : { isActive: true };
+        if (isBestSeller) {
+            where.isBestSeller = true;
+        }
+
         const products = await (prisma as any).product.findMany({
-            where: showAll ? {} : { isActive: true },
+            where,
             include: {
                 productimages: true,
                 productdetails: true,

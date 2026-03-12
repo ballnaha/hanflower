@@ -38,6 +38,11 @@ function ProductsContent() {
     const [selectedType, setSelectedType] = useState(initialCategory || 'all');
     const [sortBy, setSortBy] = useState('priority');
 
+    // Sync selectedType when initialCategory changes (e.g. via navigation from header submenu)
+    useEffect(() => {
+        setSelectedType(initialCategory || 'all');
+    }, [initialCategory]);
+
     useEffect(() => {
         const fetchData = async () => {
             try {

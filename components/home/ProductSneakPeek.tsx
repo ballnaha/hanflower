@@ -13,7 +13,7 @@ export default function ProductSneakPeek() {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await fetch('/api/products?limit=12');
+                const response = await fetch('/api/products?limit=12&bestseller=true');
                 if (!response.ok) {
                     throw new Error('Failed to fetch products');
                 }
