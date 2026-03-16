@@ -42,6 +42,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useNotification } from '@/context/NotificationContext';
+import { getImageUrl } from '@/lib/utils';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -501,7 +502,7 @@ export default function CheckoutPage() {
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                                             <Box sx={{ width: 48, height: 48, borderRadius: '12px', bgcolor: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
                                                                 {paymentSettings.bank.bankLogo ? (
-                                                                    <Image src={paymentSettings.bank.bankLogo} alt="Bank" width={48} height={48} style={{ objectFit: 'contain', padding: '4px' }} />
+                                                                    <Image src={getImageUrl(paymentSettings.bank.bankLogo)} alt="Bank" width={48} height={48} style={{ objectFit: 'contain', padding: '4px' }} />
                                                                 ) : (
                                                                     <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#999' }}>BK</Typography>
                                                                 )}
@@ -558,7 +559,7 @@ export default function CheckoutPage() {
                                                     <Box sx={{ p: 3, bgcolor: '#FFF', borderRadius: '24px', border: '1px solid #EEE', mb: 3, boxShadow: '0 10px 40px rgba(0,0,0,0.08)' }}>
                                                         {paymentSettings.qr.image ? (
                                                             <Image
-                                                                src={paymentSettings.qr.image}
+                                                                src={getImageUrl(paymentSettings.qr.image)}
                                                                 alt="QR Code"
                                                                 width={200}
                                                                 height={200}
@@ -604,7 +605,7 @@ export default function CheckoutPage() {
                                                 <Box sx={{ display: 'flex', gap: 2.5 }}>
                                                     <Box sx={{ width: 80, height: 80, position: 'relative', borderRadius: '12px', overflow: 'hidden', bgcolor: '#FFF', border: '1px solid #F0F0F0', flexShrink: 0 }}>
                                                         <Image
-                                                            src={item.image || (item.images && item.images[0]) || '/images/placeholder-product.png'}
+                                                            src={getImageUrl(item.image || (item.images && item.images[0]) || '')}
                                                             alt={item.title}
                                                             fill
                                                             style={{ objectFit: 'contain', padding: '6px' }}
