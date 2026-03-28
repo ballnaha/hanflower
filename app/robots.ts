@@ -14,8 +14,6 @@ export default function robots(): MetadataRoute.Robots {
                     '/api/',
                     '/order/',
                     '/payment/',
-                    '/payment-notification/',
-                    '/ar-scan/',
                 ],
             },
             // ChatGPT / OpenAI bot - ALLOW for AI search visibility
