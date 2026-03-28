@@ -3,8 +3,8 @@ import { Metadata } from 'next';
 import AboutContent from '@/components/about/AboutContent';
 
 export const metadata: Metadata = {
-    title: 'เกี่ยวกับเรา | Han Flower ร้านดอกไม้ รับจัดงานแต่ง อีเว้นท์',
-    description: 'รู้จัก Han Flower ทีมงานมืออาชีพ รับจัดดอกไม้งานแต่งงาน งานอีเว้นท์ และพิธีการต่างๆ ผสมผสานศิลปะดอกไม้และเทคโนโลยี QR Code เพื่อวันสำคัญของคุณ',
+    title: 'เกี่ยวกับเรา | Han Flower ร้านดอกไม้รับจัดงานแต่งและอีเว้นท์',
+    description: 'Han Flower ทีมงานมืออาชีพ รับจัดดอกไม้งานแต่งงาน และอีเว้นท์ ผสมผสานศิลปะดอกไม้และเทคโนโลยี QR Code เพื่อวันสำคัญของคุณ สวยหรู มีระดับ',
     keywords: ['ร้านดอกไม้', 'รับจัดดอกไม้งานแต่ง', 'ดอกไม้งานอีเว้นท์', 'ทีมจัดดอกไม้', 'Han Flower', 'QR Code ดอกไม้', 'จัดดอกไม้นอกสถานที่', 'Backdrop ดอกไม้'],
     openGraph: {
         title: 'เกี่ยวกับเรา | Han Flower มืออาชีพงานดอกไม้และอีเว้นท์',
