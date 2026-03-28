@@ -8,7 +8,10 @@ export default function robots(): MetadataRoute.Robots {
             // General crawlers (Google, Bing, etc.)
             {
                 userAgent: '*',
-                allow: '/',
+                allow: [
+                    '/',
+                    '/_next/static/', // Essential for Google to render JS/CSS
+                ],
                 disallow: [
                     '/admin/',
                     '/api/',
