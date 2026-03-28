@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://hanflowerthailand.com'),
   title: "HanFlower | ช่อดอกไม้สด & ไม้อวบน้ำ พร้อมการ์ดดิจิทัลแทนใจ",
   description: "ร้านดอกไม้พรีเมียม ฮันฟลาวเวอร์ HanFlower จำหน่ายช่อดอกไม้สด และไม้อวบน้ำคัดเกรด พิเศษด้วยการ์ด QR Code บอกความในใจถึงผู้รับได้ทันทีผ่านหน้าเว็บส่วนตัว",
-  keywords: "สั่งดอกไม้, ช่อดอกไม้, ไม้อวบน้ำ, ของขวัญวาเลนไทน์, การ์ดบอกรัก, ส่งดอกไม้, HanFlower, ฮันฟลาวเวอร์",
+  keywords: "ร้านดอกไม้ใกล้ฉัน, ส่งดอกไม้ด่วน, ร้านดอกไม้ออนไลน์, สั่งดอกไม้, ช่อดอกไม้พรีเมียม, ไม้อวบน้ำ, ของขวัญ QR Code, การ์ดบอกรัก, HanFlower, ฮันฟลาวเวอร์",
   robots: "index, follow",
   other: {
     "google": "notranslate",

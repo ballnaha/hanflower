@@ -18,6 +18,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
         return {
             title: 'สินค้าทั้งหมด | Han Flower ร้านดอกไม้พรีเมียม',
             description: 'เลือกชมสินค้าดอกไม้และของขวัญพรีเมียมจาก Han Flower ทั้งช่อดอกไม้สด ไม้อวบน้ำ และ Feeling Card QR Code บอกความในใจ ส่งด่วนพร้อมบริการจัดทำด้วยความประณีตทุกขั้นตอน',
+            keywords: ['ร้านดอกไม้ใกล้ฉัน', 'ช่อดอกไม้ออนไลน์', 'ของขวัญ QR Code', 'ส่งดอกไม้พรีเมียม', 'ดอกไม้สด'],
         };
     }
 
